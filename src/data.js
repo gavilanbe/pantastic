@@ -1,0 +1,140 @@
+// Datos de Pantastic!: ingredientes, panes, vecinos, mejoras y textos.
+
+export const ING = {
+  harina: { n: 'Harina de trigo', p: 2, c: '#f6ecd6', pack: 6 },
+  integral: { n: 'Harina integral', p: 3, c: '#c9a36e', pack: 4 },
+  centeno: { n: 'Harina de centeno', p: 3, c: '#9c7b5a', pack: 4 },
+  levadura: { n: 'Levadura', p: 1, c: '#e8d9a8', pack: 6 },
+  mantequilla: { n: 'Mantequilla', p: 5, c: '#ffe07a', pack: 3 },
+  azucar: { n: 'Azúcar', p: 3, c: '#ffffff', pack: 3 },
+  semillas: { n: 'Semillas', p: 4, c: '#7a6a45', pack: 3 },
+  aceitunas: { n: 'Aceitunas', p: 5, c: '#5f6b3a', pack: 3 },
+  nueces: { n: 'Nueces', p: 6, c: '#a8774a', pack: 3 },
+  chocolate: { n: 'Chocolate', p: 7, c: '#5a3524', pack: 3 },
+};
+
+// precio: por pieza. lote: 4 piezas (6 con bandeja grande).
+export const BREADS = {
+  barra: { n: 'Barra', art: 'una', pl: 'barras', price: 4, ing: { harina: 2, levadura: 1 }, sweet: 0, d: 'La de toda la vida. Corteza que cruje y miga que perdona.' },
+  hogaza: { n: 'Hogaza', art: 'una', pl: 'hogazas', price: 7, ing: { harina: 3, levadura: 1 }, sweet: 0, d: 'Redonda y paciente. Aguanta tres días y un disgusto.' },
+  mollete: { n: 'Mollete', art: 'un', pl: 'molletes', price: 8, ing: { harina: 2, levadura: 1, mantequilla: 1 }, sweet: 0, d: 'Blandito y enharinado, como una nube que se deja abrir.' },
+  centeno: { n: 'Pan de centeno', art: 'un', pl: 'panes de centeno', price: 10, ing: { centeno: 3, levadura: 1 }, sweet: 0, d: 'Oscuro, denso y honrado. Sabe a molino y a invierno.' },
+  semillas: { n: 'Integral de semillas', art: 'un', pl: 'integrales', price: 11, ing: { integral: 3, levadura: 1, semillas: 1 }, sweet: 0, d: 'Para llegar lejos: pipas, lino y sésamo en cada bocado.' },
+  chapata: { n: 'Chapata de aceitunas', art: 'una', pl: 'chapatas', price: 12, ing: { harina: 3, levadura: 1, aceitunas: 1 }, sweet: 0, d: 'Plana, alveolada y con tropezones verdes de la charca.' },
+  nueces: { n: 'Pan de nueces', art: 'un', pl: 'panes de nueces', price: 15, ing: { integral: 2, harina: 1, levadura: 1, nueces: 2 }, sweet: 0, d: 'Un pan para llevar en el zurrón por caminos largos.' },
+  brioche: { n: 'Brioche', art: 'un', pl: 'brioches', price: 14, ing: { harina: 2, levadura: 1, mantequilla: 2, azucar: 1 }, sweet: 1, d: 'Con su moñete arriba. Brilla como un libro recién forrado.' },
+  caracola: { n: 'Caracola de chocolate', art: 'una', pl: 'caracolas', price: 17, ing: { harina: 2, levadura: 1, mantequilla: 2, azucar: 1, chocolate: 2 }, sweet: 1, d: 'Se desenrolla despacito. El centro es lo mejor y se guarda.' },
+  rosca: { n: 'Rosca de la Hornada', art: 'una', pl: 'roscas', price: 22, ing: { harina: 3, levadura: 1, mantequilla: 2, azucar: 2, nueces: 1 }, sweet: 1, d: 'El pan de la fiesta. Se parte entre todos o no se parte.' },
+};
+export const BREAD_ORDER = ['barra', 'hogaza', 'mollete', 'centeno', 'semillas', 'chapata', 'nueces', 'brioche', 'caracola', 'rosca'];
+
+export const PRICE_LV = [
+  { n: 'Popular', k: 0.8, d: 'Más barato: el pueblo te coge cariño antes.' },
+  { n: 'Justo', k: 1, d: 'El precio de siempre.' },
+  { n: 'De capricho', k: 1.35, d: 'Más caro: solo cuela si el pan sale de tres estrellas.' },
+];
+
+export const REP = [
+  { at: 0, n: 'Horno recién encendido' },
+  { at: 30, n: 'Huele a pan en la calle' },
+  { at: 90, n: 'La panadería del barrio' },
+  { at: 190, n: 'Cola en la puerta' },
+  { at: 340, n: 'El orgullo de Migas' },
+  { at: 540, n: 'Maestra panadera' },
+  { at: 800, n: 'Como la abuela Hogaza' },
+];
+
+// Vecinos. look: ver chars.js
+export const NEIGH = {
+  lana: {
+    n: 'Doña Lana', lvl: 0, gives: 'mollete', favs: ['mollete', 'hogaza', 'brioche'], pitch: 1.25,
+    look: { sp: 'oveja', fur: '#fbf3e4', skin: '#f0d5c0', shirt: '#c96f7c', pat: 'punto', acc: 'gafas' },
+    hola: ['¡Ay, hija, que el horno echa humo otra vez!', 'Soy Lana, la de las bufandas. Llevo años comprando pan de gasolinera. No se lo cuentes a nadie.'],
+    gracias: ['Esto sí que es pan, criatura.', 'Me llevo el calorcito en el bolso.', 'Te tejo unas manoplas para el horno, ya verás.', 'Qué manos tienes, Pan.'],
+    receta: ['¿Sabes qué echo de menos? Los molletes de tu abuela.', 'Blancos, blanditos, con su harina por encima. Yo decía que eran como mi lana recién lavada.', 'Me dejó apuntado cómo los hacía por si alguien volvía a encender el horno. Toma. Creo que ese alguien eres tú.'],
+  },
+  tejo: {
+    n: 'Tejo', lvl: 0, gives: 'centeno', favs: ['centeno', 'hogaza', 'nueces'], pitch: 0.7,
+    look: { sp: 'tejon', fur: '#8d8f96', skin: '#f4f1ea', shirt: '#5d7a55', pat: 'cuadros', acc: 'gorra' },
+    hola: ['Hmf. Así que tú eres la nieta.', 'Tejo. Llevo el molino. Bueno, lo llevaba cuando había a quién molerle.'],
+    gracias: ['Hmf. No está mal.', 'Corteza seria. Bien.', 'El molino vuelve a tener trabajo, chiquilla.', 'Tu abuela lo habría dejado un minuto más. Pero vale.'],
+    receta: ['Tu abuela y yo discutíamos cada otoño por el centeno.', 'Ella decía que era un grano triste. Yo le decía que triste es el pan que no pesa.', 'Al final hacía un pan negro que callaba a cualquiera. Lo tengo apuntado detrás de una factura. Cuídalo.'],
+  },
+  brinco: {
+    n: 'Brinco', lvl: 0, gives: 'semillas', favs: ['semillas', 'barra', 'chapata'], pitch: 1.6,
+    look: { sp: 'liebre', fur: '#d9b58c', skin: '#fff3df', shirt: '#4fb3a8', pat: 'raya', acc: 'cinta' },
+    hola: ['¡Buenas! ¡Paso corriendo! ¡Literal!', 'Soy Brinco. Doy tres vueltas al pueblo cada mañana y ahora la meta huele a pan. ¡Peligro!'],
+    gracias: ['¡Gasolina de la buena!', '¡Me lo como en la segunda vuelta!', '¡Hoy bato mi marca, te lo dedico!', '¡Crujiente! ¡Como mis rodillas!'],
+    receta: ['Te cuento un secreto de corredor.', 'Tu abuela me hacía un integral con tantas semillas que sonaba al morderlo. Con ese pan gané la carrera de la Hornada tres años seguidos.', 'Aquí está la mezcla. Me la sé de memoria pero la llevo siempre en la riñonera.'],
+  },
+  charca: {
+    n: 'Charca', lvl: 1, gives: 'chapata', favs: ['chapata', 'barra', 'centeno'], pitch: 0.9,
+    look: { sp: 'rana', fur: '#8fca6b', skin: '#e9f5c9', shirt: '#f2efe6', pat: 'liso', acc: 'gorro' },
+    hola: ['Croac. Perdón. Buenos días.', 'Soy Charca, la cocinera de la fonda. Un guiso sin pan para mojar es media receta.'],
+    gracias: ['Esto pide salsa.', 'Hoy en la fonda se rebaña el plato.', 'Croac de aprobación.', 'Mis clientes van a dejar los platos limpios.'],
+    receta: ['En la fonda guardo una cosa de tu abuela.', 'Un verano cambió una hornada por un tarro de mis aceitunas. Al día siguiente apareció con una chapata llena de tropezones verdes.', 'Me dejó la receta escrita en una servilleta. Está un poco manchada de aceite, como debe ser.'],
+  },
+  pua: {
+    n: 'Púa', lvl: 2, gives: 'caracola', favs: ['caracola', 'brioche', 'mollete'], pitch: 1.9,
+    look: { sp: 'erizo', fur: '#8a6a55', skin: '#f6dcc0', shirt: '#ffd166', pat: 'punto', acc: 'lazo' },
+    hola: ['Hola. Tengo seis años y medio y dos monedas.', 'Me llamo Púa. No pincho si no me asustan.'],
+    gracias: ['¡Hala!', 'Me lo voy a comer por el borde primero.', 'Hoy no comparto. Bueno, un poquito.', 'Eres la mayor que mejor me cae.'],
+    receta: ['Mi abuelo dice que antes había caracolas de chocolate.', 'Que tu abuela las hacía los sábados y que él se guardaba el centro para el final, igual que yo.', 'Me ha dado este papel para ti. Dice que es la receta. Yo he dibujado una caracola al lado para que se entienda mejor.'],
+  },
+  zarza: {
+    n: 'Zarza', lvl: 2, gives: 'nueces', favs: ['nueces', 'semillas', 'barra'], pitch: 1.1,
+    look: { sp: 'zorro', fur: '#e58b4a', skin: '#fff6ea', shirt: '#5873b8', pat: 'liso', acc: 'cartera' },
+    hola: ['Carta para… ah, no, hoy vengo a comprar.', 'Zarza, cartera de Migas y de cuatro pueblos más. Conozco todos los caminos y casi todos los perros.'],
+    gracias: ['Esto viaja conmigo hasta el último buzón.', 'Certificado y con acuse de recibo.', 'Hoy reparto de buen humor.', 'Te traigo saludos de tres pueblos. Y pedidos.'],
+    receta: ['En el fondo de la saca llevo una carta sin entregar desde hace años.', 'Es de tu abuela para «quien encienda el horno». Dentro iba la receta del pan de nueces que me daba para la ruta larga.', 'Hoy por fin tiene destinataria. Firma aquí. Es broma. Pero toma.'],
+  },
+  ulular: {
+    n: 'Don Ulular', lvl: 3, gives: 'brioche', favs: ['brioche', 'centeno', 'caracola'], pitch: 0.8,
+    look: { sp: 'buho', fur: '#a98467', skin: '#f3e3c8', shirt: '#7b5ea7', pat: 'rombos', acc: 'pajarita' },
+    hola: ['Buenas tardes. O días. A mi edad uno ya ulula a cualquier hora.', 'Fui el maestro de este pueblo. A tu abuela le puse un diez en fracciones: partía el pan en partes exactamente iguales.'],
+    gracias: ['Sobresaliente.', 'Un pan con muy buena caligrafía.', 'Notable alto. El alto es por la corteza.', 'Esto merece matrícula.'],
+    receta: ['El último día de curso tu abuela traía brioche para toda la clase.', 'Decía que la mantequilla se enseña igual que las letras: con paciencia y sin prisa por pasar página.', 'Copié la receta en la pizarra y luego en este cuaderno. Considéralo tu boletín de notas, Pan.'],
+  },
+};
+export const NEIGH_ORDER = ['lana', 'tejo', 'brinco', 'charca', 'pua', 'zarza', 'ulular'];
+export const HEART_AT = [0, 3, 9, 18, 30, 45];   // puntos para cada corazón; la receta llega con el segundo
+
+export const UPG = {
+  bandeja: { n: 'Bandeja grande', p: 120, d: 'Cada hornada da 6 piezas en vez de 4.', ic: '🥖' },
+  fermenta: { n: 'Fermentadora templada', p: 180, d: 'La masa sube el doble de rápido.', ic: '🌡️' },
+  jardin: { n: 'Jardineras en la puerta', p: 90, d: 'Flores en la entrada. Entra más gente y deja más propina.', ic: '🌷' },
+  horno2: { n: 'Segunda boca de horno', p: 320, d: 'Hornea dos hornadas a la vez.', ic: '🔥', lvl: 1 },
+  terraza: { n: 'Terraza en la plaza', p: 260, d: 'Mesas al sol. La gente se queda y vuelve.', ic: '⛱️', lvl: 2 },
+  miga: { n: 'Miga, la aprendiz', p: 450, d: 'Una ratona muy seria que despacha en el mostrador mientras tú amasas.', ic: '🐭', lvl: 2 },
+  farolillos: { n: 'Farolillos de la plaza', p: 380, d: 'Luces de verbena de lado a lado. Las tardes se llenan.', ic: '🏮', lvl: 3 },
+  fuente: { n: 'Arreglar la fuente', p: 520, d: 'Vuelve a manar. Dicen que da suerte echarle una miga.', ic: '⛲', lvl: 4 },
+};
+export const UPG_ORDER = ['bandeja', 'jardin', 'fermenta', 'horno2', 'terraza', 'miga', 'farolillos', 'fuente'];
+
+export const DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+export const TIEMPO = {
+  sol: { n: 'Soleado', ic: '☀️', k: 1 },
+  nubes: { n: 'Nubes', ic: '⛅', k: 0.95 },
+  lluvia: { n: 'Lluvia', ic: '🌧️', k: 0.8 },
+  viento: { n: 'Viento', ic: '🍃', k: 1 },
+};
+
+export const CARTA = [
+  'Querida Pan:',
+  'Si lees esto es que el horno lleva frío demasiado tiempo y que tú, cabezota como yo, has decidido encenderlo.',
+  'En Migas el pan nunca fue solo pan. Cada vecino tenía el suyo, y cada año, cuando todos habían comido del suyo, celebrábamos la Hornada en la plaza.',
+  'Mis recetas no están en ningún libro. Las fui dejando en sus manos. Gánate su cariño y te las irán devolviendo.',
+  'Empieza por lo sencillo: una barra, una hogaza y la puerta abierta.',
+  'Con harina en las manos, tu abuela Hogaza.',
+];
+export const CARTA_ROSCA = [
+  'Pan, mi niña:',
+  'Si esta carta ha salido de su escondite detrás del horno es que ya te han devuelto todas mis recetas. Eso quiere decir que Migas te quiere.',
+  'Queda una. La Rosca de la Hornada no se vende en un día cualquiera: se hornea para todos y se parte en la plaza.',
+  'Ten ocho roscas en el mostrador al caer la tarde y el pueblo sabrá qué hacer.',
+  'Yo ya estaré oliéndola desde donde esté.',
+];
+
+export const VISIT_LINES = ['¡Gracias!', 'Qué bien huele aquí.', 'Me habían hablado de este sitio.', 'Mañana vuelvo.', 'Calentito, calentito.', 'Esto no llega entero a casa.', '¡Hasta luego, Pan!', 'Así da gusto madrugar.'];
+export const NO_STOCK = ['Vaya, hoy no queda…', 'Otro día será.', 'Volveré mañana, no te apures.'];
+export const CARO = ['Uy, se me va de precio hoy.', 'Hmm, mejor otro día.'];

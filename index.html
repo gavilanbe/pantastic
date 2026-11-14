@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pantastic!</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥖</text></svg>">
+<link rel="stylesheet" href="src/ui.css">
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="rain"></div>
+<div id="ui">
+  <div id="world"></div>
+  <div id="hud" class="hide">
+    <div id="daycard" class="card">
+      <div class="dc-top"><span id="dc-day">Día 1</span><span id="dc-wd">lunes</span></div>
+      <div class="dc-mid"><span id="dc-wx">☀️</span><span id="dc-time">7:00</span></div>
+      <div id="dc-bar"><i></i></div>
+      <div id="dc-antojo"></div>
+    </div>
+    <div id="topright">
+      <div id="money" class="pill"><span class="coin"></span><b id="money-n">0</b></div>
+      <div id="rep" class="card"><div class="rep-top"><span class="heart">♥</span><span id="rep-name"></span></div><div class="bar"><i id="rep-bar"></i></div></div>
+      <div id="shelf"></div>
+    </div>
+    <div id="goal" class="card"><span class="goal-ic">🥖</span><span id="goal-t"></span></div>
+    <div id="keys"><span><kbd>WASD</kbd> moverse</span><span><kbd>E</kbd> acción</span><span><kbd>L</kbd> libreta</span><span><kbd>M</kbd> sonido</span></div>
+    <button id="btn-lib" class="btn round" title="Libreta (L)">📒</button>
+  </div>
+  <div id="prompt" class="hide"></div>
+  <div id="knead" class="hide"><div class="k-title">¡Amasa al ritmo!</div><div class="k-stage"><div class="k-target"></div><div class="k-ring"></div><div class="k-core"><kbd>E</kbd></div></div><div class="k-dots"></div><div class="k-word"></div></div>
+  <div id="fade"></div>
+  <div id="toasts"></div>
+  <div id="dialog" class="hide"><div id="dlg-name"></div><div id="dlg-text"></div><div id="dlg-next">▼</div></div>
+  <div id="modal" class="hide"></div>
+  <div id="title" class="hide"></div>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
