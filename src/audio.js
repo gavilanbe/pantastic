@@ -53,6 +53,7 @@ const FX = {
   page: () => noise({ f: 2500, fTo: 900, d: 0.16, g: 0.1, q: 0.7 }),
   buy: () => { tone({ f: M(72), d: 0.08, g: 0.14, type: 'triangle' }); tone({ f: M(79), t: ac.currentTime + 0.07, d: 0.16, g: 0.14, type: 'triangle' }); },
   no: () => { tone({ f: 210, d: 0.1, g: 0.14, type: 'triangle' }); tone({ f: 170, t: ac.currentTime + 0.11, d: 0.16, g: 0.14, type: 'triangle' }); },
+  stamp: () => { tone({ f: 130, to: 60, d: 0.14, g: 0.4 }); noise({ f: 700, fTo: 200, d: 0.09, g: 0.2, type: 'lowpass' }); },
   poof: () => noise({ f: 1400, fTo: 400, d: 0.22, g: 0.12, q: 0.5 }),
   whoosh: () => noise({ f: 300, fTo: 1600, d: 0.25, g: 0.1, q: 0.8 }),
   heart: () => [0, 7, 12].forEach((s, i) => tone({ f: M(79 + s), t: ac.currentTime + i * 0.08, d: 0.35, g: 0.12 })),

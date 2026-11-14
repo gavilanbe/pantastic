@@ -1,16 +1,16 @@
 // Datos de Pantastic!: ingredientes, panes, vecinos, mejoras y textos.
 
 export const ING = {
-  harina: { n: 'Harina de trigo', p: 2, c: '#f6ecd6', pack: 6 },
-  integral: { n: 'Harina integral', p: 3, c: '#c9a36e', pack: 4 },
-  centeno: { n: 'Harina de centeno', p: 3, c: '#9c7b5a', pack: 4 },
-  levadura: { n: 'Levadura', p: 1, c: '#e8d9a8', pack: 6 },
-  mantequilla: { n: 'Mantequilla', p: 5, c: '#ffe07a', pack: 3 },
-  azucar: { n: 'Azúcar', p: 3, c: '#ffffff', pack: 3 },
-  semillas: { n: 'Semillas', p: 4, c: '#7a6a45', pack: 3 },
-  aceitunas: { n: 'Aceitunas', p: 5, c: '#5f6b3a', pack: 3 },
-  nueces: { n: 'Nueces', p: 6, c: '#a8774a', pack: 3 },
-  chocolate: { n: 'Chocolate', p: 7, c: '#5a3524', pack: 3 },
+  harina: { n: 'Harina de trigo', p: 2, c: '#f6ecd6', pack: 6, d: 'La blanca de toda la vida. Sin ella no hay obrador que valga.' },
+  integral: { n: 'Harina integral', p: 3, c: '#c9a36e', pack: 4, d: 'Con su salvado y todo. Sabe a campo.' },
+  centeno: { n: 'Harina de centeno', p: 3, c: '#9c7b5a', pack: 4, d: 'Oscura y seria, como Tejo en lunes.' },
+  levadura: { n: 'Levadura', p: 1, c: '#e8d9a8', pack: 6, d: 'Fresquísima. Mírala, si casi respira.' },
+  mantequilla: { n: 'Mantequilla', p: 5, c: '#ffe07a', pack: 3, d: 'De vaca feliz. No preguntes cómo lo sé.' },
+  azucar: { n: 'Azúcar', p: 3, c: '#ffffff', pack: 3, d: 'Para los días de lluvia y los cumpleaños.' },
+  semillas: { n: 'Semillas', p: 4, c: '#7a6a45', pack: 3, d: 'Pipas, lino y sésamo. Brinco se las come a puñados.' },
+  aceitunas: { n: 'Aceitunas', p: 5, c: '#5f6b3a', pack: 3, d: 'Del tarro de Charca. Con hueso no, tranquila.' },
+  nueces: { n: 'Nueces', p: 6, c: '#a8774a', pack: 3, d: 'Recogidas del camino viejo. Crujen que da gusto.' },
+  chocolate: { n: 'Chocolate', p: 7, c: '#5a3524', pack: 3, d: 'Negro del bueno. Escóndelo de Púa.' },
 };
 
 // precio: por pieza. lote: 4 piezas (6 con bandeja grande).
@@ -100,16 +100,31 @@ export const NEIGH_ORDER = ['lana', 'tejo', 'brinco', 'charca', 'pua', 'zarza', 
 export const HEART_AT = [0, 3, 9, 18, 30, 45];   // puntos para cada corazón; la receta llega con el segundo
 
 export const UPG = {
-  bandeja: { n: 'Bandeja grande', p: 120, d: 'Cada hornada da 6 piezas en vez de 4.', ic: '🥖' },
-  fermenta: { n: 'Fermentadora templada', p: 180, d: 'La masa sube el doble de rápido.', ic: '🌡️' },
-  jardin: { n: 'Jardineras en la puerta', p: 90, d: 'Flores en la entrada. Entra más gente y deja más propina.', ic: '🌷' },
-  horno2: { n: 'Segunda boca de horno', p: 320, d: 'Hornea dos hornadas a la vez.', ic: '🔥', lvl: 1 },
-  terraza: { n: 'Terraza en la plaza', p: 260, d: 'Mesas al sol. La gente se queda y vuelve.', ic: '⛱️', lvl: 2 },
-  miga: { n: 'Miga, la aprendiz', p: 450, d: 'Una ratona muy seria que despacha en el mostrador mientras tú amasas.', ic: '🐭', lvl: 2 },
-  farolillos: { n: 'Farolillos de la plaza', p: 380, d: 'Luces de verbena de lado a lado. Las tardes se llenan.', ic: '🏮', lvl: 3 },
-  fuente: { n: 'Arreglar la fuente', p: 520, d: 'Vuelve a manar. Dicen que da suerte echarle una miga.', ic: '⛲', lvl: 4 },
+  bandeja: { n: 'Bandeja grande', p: 120, cap: 0, d: 'Cada hornada da 6 piezas en vez de 4.', at: [1.6, 1.4, -2.6] },
+  jardin: { n: 'Jardineras en la puerta', p: 90, cap: 0, d: 'Flores en la entrada. Entra más gente, espera más a gusto y deja más propina.', at: [0, 0.6, 3.2] },
+  fermenta: { n: 'Fermentadora templada', p: 180, cap: 0, d: 'La masa sube el doble de rápido.', at: [3, 1.6, -4.9] },
+  huerto: { n: 'El huerto de la abuela', p: 160, cap: 0, lvl: 1, d: 'Lo desbrozan y lo plantan. Cada mañana te deja algo: aceitunas, nueces o semillas.', at: [-15, 0.8, 1.2] },
+  horno2: { n: 'Segunda boca de horno', p: 320, cap: 1, lvl: 1, d: 'Abren la leñera y hornean dos hornadas a la vez.', at: [5.1, 1, -4.2] },
+  reforma: { n: 'Reforma del obrador', p: 420, cap: 1, lvl: 2, d: 'Baldosa nueva, azulejo azul y banderines. Viene más gente y las propinas suben.', at: [0, 1.5, -3] },
+  molino: { n: 'Arreglar el molino de Tejo', p: 380, cap: 1, lvl: 2, d: 'Aspas nuevas y muela afilada. Las tres harinas te salen un tercio más baratas.', at: [-9.8, 1.5, -3] },
+  miga: { n: 'Miga, la aprendiz', p: 450, cap: 1, lvl: 2, d: 'La sobrina de Pipa. Una ratona muy seria que despacha en el mostrador mientras tú amasas.', at: [-1, 1, -3.85] },
+  terraza: { n: 'Terraza en la plaza', p: 260, cap: 2, lvl: 2, d: 'Mesas y sombrillas. La gente se queda a merendar y vuelve.', at: [11, 1, 1] },
+  puesto: { n: 'Puesto en la plaza', p: 480, cap: 2, lvl: 3, d: 'Un tenderete con toldo. Lo que te sobre al cerrar se vende allí a mitad de precio.', at: [-4.2, 1, 7.4] },
+  farolillos: { n: 'Farolillos de verbena', p: 380, cap: 2, lvl: 3, d: 'Luces de lado a lado de la plaza. Las tardes se llenan.', at: [0, 3, 4.5] },
+  fuente: { n: 'Arreglar la fuente', p: 520, cap: 2, lvl: 4, d: 'Vuelve a manar. Dicen que da suerte echarle una miga.', at: [-10.2, 1.4, 7] },
 };
-export const UPG_ORDER = ['bandeja', 'jardin', 'fermenta', 'horno2', 'terraza', 'miga', 'farolillos', 'fuente'];
+export const UPG_ORDER = ['bandeja', 'jardin', 'fermenta', 'huerto', 'horno2', 'reforma', 'molino', 'miga', 'terraza', 'puesto', 'farolillos', 'fuente'];
+export const CAPS = ['Primeros arreglos', 'El obrador crece', 'La plaza revive'];
+export const PIPA_LOOK = { sp: 'raton', fur: '#d9b08a', skin: '#fff3e2', shirt: '#6fbfae', pat: 'punto', acc: 'lazo' };
+export const PIPA = {
+  hola: ['¡La nieta de Hogaza! Soy Pipa, la del colmado. Dime qué te subo.'],
+  abre: ['¿Qué te pongo hoy, Pan?', '¡Buenas! Recién repuesto todo.', 'Pide por esa boquita.', 'Hoy el género ha venido precioso.'],
+  mas: ['¡Marchando!', 'Apuntado.', '¿Algo más, reina?', 'Eso es tener ojo.', 'Te lo voy envolviendo.'],
+  menos: ['Lo quito, sin problema.', 'Tachado.', 'Mejor, que luego se pone malo.'],
+  caro: ['Uy, eso se te va del monedero, cielo.', 'Con lo que llevas no te llega. Quita algo.'],
+  paga: ['¡Gracias, Pan! Te lo subo ahora mismo.', '¡Listo! Hornea algo rico con esto.', 'Un placer. Guárdame una barra.'],
+  vacio: ['El tique está en blanco, mujer.'],
+};
 
 export const DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 export const TIEMPO = {

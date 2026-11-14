@@ -335,7 +335,7 @@ export function makeChar(look) {
   if (sp === 'raton') { tail = group({ parent: body, p: [0, 0.28, -0.22], r: [-1.1, 0, 0] }); mesh(G.cap(0.018, 0.34, 6), mat('#e8a0a8'), { parent: tail, p: [0, 0.18, 0] }); }
   if (sp === 'tejon') tail = mesh(G.sph(0.1, 10, 8), furM, { parent: body, p: [0, 0.3, -0.26], s: [0.9, 0.8, 1.3] });
 
-  const carryAnchor = group({ parent: body, p: [0, 0.5, 0.42] });
+  const carryAnchor = group({ parent: body, p: [0, 0.5, 0.56] });
   root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
   skull.receiveShadow = false;
 

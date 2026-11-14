@@ -14,26 +14,28 @@
 <div id="ui">
   <div id="world"></div>
   <div id="hud" class="hide">
-    <div id="daycard" class="card">
-      <div class="dc-top"><span id="dc-day">Día 1</span><span id="dc-wd">lunes</span></div>
-      <div class="dc-mid"><span id="dc-wx">☀️</span><span id="dc-time">7:00</span></div>
-      <div id="dc-bar"><i></i></div>
+    <div id="cal">
+      <div class="leaf" id="leaf"><div class="top" id="dc-wd">lunes</div><small>día</small><b id="dc-day">1</b></div>
+      <div class="clock">
+        <div class="sunarc"><svg viewBox="0 0 140 40" preserveAspectRatio="none"><path d="M6 38 Q70 -30 134 38" fill="none" stroke="#dcc59a" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/></svg><div id="sun"></div></div>
+        <div class="row2"><span id="dc-time">7:00</span><span id="dc-wx"></span></div>
+      </div>
       <div id="dc-antojo"></div>
     </div>
     <div id="topright">
-      <div id="money" class="pill"><span class="coin"></span><b id="money-n">0</b></div>
-      <div id="rep" class="card"><div class="rep-top"><span class="heart">♥</span><span id="rep-name"></span></div><div class="bar"><i id="rep-bar"></i></div></div>
+      <div id="money"><span class="coin"></span><b id="money-n">0</b></div>
+      <div id="rep"><div class="rosette"><b id="rep-lv">1</b></div><div><div id="rep-name"></div><div class="loafbar"><i id="rep-bar"></i></div></div></div>
       <div id="shelf"></div>
     </div>
-    <div id="goal" class="card"><span class="goal-ic">🥖</span><span id="goal-t"></span></div>
-    <div id="keys"><span><kbd>WASD</kbd> moverse</span><span><kbd>E</kbd> acción</span><span><kbd>L</kbd> libreta</span><span><kbd>M</kbd> sonido</span></div>
-    <button id="btn-lib" class="btn round" title="Libreta (L)">📒</button>
+    <div id="goal"><img id="goal-ic" alt=""><span id="goal-t"></span></div>
+    <div id="keys"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> moverse</span><span><kbd>E</kbd> acción</span><span><kbd>M</kbd> sonido</span></div>
+    <button id="btn-lib" title="Libreta (L)"></button>
   </div>
   <div id="prompt" class="hide"></div>
-  <div id="knead" class="hide"><div class="k-title">¡Amasa al ritmo!</div><div class="k-stage"><div class="k-target"></div><div class="k-ring"></div><div class="k-core"><kbd>E</kbd></div></div><div class="k-dots"></div><div class="k-word"></div></div>
+  <div id="knead" class="hide"><div class="k-title">¡Amasa cuando el aro toque la masa!</div><div class="k-stage"><div class="k-ring"></div><div class="k-target"></div><div class="k-core"><kbd>E</kbd></div></div><div class="k-dots"></div><div class="k-word"></div></div>
   <div id="fade"></div>
   <div id="toasts"></div>
-  <div id="dialog" class="hide"><div id="dlg-name"></div><div id="dlg-text"></div><div id="dlg-next">▼</div></div>
+  <div id="dialog" class="hide"><div id="dlg-face"><img alt=""></div><div id="dlg-name"></div><div id="dlg-text"></div><div id="dlg-next">▼</div></div>
   <div id="modal" class="hide"></div>
   <div id="title" class="hide"></div>
 </div>
