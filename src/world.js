@@ -363,10 +363,13 @@ function bakery() {
   mesh(G.box(1.4, 2.05, 0.08, 0.03), tealD, { parent: F, p: [0, 1.025, -0.44] });
   for (const sx of [-1, 1]) mesh(G.box(0.09, 2.05, 0.96, 0.03), teal, { parent: F, p: [sx * 0.655, 1.025, 0] });
   mesh(G.box(1.4, 0.26, 0.96, 0.05), teal, { parent: F, p: [0, 1.93, 0] }); mesh(G.box(1.4, 0.2, 0.96, 0.05), teal, { parent: F, p: [0, 0.1, 0] });
-  W.fermGlow = mat('#ffd9a0', { emissive: '#ffb347', ei: 0.5, nocache: true });
+  W.fermGlow = mat('#f6d6a6', { emissive: '#ffb347', ei: 0.3, nocache: true });
   mesh(G.box(1.2, 1.56, 0.02, 0.01), W.fermGlow, { parent: F, p: [0, 1.0, -0.39], cast: false });
   mesh(G.box(1.22, 0.02, 0.84, 0.005), mat('#3a2a26', { rough: 0.9 }), { parent: F, p: [0, 0.21, 0], cast: false });
-  for (let i = 0; i < 3; i++) for (const sx of [-1, 1]) mesh(G.box(0.05, 0.03, 0.82, 0.01), iron, { parent: F, p: [sx * 0.585, 0.42 + i * 0.5, 0] });
+  // baldas de rejilla de lado a lado: la bandeja descansa encima
+  const fsteel = mat('#c3ccd4', { rough: 0.35, metal: 0.5 });
+  for (let i = 0; i < 3; i++) { const y = 0.42 + i * 0.5; for (const sx of [-1, 1]) mesh(G.box(0.06, 0.05, 0.84, 0.012), fsteel, { parent: F, p: [sx * 0.58, y - 0.012, 0.02] }); for (const z of [-0.36, 0.4]) mesh(G.box(1.2, 0.03, 0.03, 0.01), fsteel, { parent: F, p: [0, y, z] }); for (let k = 0; k < 6; k++) mesh(G.box(0.022, 0.022, 0.78, 0.008), fsteel, { parent: F, p: [-0.45 + k * 0.18, y, 0.02] }); }
+  for (const sx of [-1, 1]) mesh(G.box(0.02, 1.58, 0.84, 0.005), mat('#f1d7ae', { rough: 0.9 }), { parent: F, p: [sx * 0.605, 1.0, 0.02], cast: false });
   for (const lx of [-0.5, 0.5]) mesh(G.cyl(0.06, 0.05, 0.1, 8), iron, { parent: F, p: [lx, -0.03, 0.3] });
   // panel de arriba: dial y pilotos de cada balda
   mesh(G.box(0.9, 0.17, 0.03, 0.02), cream, { parent: F, p: [-0.12, 1.93, 0.485] });
@@ -377,7 +380,7 @@ function bakery() {
   for (const [x, y, w, h] of [[-0.66, 0.3, 1.32, 0.1], [-0.66, 1.75, 1.32, 0.1], [-0.05, 1.025, 0.1, 1.55], [-1.27, 1.025, 0.1, 1.55]]) mesh(G.box(w, h, 0.06, 0.02), teal, { parent: W.fermDoor, p: [x, y, 0] });
   mesh(G.box(1.14, 1.38, 0.025, 0.01), mat('#dff3ff', { transparent: true, opacity: 0.2, rough: 0.08 }), { parent: W.fermDoor, p: [-0.66, 1.025, 0], cast: false });
   mesh(G.box(0.05, 0.5, 0.07, 0.02), cream, { parent: W.fermDoor, p: [-1.2, 1.025, 0.06] });
-  for (let i = 0; i < 3; i++) W.fermSlots.push({ p: [3.0, 0.56 + i * 0.5, -5.47], holder: group({ parent: B, p: [3.0, 0.56 + i * 0.5, -5.47], s: 0.85 }) });
+  for (let i = 0; i < 3; i++) W.fermSlots.push({ p: [3.0, 0.535 + i * 0.5, -5.43], holder: group({ parent: B, p: [3.0, 0.535 + i * 0.5, -5.43], s: 1.12 }) });
   W.obstacles.push([2.2, -5.9, 3.8, -4.8]);
 
   // ---- horno de leña: bóveda, boca en túnel con solera y llamas, hueco de abajo ----
@@ -748,7 +751,7 @@ export function updateWorld(dt, hour, o = {}) {
   for (const m of W.windows) m.emissiveIntensity = n * 1.8;
   for (let i = 0; i < W.lanterns.length; i += 2) { W.lanterns[i].emissiveIntensity = 0.3 + n * 2.2 * (0.85 + Math.sin(t * 2 + i) * 0.15); W.lanterns[i + 1].rotation.z = Math.sin(t * 1.6 + i) * (o.wind ? 0.25 : 0.1); }
   W.home.light.intensity = o.home ? 1.0 + n * 2.6 : 0;
-  W.fermGlow.emissiveIntensity = 0.55 + Math.sin(t * 2) * 0.08;
+  W.fermGlow.emissiveIntensity = 0.3 + Math.sin(t * 2) * 0.05;
   W.fermDoor.rotation.y += ((o.fermOpen ? 1.75 : 0) - W.fermDoor.rotation.y) * (1 - Math.exp(-dt * 12)); W.fermDial.rotation.z = -0.9 + Math.sin(t * 0.7) * 0.08 - (o.fermBusy ? 0.7 : 0);
   for (const fs of W.flames) { const pw = (o.fire ?? 0.6) * (fs.lower ? (o.baking?.[1] ? 1.15 : 0.85) : (o.baking?.[0] ? 1.15 : 0.9)); fs.list.forEach((fl, i) => { const k = 0.25 + pw * (0.85 + Math.sin(t * 11 + i * 2.1) * 0.22 + Math.sin(t * 23 + i) * 0.12); fl.scale.set(0.7 + pw * 0.5, Math.max(0.05, k * 1.5), 0.7 + pw * 0.5); fl.rotation.z = Math.sin(t * 7 + i) * 0.14; }); }
   const f = 1.1 + Math.sin(t * 9) * 0.18 + Math.sin(t * 23) * 0.1;
