@@ -7,8 +7,8 @@ export const W = {
   obstacles: [], circles: [], up: {}, lamps: [], windows: [], sails: null, ducks: [], t: 0,
   st: {
     mesa: { x: 0.8, z: -3.95, ox: 0.8, oz: -5.0, yaw: Math.PI, label: 'Amasar' },
-    ferm: { x: 3.0, z: -4.3, ox: 3.0, oz: -5.35, yaw: Math.PI, label: 'Fermentadora' },
-    horno: { x: 5.1, z: -3.55, ox: 5.1, oz: -5.0, yaw: Math.PI, label: 'Horno' },
+    ferm: { x: 2.5, z: -4.2, ox: 3.0, oz: -5.35, yaw: 2.72, label: 'Fermentadora' },
+    horno: { x: 4.35, z: -3.3, ox: 5.1, oz: -4.6, yaw: 2.55, label: 'Horno' },
     despensa: { x: 5.2, z: -2.2, ox: 6.2, oz: -2.2, yaw: Math.PI / 2, label: 'Despensa' },
     mostrador: { x: -1.0, z: -2.7, ox: -1.9, oz: -2.7, yaw: -Math.PI / 2, label: 'Mostrador' },
     carro: { x: 4.95, z: -0.45, ox: 5.9, oz: -0.45, yaw: Math.PI / 2, label: 'Carro' },
@@ -358,46 +358,61 @@ function bakery() {
   W.dough.visible = false; W.doughWorld = [0.18, 1.15, -4.95];
   W.obstacles.push([-0.5, -5.8, 2.1, -4.35]);
 
-  // ---- fermentadora ----
-  const F = group({ parent: B, p: [3.0, 0.1, -5.45] });
-  mesh(G.box(1.35, 2.05, 0.95, 0.09), mat('#9ad1c0', { rough: 0.55 }), { parent: F, p: [0, 1.025, 0] });
-  mesh(G.box(1.12, 1.5, 0.08, 0.05), mat('#3a2a26', { rough: 0.9 }), { parent: F, p: [0, 1.12, 0.42] });
+  // ---- fermentadora: armario hueco con raíles, puerta de cristal y pilotos ----
+  const F = group({ parent: B, p: [3.0, 0.1, -5.45] }), teal = mat('#9ad1c0', { rough: 0.55 }), tealD = mat('#7fbfae', { rough: 0.55 });
+  mesh(G.box(1.4, 2.05, 0.08, 0.03), tealD, { parent: F, p: [0, 1.025, -0.44] });
+  for (const sx of [-1, 1]) mesh(G.box(0.09, 2.05, 0.96, 0.03), teal, { parent: F, p: [sx * 0.655, 1.025, 0] });
+  mesh(G.box(1.4, 0.26, 0.96, 0.05), teal, { parent: F, p: [0, 1.93, 0] }); mesh(G.box(1.4, 0.2, 0.96, 0.05), teal, { parent: F, p: [0, 0.1, 0] });
   W.fermGlow = mat('#ffd9a0', { emissive: '#ffb347', ei: 0.5, nocache: true });
-  mesh(G.box(1.06, 1.44, 0.02, 0.01), W.fermGlow, { parent: F, p: [0, 1.12, 0.4], cast: false });
-  for (let i = 0; i < 3; i++) mesh(G.box(1.08, 0.03, 0.2, 0.01), iron, { parent: F, p: [0, 0.5 + i * 0.5, 0.46] });
-  mesh(G.box(1.2, 1.56, 0.03, 0.02), mat('#dff3ff', { transparent: true, opacity: 0.18, rough: 0.1 }), { parent: F, p: [0, 1.12, 0.6], cast: false });
-  mesh(G.box(0.05, 0.6, 0.06, 0.02), cream, { parent: F, p: [0.5, 1.12, 0.64] });
+  mesh(G.box(1.2, 1.56, 0.02, 0.01), W.fermGlow, { parent: F, p: [0, 1.0, -0.39], cast: false });
+  mesh(G.box(1.22, 0.02, 0.84, 0.005), mat('#3a2a26', { rough: 0.9 }), { parent: F, p: [0, 0.21, 0], cast: false });
+  for (let i = 0; i < 3; i++) for (const sx of [-1, 1]) mesh(G.box(0.05, 0.03, 0.82, 0.01), iron, { parent: F, p: [sx * 0.585, 0.42 + i * 0.5, 0] });
   for (const lx of [-0.5, 0.5]) mesh(G.cyl(0.06, 0.05, 0.1, 8), iron, { parent: F, p: [lx, -0.03, 0.3] });
-  mesh(G.box(0.5, 0.2, 0.04, 0.02), cream, { parent: F, p: [0, 1.96, 0.47] });
-  for (let i = 0; i < 3; i++) mesh(G.sph(0.03, 8, 6), mat(['#ff7b6b', '#ffd166', '#7bd389'][i], { emissive: ['#ff7b6b', '#ffd166', '#7bd389'][i], ei: 0.6 }), { parent: F, p: [-0.14 + i * 0.14, 1.96, 0.5] });
-  for (let i = 0; i < 3; i++) W.fermSlots.push({ p: [3.0, 0.63 + i * 0.5, -4.93], holder: group({ parent: B, p: [3.0, 0.63 + i * 0.5, -4.93], s: 0.85 }) });
+  // panel de arriba: dial y pilotos de cada balda
+  mesh(G.box(0.9, 0.17, 0.03, 0.02), cream, { parent: F, p: [-0.12, 1.93, 0.485] });
+  mesh(G.cyl(0.075, 0.075, 0.03, 16), mat('#fffdf5'), { parent: F, p: [-0.4, 1.93, 0.5], r: [Math.PI / 2, 0, 0] }); W.fermDial = group({ parent: F, p: [-0.4, 1.93, 0.52] }); mesh(G.box(0.014, 0.065, 0.008, 0.003), mat('#e2664f'), { parent: W.fermDial, p: [0, 0.028, 0] });
+  W.fermLed = []; for (let i = 0; i < 3; i++) { const lm = mat('#6a6a6a', { emissive: '#000000', ei: 1, rough: 0.3, nocache: true }); W.fermLed.push(lm); mesh(G.sph(0.034, 10, 8), lm, { parent: F, p: [-0.12 + i * 0.13, 1.93, 0.505], cast: false }); }
+  // puerta con bisagra a la izquierda
+  W.fermDoor = group({ parent: F, p: [0.66, 0, 0.5] });
+  for (const [x, y, w, h] of [[-0.66, 0.3, 1.32, 0.1], [-0.66, 1.75, 1.32, 0.1], [-0.05, 1.025, 0.1, 1.55], [-1.27, 1.025, 0.1, 1.55]]) mesh(G.box(w, h, 0.06, 0.02), teal, { parent: W.fermDoor, p: [x, y, 0] });
+  mesh(G.box(1.14, 1.38, 0.025, 0.01), mat('#dff3ff', { transparent: true, opacity: 0.2, rough: 0.08 }), { parent: W.fermDoor, p: [-0.66, 1.025, 0], cast: false });
+  mesh(G.box(0.05, 0.5, 0.07, 0.02), cream, { parent: W.fermDoor, p: [-1.2, 1.025, 0.06] });
+  for (let i = 0; i < 3; i++) W.fermSlots.push({ p: [3.0, 0.56 + i * 0.5, -5.47], holder: group({ parent: B, p: [3.0, 0.56 + i * 0.5, -5.47], s: 0.85 }) });
   W.obstacles.push([2.2, -5.9, 3.8, -4.8]);
 
-  // ---- horno de leña ----
+  // ---- horno de leña: bóveda, boca en túnel con solera y llamas, hueco de abajo ----
   const H = group({ parent: B, p: [5.1, 0.1, -5.1] });
-  const brickM = mat('#ffffff', { map: T.brick, rough: 0.95 });
-  mesh(G.box(2.45, 1.0, 1.75, 0.08), mat('#ffffff', { map: T.stone, rough: 1 }), { parent: H, p: [0, 0.5, 0] });
-  mesh(G.box(2.6, 0.14, 1.9, 0.05), mat('#cfc6b6', { rough: 0.9 }), { parent: H, p: [0, 1.04, 0] });
+  const brickM = mat('#ffffff', { map: T.brick, rough: 0.95 }), stoneM = mat('#ffffff', { map: T.stone, rough: 1 }), soot = mat('#2a1a16', { rough: 1 });
+  mesh(G.box(2.45, 1.0, 1.75, 0.08), stoneM, { parent: H, p: [0, 0.5, 0] });
+  mesh(G.box(2.7, 0.14, 2.32, 0.05), mat('#cfc6b6', { rough: 0.9 }), { parent: H, p: [0, 1.04, 0.26] });
   const dome = new THREE.SphereGeometry(1.18, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2); dome.scale(1, 0.92, 0.74);
   mesh(dome, brickM, { parent: H, p: [0, 1.1, -0.05] });
   mesh(G.cyl(0.26, 0.3, 2.4, 14), mat('#cfc6b6', { rough: 0.9 }), { parent: H, p: [0, 3.2, -0.55] });
-  const archShape = (w, h) => { const s = new THREE.Shape(); s.moveTo(-w, 0); s.lineTo(-w, h - w); s.absarc(0, h - w, w, Math.PI, 0, true); s.lineTo(w, 0); s.lineTo(-w, 0); return s; };
+  const archShape = (w, h) => { const sp = new THREE.Shape(); sp.moveTo(-w, 0); sp.lineTo(-w, h - w); sp.absarc(0, h - w, w, Math.PI, 0, true); sp.lineTo(w, 0); sp.lineTo(-w, 0); return sp; };
   const archG = (w, h, d) => new THREE.ExtrudeGeometry(archShape(w, h), { depth: d, bevelEnabled: false, curveSegments: 14 });
-  mesh(archG(0.6, 0.86, 0.12), mat('#b9ae9c', { rough: 0.9 }), { parent: H, p: [0, 1.1, 0.78] });
+  const ring = archShape(0.8, 1.12); ring.holes.push(new THREE.Path(archShape(0.52, 0.8).getPoints(14)));
+  mesh(new THREE.ExtrudeGeometry(ring, { depth: 0.78, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 2, curveSegments: 14 }), brickM, { parent: H, p: [0, 1.11, 0.5] });
+  mesh(G.box(0.3, 0.26, 0.1, 0.04), mat('#cfc6b6', { rough: 0.9 }), { parent: H, p: [0, 2.12, 1.26] });
+  mesh(archG(0.53, 0.81, 0.02), soot, { parent: H, p: [0, 1.11, 0.5] });
   W.fire = [mat('#ffb04d', { emissive: '#ff8a2a', ei: 1.2, nocache: true }), mat('#ffb04d', { emissive: '#ff8a2a', ei: 0, nocache: true })];
-  mesh(archG(0.5, 0.74, 0.02), mat('#2a1a16'), { parent: H, p: [0, 1.1, 0.9] });
-  mesh(archG(0.44, 0.5, 0.02), W.fire[0], { parent: H, p: [0, 1.1, 0.915], cast: false });
-  // boca de abajo: leñera o segunda boca
-  mesh(archG(0.5, 0.62, 0.02), mat('#2a1a16'), { parent: H, p: [0, 0.14, 0.87] });
-  W.logs = group({ parent: H, p: [0, 0.22, 0.82] });
-  for (let i = 0; i < 5; i++) { const l = mesh(G.cyl(0.09, 0.09, 0.3, 8), mat('#b07a4c'), { parent: W.logs, p: [-0.22 + (i % 3) * 0.22 + (i > 2 ? 0.11 : 0), i > 2 ? 0.25 : 0.08, 0], r: [Math.PI / 2, 0, 0] }); mesh(G.cyl(0.07, 0.07, 0.31, 8), mat('#f0d2a0'), { parent: W.logs, p: l.position.toArray(), r: [Math.PI / 2, 0, 0] }); }
-  W.mouth2 = mesh(archG(0.42, 0.5, 0.02), W.fire[1], { parent: H, p: [0, 0.16, 0.89], cast: false }); W.mouth2.visible = false;
+  mesh(archG(0.44, 0.5, 0.02), W.fire[0], { parent: H, p: [0, 1.11, 0.525], cast: false });
+  const flameM = mat('#ffd27a', { emissive: '#ff9a2a', ei: 2.2, rough: 0.6, nocache: true }), flameC = mat('#fff3c0', { emissive: '#ffd060', ei: 2.6, nocache: true });
+  W.flames = [];
+  const fireSet = (parent, x0, y, z, n, sc) => { const g = group({ parent, p: [x0, y, z], s: sc }), list = []; for (let i = 0; i < n; i++) { const fx = -0.3 + i * 0.6 / (n - 1), fl = group({ parent: g, p: [fx, 0, (i % 2) * 0.06] }); mesh(G.cone(0.09, 0.34, 7), flameM, { parent: fl, p: [0, 0.17, 0], cast: false }); mesh(G.cone(0.045, 0.2, 6), flameC, { parent: fl, p: [0, 0.1, 0.03], cast: false }); list.push(fl); } for (let i = 0; i < 4; i++) { mesh(G.cyl(0.05, 0.05, 0.36, 7), mat('#5a3524', { rough: 1 }), { parent: g, p: [-0.24 + i * 0.16, 0.04, 0.02], r: [Math.PI / 2, 0, 0.3 - i * 0.2] }); mesh(G.sph(0.04, 6, 5), mat('#ff7a2a', { emissive: '#ff5a1a', ei: 2 }), { parent: g, p: [-0.2 + i * 0.14, 0.06, 0.1], cast: false }); } W.flames.push({ g, list }); return g; };
+  fireSet(H, 0, 1.12, 0.6, 5, 1);
+  // hueco bajo la repisa: leñera, o segunda boca cuando se abre
+  for (const sx of [-1, 1]) mesh(G.box(0.16, 0.92, 0.52, 0.04), stoneM, { parent: H, p: [sx * 0.68, 0.46, 1.13] });
+  mesh(G.box(1.24, 0.9, 0.03, 0.01), soot, { parent: H, p: [0, 0.46, 0.89] });
+  mesh(G.box(1.24, 0.05, 0.5, 0.01), mat('#b9ae9c', { rough: 1 }), { parent: H, p: [0, 0.025, 1.13], cast: false });
+  W.logs = group({ parent: H, p: [0, 0.14, 1.12] });
+  for (let i = 0; i < 5; i++) { const l = mesh(G.cyl(0.11, 0.11, 0.42, 8), mat('#b07a4c'), { parent: W.logs, p: [-0.28 + (i % 3) * 0.28 + (i > 2 ? 0.14 : 0), i > 2 ? 0.27 : 0.08, 0], r: [Math.PI / 2, 0, 0] }); mesh(G.cyl(0.085, 0.085, 0.43, 8), mat('#f0d2a0'), { parent: W.logs, p: l.position.toArray(), r: [Math.PI / 2, 0, 0] }); }
+  W.mouth2 = group({ parent: H }); mesh(G.box(1.0, 0.5, 0.02, 0.01), W.fire[1], { parent: W.mouth2, p: [0, 0.4, 0.91], cast: false }); fireSet(W.mouth2, 0, 0.06, 0.96, 4, 0.8); W.flames[1].lower = true; W.mouth2.visible = false;
   // pala
-  const peel = group({ parent: B, p: [6.35, 0.1, -3.55], r: [0, 0, 0.1] });
+  const peel = group({ parent: B, p: [6.35, 0.1, -3.35], r: [0, 0, 0.1] });
   mesh(G.cyl(0.03, 0.03, 1.9, 8), woodM, { parent: peel, p: [0, 1.0, 0] }); mesh(G.box(0.36, 0.5, 0.04, 0.03), woodM, { parent: peel, p: [0, 2.1, 0] });
-  W.ovenLight = new THREE.PointLight(0xff9a3c, 0, 7, 1.6); W.ovenLight.position.set(5.1, 1.5, -3.6); scene.add(W.ovenLight);
-  for (let i = 0; i < 2; i++) W.ovenSlots.push({ p: [5.1, i ? 0.42 : 1.33, -4.3], holder: group({ parent: B, p: [5.1, i ? 0.42 : 1.3, -4.28], s: i ? 0.8 : 0.9 }) });
-  W.obstacles.push([3.85, -5.9, 6.4, -4.1]);
+  W.ovenLight = new THREE.PointLight(0xff9a3c, 0, 7, 1.6); W.ovenLight.position.set(5.1, 1.6, -3.7); scene.add(W.ovenLight);
+  W.ovenSlots.push({ p: [5.1, 1.23, -4.22], holder: group({ parent: B, p: [5.1, 1.23, -4.22], s: 0.9 }) }, { p: [5.1, 0.16, -3.98], holder: group({ parent: B, p: [5.1, 0.16, -3.98], s: 0.82 }) });
+  W.obstacles.push([3.85, -5.9, 6.4, -3.7]);
 
   // ---- despensa (pared derecha) ----
   const D = group({ parent: B, p: [6.25, 0.1, -2.25], r: [0, -Math.PI / 2, 0] });
@@ -734,6 +749,8 @@ export function updateWorld(dt, hour, o = {}) {
   for (let i = 0; i < W.lanterns.length; i += 2) { W.lanterns[i].emissiveIntensity = 0.3 + n * 2.2 * (0.85 + Math.sin(t * 2 + i) * 0.15); W.lanterns[i + 1].rotation.z = Math.sin(t * 1.6 + i) * (o.wind ? 0.25 : 0.1); }
   W.home.light.intensity = o.home ? 1.0 + n * 2.6 : 0;
   W.fermGlow.emissiveIntensity = 0.55 + Math.sin(t * 2) * 0.08;
+  W.fermDoor.rotation.y += ((o.fermOpen ? 1.75 : 0) - W.fermDoor.rotation.y) * (1 - Math.exp(-dt * 12)); W.fermDial.rotation.z = -0.9 + Math.sin(t * 0.7) * 0.08 - (o.fermBusy ? 0.7 : 0);
+  for (const fs of W.flames) { const pw = (o.fire ?? 0.6) * (fs.lower ? (o.baking?.[1] ? 1.15 : 0.85) : (o.baking?.[0] ? 1.15 : 0.9)); fs.list.forEach((fl, i) => { const k = 0.25 + pw * (0.85 + Math.sin(t * 11 + i * 2.1) * 0.22 + Math.sin(t * 23 + i) * 0.12); fl.scale.set(0.7 + pw * 0.5, Math.max(0.05, k * 1.5), 0.7 + pw * 0.5); fl.rotation.z = Math.sin(t * 7 + i) * 0.14; }); }
   const f = 1.1 + Math.sin(t * 9) * 0.18 + Math.sin(t * 23) * 0.1;
   const fl = 0.25 + (o.fire ?? 0.6) * 1.1;
   W.fire[0].emissiveIntensity = f * (o.baking?.[0] ? 1.5 : 0.9) * fl; W.fire[1].emissiveIntensity = f * (o.baking?.[1] ? 1.5 : 0.8) * fl;

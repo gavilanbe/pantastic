@@ -96,7 +96,7 @@ function startDay(first = false) {
   const HANG = [[-12.6, 7.4], [-8, 9.4], [-7, 5], [2, 5.2], [5.6, 8.2], [10.5, 4.2], [13.8, 5.2], [-3, 4.2]];
   NEIGH_ORDER.filter(id => S.met[id] && NEIGH[id].lvl <= L).sort(() => r() - 0.5).slice(0, 3).forEach((id, i) => { const ch = nbChar[id] ||= makeChar(NEIGH[id].look); const p = HANG[Math.floor(r() * HANG.length)]; ch.x = p[0] + i * 0.4; ch.z = p[1]; ch.sit = false; ch.action = null; ch.speed = 0; ch.arms[1].remove(...ch.arms[1].children.filter(o => o.userData.bag)); scene.add(ch.root); R.stroll.push({ nb: id, ch, t: 3 + r() * 8, to: null, hang: HANG, pos: [0, 0, 0] }); });
   if (!pipa) { pipa = makeChar(PIPA_LOOK); } pipa.x = W.pipaSpot[0]; pipa.z = W.pipaSpot[1]; pipa.yaw = pipa.yawTo = 0.3; scene.add(pipa.root); R.pipa = true;
-  ui.unanchor(R.fireG); R.fireG = ui.anchor('gauge fire', '<span>Fuego</span><div class="track"><i></i></div>', [6.2, 2.45, -4.7]);
+  ui.unanchor(R.fireG); R.fireG = ui.anchor('gauge fire', '<span>Fuego</span><div class="track"><i></i></div>', [6.25, 2.3, -4.9]); tweens.length = 0; for (const sl of [...W.fermSlots, ...W.ovenSlots]) sl.holder.position.set(...sl.p);
   pan.x = 1.6; pan.z = -2.6; pan.yawTo = pan.yaw = 0; pan.goto = null;
   mode = R.reveal.length ? 'reveal' : 'play'; R.revT = 0; music('day'); ui.show('#hud', true);
   if (!first) { ui.dayTitle('Día ' + S.day, `${DIAS[wd]} · ${TIEMPO[wk].n.toLowerCase()}`); sfx('day'); }
@@ -121,7 +121,11 @@ function setCarry(b) {
   if (b && b.stage === 'wood') { for (let i = 0; i < 3; i++) { const l = new THREE.Group(); gmesh(GG.cyl(0.1, 0.1, 0.7, 9), gmat('#b07a4c', { rough: 0.95 }), { parent: l, r: [0, 0, Math.PI / 2] }); gmesh(GG.cyl(0.075, 0.075, 0.71, 9), gmat('#f0d2a0'), { parent: l, r: [0, 0, Math.PI / 2] }); l.position.set(0, i === 2 ? 0.19 : 0.04, i === 2 ? -0.08 : (i ? -0.18 : 0.03)); pan.carryAnchor.add(l); } }
   else if (b) { const t = makeTray(b.id, b.n, b.stage, b.burnt ? 1 : b.tone || 0); t.scale.setScalar(0.82); pan.carryAnchor.add(t); }
 }
-function holderTray(slot, b) { slot.holder.clear(); if (b) slot.holder.add(makeTray(b.id, b.n, b.stage === 'baking' ? 'proofed' : b.stage)); }
+const tweens = [];
+/** Desliza una bandeja entre las manos de Pan y su hueco. dir 1 = entra, -1 = sale. */
+function slide(slot, dir, done) { const hp = new THREE.Vector3(); pan.carryAnchor.getWorldPosition(hp); tweens.push({ slot, dir, t: 0, hp: [hp.x, hp.y, hp.z], done }); if (dir > 0) slot.holder.position.set(hp.x, hp.y, hp.z); }
+function updateTweens(dt) { for (let i = tweens.length - 1; i >= 0; i--) { const w = tweens[i]; w.t = Math.min(1, w.t + dt / 0.32); const k = w.dir > 0 ? 1 - Math.pow(1 - w.t, 3) : 1 - w.t * w.t, p = w.slot.p; w.slot.holder.position.set(w.hp[0] + (p[0] - w.hp[0]) * k, w.hp[1] + (p[1] - w.hp[1]) * k + Math.sin(k * Math.PI) * 0.12, w.hp[2] + (p[2] - w.hp[2]) * k); if (w.t >= 1) { tweens.splice(i, 1); w.slot.holder.position.set(...p); w.done?.(); } } }
+function holderTray(slot, b, look) { slot.holder.clear(); if (b) slot.holder.add(look === 'baked' ? makeTray(b.id, b.n, 'baked', b.tone || 0) : makeTray(b.id, b.n, b.stage === 'baking' ? 'proofed' : b.stage)); }
 function refreshBaskets() {
   const have = Object.keys(R.shelf).filter(k => R.shelf[k].length);
   for (const b of W.basketGroups) if (b.id && !have.includes(b.id)) { b.id = null; }
@@ -221,24 +225,24 @@ function useFerm() {
   const c = R.carry;
   if (c && c.stage === 'dough') {
     const i = R.ferm.findIndex(x => !x); if (i < 0) return ui.toast('La fermentadora está llena'), sfx('no');
-    R.ferm[i] = { ...c, t: 0, need: S.up.fermenta ? 12 : 24 }; holderTray(W.fermSlots[i], c); setCarry(null); sfx('place'); pan.act('give');
-    R.ferm[i].g = ui.anchor('gauge ferm', `<span>Subiendo…</span><div class="track"><i style="width:0"></i></div>`, [W.fermSlots[i].p[0] + (i - 1) * 0.0, W.fermSlots[i].p[1] + 0.55, W.fermSlots[i].p[2]]);
+    R.ferm[i] = { ...c, t: 0, need: S.up.fermenta ? 12 : 24 }; holderTray(W.fermSlots[i], c); R.fermOpen = 0.75; slide(W.fermSlots[i], 1, () => { sfx('place'); burst('steam', 3.0, W.fermSlots[i].p[1] + 0.2, -4.95, 4); }); setCarry(null); sfx('whoosh'); pan.act('give');
+    R.ferm[i].g = ui.anchor('gauge ferm mini', `<span>Subiendo…</span><div class="track"><i style="width:0"></i></div>`, [3.95, W.fermSlots[i].p[1] + 0.34, -4.95]);
     if (S.tut === 1) S.tut = 2; return;
   }
   if (c) return ui.toast(c.stage === 'wood' ? 'La leña va a la boca del horno' : c.stage === 'proofed' ? 'Esta ya ha subido: al horno, o déjala en el carro' : 'Eso va al mostrador'), sfx('no');
   const i = R.ferm.findIndex(x => x && x.t >= x.need);
   if (i < 0) return ui.toast(R.ferm.some(x => x) ? 'Aún está subiendo. Paciencia de panadera.' : 'No hay masa dentro'), sfx('no');
-  const b = R.ferm[i]; ui.unanchor(b.g); R.ferm[i] = null; holderTray(W.fermSlots[i], null);
-  setCarry({ id: b.id, n: b.n, stage: 'proofed', knead: b.knead }); sfx('pick'); pan.pop(3); if (S.tut === 2) S.tut = 3;
+  const b = R.ferm[i]; ui.unanchor(b.g); R.ferm[i] = null; R.fermOpen = 0.8; sfx('whoosh'); pan.act('give'); burst('steam', 3.0, W.fermSlots[i].p[1] + 0.3, -4.95, 6);
+  slide(W.fermSlots[i], -1, () => { holderTray(W.fermSlots[i], null); setCarry({ id: b.id, n: b.n, stage: 'proofed', knead: b.knead }); sfx('pick'); pan.pop(3); }); if (S.tut === 2) S.tut = 3;
 }
 function useOven() {
   const c = R.carry, max = S.up.horno2 ? 2 : 1;
-  if (c && c.stage === 'wood') { if (R.fire > 0.92) return ui.toast('El fuego ya está bien alto'), sfx('no'); R.fire = Math.min(1, R.fire + 0.4); setCarry(null); sfx('fire'); sfx('place'); pan.act('give'); burst('spark', 5.1, 1.5, -4.2, 16, { color: 0xffa040 }); cam.shake = 0.25; R.fireWarn = false; return; }
+  if (c && c.stage === 'wood') { if (R.fire > 0.92) return ui.toast('El fuego ya está bien alto'), sfx('no'); R.fire = Math.min(1, R.fire + 0.4); setCarry(null); sfx('fire'); sfx('place'); pan.act('give'); burst('spark', 5.1, 1.5, -4.3, 22, { color: 0xffa040 }); burst('steam', 5.1, 1.7, -4.2, 5); cam.shake = 0.25; R.fireWarn = false; return; }
   if (c && c.stage === 'proofed' && R.fire < 0.12) return ui.toast('El horno está casi apagado: trae leña de la leñera de fuera'), sfx('no');
   if (c && c.stage === 'proofed') {
     const i = R.oven.findIndex((x, k) => !x && k < max); if (i < 0) return ui.toast((max === 1 ? 'El horno está ocupado' : 'Las dos bocas están ocupadas') + ': deja la bandeja en el carro'), sfx('no');
-    R.oven[i] = { ...c, stage: 'baking', t: 0, dinged: false }; holderTray(W.ovenSlots[i], R.oven[i]); setCarry(null); sfx('place'); sfx('fire'); pan.act('give');
-    R.oven[i].g = ui.anchor('gauge', `<span>Horneando</span><div class="track"><div class="mark">${img(c.id)}</div></div>`, [W.ovenSlots[i].p[0] + (i ? 0.9 : 0), W.ovenSlots[i].p[1] + (i ? 0.5 : 2.15), W.ovenSlots[i].p[2]]);
+    R.oven[i] = { ...c, stage: 'baking', t: 0, look: 0 }; holderTray(W.ovenSlots[i], R.oven[i]); slide(W.ovenSlots[i], 1, () => { sfx('place'); sfx('fire'); burst('spark', W.ovenSlots[i].p[0], W.ovenSlots[i].p[1] + 0.2, W.ovenSlots[i].p[2] - 0.2, 10, { color: 0xffa040 }); cam.shake = 0.2; }); setCarry(null); sfx('whoosh'); pan.act('give');
+    R.oven[i].g = ui.anchor('gauge', `<span>Horneando</span><div class="track"><div class="mark">${img(c.id)}</div></div>`, [W.ovenSlots[i].p[0] + (i ? 0.9 : 0), W.ovenSlots[i].p[1] + (i ? 0.55 : 2.25), W.ovenSlots[i].p[2]]);
     return;
   }
   if (c) return ui.toast(c.stage === 'dough' ? 'Primero tiene que subir en la fermentadora' : 'Eso ya está hecho: al mostrador'), sfx('no');
@@ -249,9 +253,9 @@ function useOven() {
   if (b.t < BAKE.gold0) { bake = 0.4; word = 'Un poco pálido'; } else if (b.t <= BAKE.gold1) { const mid = Math.abs(b.t - (BAKE.gold0 + BAKE.gold1) / 2) < 2.2; bake = 1; word = mid ? '¡En su punto!' : 'Dorado'; cls = mid ? 'gold' : 'good'; }
   else if (b.t < BAKE.burnt) { bake = 0.4; word = 'Algo tostado'; } else { bake = 0; word = 'Muy tostado… se venderá barato'; }
   const tot = b.knead * 0.5 + bake * 0.5, q = bake === 0 ? 1 : tot >= 0.8 ? 3 : tot >= 0.5 ? 2 : 1;
-  ui.unanchor(b.g); R.oven[i] = null; holderTray(W.ovenSlots[i], null);
-  setCarry({ id: b.id, n: b.n, stage: 'baked', q, burnt: bake === 0, tone: b.t > BAKE.gold1 ? 0.45 : 0 });
-  sfx('pick'); sfx(q === 3 ? 'perfect' : 'good'); pan.pop(4); if (q === 3) { pan.say('happy', 1.5); burst('spark', pan.x, 1.4, pan.z + 0.4, 12); }
+  ui.unanchor(b.g); R.oven[i] = null; sfx('whoosh'); pan.act('give');
+  slide(W.ovenSlots[i], -1, () => { holderTray(W.ovenSlots[i], null); setCarry({ id: b.id, n: b.n, stage: 'baked', q, burnt: bake === 0, tone: b.t > BAKE.gold1 ? 0.45 : 0 }); sfx('pick'); burst('steam', pan.x, 1.3, pan.z - 0.5, 10); });
+   sfx(q === 3 ? 'perfect' : 'good'); pan.pop(4); if (q === 3) { pan.say('happy', 1.5); burst('spark', pan.x, 1.4, pan.z + 0.4, 12); }
   burst('steam', pan.x, 1.2, pan.z + 0.4, 8); ui.toast(`${img(b.id)}${word} <span class="st">${stars(q)}</span>`, cls); if (S.tut === 3) S.tut = 4;
 }
 function refreshWood() { W.woodLogs.forEach((l, i) => l.visible = i < Math.min(12, S.wood)); }
@@ -721,13 +725,17 @@ function updatePlay(dt) {
   if (!R.open && R.time >= T_OPEN) { R.open = true; sfx('bell'); ui.toast('¡Abierto! Suena la campanilla.'); }
   if (R.time > 17.5 * 60) music('eve');
   // fermentadora y horno
-  R.ferm.forEach((b, i) => { if (!b) return; const was = b.t >= b.need; b.t += dt; const f = Math.min(1, b.t / b.need); b.g.querySelector('.track i').style.width = f * 100 + '%'; const it = W.fermSlots[i].holder.children[0]?.userData.items; if (it) for (const d of it) { const k = 1 + f * 0.3; d.scale.set(k * 0.9, (1 + f * 0.55) * 0.9, k * 0.9); } if (!was && b.t >= b.need) { b.g.classList.add('ready'); b.g.querySelector('span').textContent = '¡Ha subido!'; sfx('pop'); } });
+  R.fermOpen = Math.max(0, (R.fermOpen || 0) - dt); updateTweens(dt);
+  R.ferm.forEach((b, i) => { const led = W.fermLed[i]; if (!b) { led.emissive.set('#000000'); led.color.set('#6a6a6a'); return; } led.color.set(b.t >= b.need ? '#7bd389' : '#ffd166'); led.emissive.set(b.t >= b.need ? '#3fdc6a' : '#ffb020'); led.emissiveIntensity = b.t >= b.need ? 1.6 + Math.sin(tSec * 8) * 0.8 : 0.9; const was = b.t >= b.need; b.t += dt; const f = Math.min(1, b.t / b.need); b.g.querySelector('.track i').style.width = f * 100 + '%'; const it = W.fermSlots[i].holder.children[0]?.userData.items; if (it) for (const d of it) { const k = 1 + f * 0.3; d.scale.set(k * 0.9, (1 + f * 0.55) * 0.9, k * 0.9); } if (!was && b.t >= b.need) { b.g.classList.add('ready'); b.g.querySelector('span').textContent = '¡Ha subido!'; sfx('pop'); } });
   const bakingNow = R.oven.some(x => x); R.fire = Math.max(0, R.fire - dt * (bakingNow ? 0.004 : 0.0006)); const heat = R.fire < 0.12 ? 0.25 : 0.6 + R.fire * 0.6;
   if (R.fireG) { const fi = R.fireG.querySelector('.track i'); fi.style.width = (R.fire * 100) + '%'; R.fireG.classList.toggle('low', R.fire < 0.25); }
   if (R.fire < 0.2 && !R.fireWarn) { R.fireWarn = true; ui.toast('El fuego del horno flojea. Hay leña en la leñera, fuera a la derecha.'); sfx('no'); }
   if (W.axe.userData.t > 0) { W.axe.userData.t -= dt; W.axe.rotation.z = 0.5 - Math.sin(Math.max(0, W.axe.userData.t) / 0.25 * Math.PI) * 1.3; }
   R.oven.forEach((b, i) => {
     if (!b) return; const t0 = b.t; b.t += dt * heat; const mark = b.g.querySelector('.mark'); mark.style.left = Math.min(100, b.t / BAKE.burnt * 100) + '%';
+    // el pan se va haciendo a la vista: masa, corteza clara, tostado
+    const lk = b.t < BAKE.raw ? 0 : b.t <= BAKE.gold1 ? 1 : b.t < BAKE.burnt ? 2 : 3; if (lk !== b.look && !tweens.some(w => w.slot === W.ovenSlots[i])) { b.look = lk; if (lk) { holderTray(W.ovenSlots[i], { ...b, tone: lk === 1 ? 0 : lk === 2 ? 0.45 : 1 }, 'baked'); burst('steam', W.ovenSlots[i].p[0], W.ovenSlots[i].p[1] + 0.3, W.ovenSlots[i].p[2] + 0.3, 5); sfx('poof'); } }
+    if (lk === 0) { const it = W.ovenSlots[i].holder.children[0]?.userData.items; if (it) for (const d of it) { const k = 1.25 + (b.t / BAKE.raw) * 0.25; d.scale.set(k * 0.9, k * 1.15, k * 0.9); } }
     const sp = b.g.querySelector('span'); const st = b.t < BAKE.gold0 ? 'Horneando…' : b.t <= BAKE.gold1 ? '¡Dorado! Sácalo' : b.t < BAKE.burnt ? '¡Que se tuesta!' : 'Muy tostado'; if (sp.textContent !== st) sp.textContent = st;
     b.g.classList.toggle('ready', b.t >= BAKE.gold0);
     if (t0 < BAKE.gold0 && b.t >= BAKE.gold0) { sfx('ding'); burst('steam', W.ovenSlots[i].p[0], W.ovenSlots[i].p[1] + 0.4, W.ovenSlots[i].p[2] + 0.5, 6); }
@@ -761,7 +769,7 @@ function frame(dt) {
   const focus = inHome ? { x: clamp(pan.x, 58.6, 61.4), z: clamp(pan.z - 0.5, -4.2, -2.2) } : mode === 'reveal' && R.reveal[0] ? { x: clamp(UPG[R.reveal[0]].at[0], -11, 11), z: clamp(UPG[R.reveal[0]].at[2], -3.4, 8) } : mode === 'title' ? { x: 0, z: 0.5 } : mode === 'knead' ? { x: 0.0, z: -4.5 } : mode === 'fiesta' && fiesta ? { x: fiesta.cx, z: fiesta.cz + 0.3 } : ui.dialogOpen && cur?.cust ? { x: -2, z: cur.cust.ch.z + 0.3 } : { x: clamp(pan.x, -11, 11), z: clamp(pan.z + (inside ? -0.6 : 0.2), -3.4, 8) };
   updateCamera(dt, focus, frame.snap); frame.snap = false;
   setTimeOfDay(hour, wd);
-  updateWorld(dt, hour, { wind: R?.weather === 'viento', baking: R ? [!!R.oven[0], !!R.oven[1]] : null, fire: R?.fire, home: !!R?.inHome });
+  updateWorld(dt, hour, { wind: R?.weather === 'viento', baking: R ? [!!R.oven[0], !!R.oven[1]] : null, fire: R?.fire, home: !!R?.inHome, fermOpen: R?.fermOpen > 0, fermBusy: R?.ferm.some(x => x) });
   updateParticles(dt); ui.update();
 }
 let last = performance.now();
