@@ -1,6 +1,6 @@
 // El logo de Pantastic!: placa roja, letras gordas con relieve, espigas y cinta. Se usa en el título, el tique y el rótulo.
 let cv = null;
-const FONT = 'ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", sans-serif';
+const FONT = '"Baloo 2", ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", sans-serif';
 
 function ear(g, x, y, s, flip) {
   g.save(); g.translate(x, y); g.scale(flip ? -s : s, s); g.rotate(-0.5);

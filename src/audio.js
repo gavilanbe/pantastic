@@ -1,5 +1,6 @@
 // Sonido: efectos sintetizados y «Masa madre», el tema del obrador (6/8, fa mayor, dos voces).
-let ac, master, musicBus, sfxBus, delay, started = false, muted = false;
+let ac, master, musicBus, sfxBus, delay, started = false, muted = false, volM = 0.5, volS = 0.8;
+export function setVolume(m, s) { volM = m; volS = s; if (musicBus) { musicBus.gain.value = m; sfxBus.gain.value = s; } }
 const M = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const N = { C: 0, 'C#': 1, Db: 1, D: 2, Eb: 3, E: 4, F: 5, 'F#': 6, G: 7, Ab: 8, A: 9, Bb: 10, B: 11 };
 const n = (s) => { const m = s.match(/^([A-G][b#]?)(\d)$/); return 12 * (Number(m[2]) + 1) + N[m[1]]; };
@@ -10,7 +11,7 @@ export function initAudio() {
   master = ac.createGain(); master.gain.value = muted ? 0 : 0.9;
   const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 3;
   master.connect(comp); comp.connect(ac.destination);
-  musicBus = ac.createGain(); musicBus.gain.value = 0.5; sfxBus = ac.createGain(); sfxBus.gain.value = 0.8;
+  musicBus = ac.createGain(); musicBus.gain.value = volM; sfxBus = ac.createGain(); sfxBus.gain.value = volS;
   delay = ac.createDelay(1); delay.delayTime.value = 0.34; const fb = ac.createGain(); fb.gain.value = 0.28; const lp = ac.createBiquadFilter(); lp.frequency.value = 2200;
   delay.connect(lp); lp.connect(fb); fb.connect(delay); const wet = ac.createGain(); wet.gain.value = 0.22; lp.connect(wet); wet.connect(master);
   musicBus.connect(master); musicBus.connect(delay); sfxBus.connect(master);

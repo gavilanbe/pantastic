@@ -229,9 +229,11 @@ export function initGfx(canvas) {
   resize();
   window.addEventListener('resize', resize);
 }
+let prCap = 2;
+export function setQuality(q) { prCap = q === 'media' ? 1 : 2; if (renderer) resize(); }
 export function resize() {
   const w = window.innerWidth, h = window.innerHeight;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, prCap));
   renderer.setSize(w, h, false); composer.setSize(w, h);
   camera.aspect = w / h;
   camera.fov = w / h < 1.2 ? 38 : 26;
@@ -310,6 +312,14 @@ export function updateCamera(dt, focus, snap = false) {
 }
 const tv = new THREE.Vector3();
 /** Proyecta un punto del mundo (aplicando la curvatura) a píxeles CSS. */
+/** Punto del suelo (curvado) bajo un píxel de pantalla. */
+const rc = new THREE.Vector3(), rd = new THREE.Vector3();
+export function groundAt(px, py) {
+  rc.set(px / window.innerWidth * 2 - 1, -(py / window.innerHeight) * 2 + 1, 0.5).unproject(camera); rd.copy(rc).sub(camera.position).normalize(); const o = camera.position, k = bend.k.value, bz = bend.z.value;
+  const a = k * rd.z * rd.z, b = rd.y + 2 * k * rd.z * (o.z - bz), c = o.y + k * (o.z - bz) * (o.z - bz); let t;
+  if (Math.abs(a) < 1e-7) t = -c / b; else { const dsc = b * b - 4 * a * c; if (dsc < 0) return null; t = (-b - Math.sqrt(dsc)) / (2 * a); if (t < 0) t = (-b + Math.sqrt(dsc)) / (2 * a); }
+  return t > 0 ? { x: o.x + rd.x * t, z: o.z + rd.z * t } : null;
+}
 export function toScreen(x, y, z) {
   const d = z - bend.z.value;
   tv.set(x, y - d * d * bend.k.value, z).project(camera);

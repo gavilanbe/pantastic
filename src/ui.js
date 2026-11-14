@@ -44,19 +44,19 @@ export const ui = {
     box.innerHTML = ids.map(k => `<div class="sh">${img(k)}×${shelf[k].length}</div>`).join('');
   },
   setGoal(t, ic) { const g = $('#goal'); if ($('#goal-t').textContent === t) return; $('#goal-t').textContent = t; $('#goal-ic').src = ic || ICON.barra; g.classList.remove('flash'); void g.offsetWidth; g.classList.add('flash'); },
-  prompt(text, p, ok = true) {
-    const e = $('#prompt'); if (!text) { e.classList.add('hide'); return; }
+  prompt(text, p, ok = true, hold = 0) {
+    const e = $('#prompt'); if (!text) { e.classList.add('hide'); return; } e.style.setProperty('--h', hold);
     e.classList.remove('hide'); const html = `<div class="in ${ok ? '' : 'no'}">${ok ? '<kbd>E</kbd>' : ''}<span>${text}</span></div>`;
     if (e.dataset.h !== html) { e.innerHTML = html; e.dataset.h = html; }
-    const s = toScreen(p[0], p[1], p[2]); e.style.transform = `translate(${s.x}px, ${s.y}px)`;
+    const s = toScreen(p[0], p[1], p[2]); for (const a of anchors) if (a.sx != null && Math.abs(a.sx - s.x) < 130 && a.sy - s.y > -14 && a.sy - s.y < 46) s.y = a.sy - 50; e.style.transform = `translate(${s.x}px, ${Math.max(46, s.y)}px)`;
   },
-  toast(html, cls = '') { const t = el('div', 'toast ' + cls, html); $('#toasts').append(t); setTimeout(() => t.remove(), 2900); while ($('#toasts').children.length > 3) $('#toasts').firstChild.remove(); },
+  toast(html, cls = '') { const t = el('div', 'toast ' + cls, html); $('#toasts').append(t); setTimeout(() => t.remove(), 2550); while ($('#toasts').children.length > 2) $('#toasts').firstChild.remove(); },
 
   // ---- anclados al mundo ----
   anchor(cls, html, pos) { const e = el('div', cls, `<div class="in">${html}</div>`); e.pos = pos; $('#world').append(e); anchors.add(e); return e; },
   unanchor(e) { if (!e) return; anchors.delete(e); e.remove(); },
   float(text, x, y, z, cls = '') { const s = toScreen(x, y, z); const f = el('div', 'float ' + cls, text); f.style.left = s.x + 'px'; f.style.top = s.y + 'px'; $('#world').append(f); setTimeout(() => f.remove(), 1300); },
-  update() { for (const e of anchors) { const p = e.pos, s = toScreen(p[0], p[1], p[2]); e.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px)`; } },
+  update() { for (const e of anchors) { const p = e.pos, s = toScreen(p[0], p[1], p[2]); e.sx = s.x; e.sy = s.y; e.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px)`; } },
   clearWorld() { for (const e of anchors) e.remove(); anchors.clear(); },
 
   // ---- diálogo con máquina de escribir estable ----
@@ -74,8 +74,8 @@ export const ui = {
   },
 
   // ---- modal ----
-  modal(html, cls = '') { const m = $('#modal'); m.innerHTML = `<div class="sheet ${cls}">${html}</div>`; m.classList.remove('hide'); ui.modalOpen = true; return m.firstChild; },
-  closeModal() { $('#modal').classList.add('hide'); $('#modal').innerHTML = ''; ui.modalOpen = false; ui.onClose?.(); ui.onClose = null; },
+  modal(html, cls = '') { const m = $('#modal'); clearTimeout(ui.outT); m.classList.remove('out'); m.innerHTML = `<div class="sheet ${cls}">${html}</div>`; m.classList.remove('hide'); ui.modalOpen = true; return m.firstChild; },
+  closeModal() { const m = $('#modal'); if (!ui.modalOpen) return; ui.modalOpen = false; m.classList.add('out'); const cb = ui.onClose; ui.onClose = null; ui.outT = setTimeout(() => { m.classList.add('hide'); m.classList.remove('out'); m.innerHTML = ''; }, 130); cb?.(); },
 
   // ---- amasado ----
   knead(show, beats = 6, title = '') { ui.show('#knead', show); if (show) { $('.k-dots').innerHTML = '<i></i>'.repeat(beats); $('.k-word').textContent = ''; $('.k-combo').textContent = ''; $('.k-title').textContent = title; $('.k-hold').classList.add('hide'); $('.k-stage').classList.remove('hide'); $('.k-dots').classList.remove('hide'); } },

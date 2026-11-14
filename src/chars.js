@@ -392,6 +392,7 @@ export function updateChar(ch, dt) {
   if (ch.talking && !a && !ch.carry) { aR = -0.7 + Math.sin(ch.t * 6.5) * 0.3; azR = 0.5 + Math.sin(ch.t * 4.3) * 0.2; aL = Math.sin(ch.t * 5.1) * 0.15; headX += Math.sin(ch.t * 9) * 0.05; }
   if (ch.sit) { lL = lR = -1.45; by -= 0.14; }
   ch.body.position.y = by; ch.body.rotation.x = lean; ch.body.rotation.z = roll;
+  ch.carryAnchor.rotation.z = ch.carry ? s * 0.05 * mv : 0; ch.carryAnchor.rotation.x = ch.carry ? -lean * 0.8 : 0; ch.carryAnchor.position.y = 0.5 + (ch.carry ? Math.abs(s) * 0.025 * mv : 0);
   ch.arms[0].rotation.x = aL; ch.arms[1].rotation.x = aR; ch.arms[0].rotation.z = azL; ch.arms[1].rotation.z = azR;
   ch.legs[0].rotation.x = lL; ch.legs[1].rotation.x = lR;
   // la cabeza y los ojos siguen a quien miran; si no, curiosean de vez en cuando

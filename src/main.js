@@ -10,7 +10,8 @@ import { logoURL } from './logo.js';
 import { ui, img, coin, stars, ingChip, $, ICON, XI } from './ui.js';
 import { initAudio, resumeAudio, sfx, blip, note, music, toggleMute } from './audio.js';
 import { DOUGH_TINT } from './breads.js';
-import { toScreen } from './gfx.js';
+import { toScreen, groundAt, setQuality } from './gfx.js';
+import { setVolume } from './audio.js';
 
 const Q = new URLSearchParams(location.search), TEST = Q.has('test');
 const SAVE = 'pantastic-v1';
@@ -18,9 +19,12 @@ const T_OPEN = 8 * 60, T_LAST = 19 * 60, T_CLOSE = 19.5 * 60, MIN_PER_SEC = 1.6;
 const BAKE = { raw: 8, gold0: 14, gold1: 22, burnt: 28 };
 
 let S, R, mode = 'boot', K = null, tSec = 0, cur = null, fiesta = null;
-const keys = new Set(); let pressE = false;
+const keys = new Set(); let pressE = false, eBuf = 0, holdT = 0, hitstop = 0, lastCust = null; const joy = { x: 0, y: 0, on: false };
+const CFG = Object.assign({ mus: 0.5, sfx: 0.8, q: 'alta' }, (() => { try { return JSON.parse(localStorage.getItem('pantastic-cfg')) || {}; } catch { return {}; } })());
+const hit = (s) => { hitstop = Math.max(hitstop, s); };
 const pan = makeChar(PAN_LOOK); let miga = null, pipa = null; const nbChar = {};
 const doughSq = new Spring(1, 260, 12);
+const marker = gmesh(GG.cone(0.11, 0.2, 4), gmat('#fff6da', { emissive: '#ffd98a', ei: 0.9, rough: 0.4 }), { r: [Math.PI, 0, 0], cast: false }); marker.visible = false;
 
 // ---------- partida ----------
 function fresh() { return { v: 1, day: 1, money: 30, rep: 0, ing: { harina: 8, levadura: 4 }, recipes: ['barra', 'hogaza'], prices: {}, pts: {}, met: {}, gave: {}, up: {}, build: [], baked: {}, wood: 6, lata: 0, home: {}, sup: {}, tut: 0, intro: false, roscaLetter: false, fiesta: false, total: { sold: 0, earned: 0 }, seenLvl: 0 }; }
@@ -98,6 +102,7 @@ function startDay(first = false) {
   if (!pipa) { pipa = makeChar(PIPA_LOOK); } pipa.x = W.pipaSpot[0]; pipa.z = W.pipaSpot[1]; pipa.yaw = pipa.yawTo = 0.3; scene.add(pipa.root); R.pipa = true;
   ui.unanchor(R.fireG); R.fireG = ui.anchor('gauge flame', '<div class="fl"><i></i></div>', [6.2, 2.05, -4.6]); ui.unanchor(R.fermG); R.fermG = ui.anchor('gauge fdots', '<div class="fb"><i></i></div><div class="fb"><i></i></div><div class="fb"><i></i></div>', [3.0, 2.34, -4.95]); tweens.length = 0; for (const sl of [...W.fermSlots, ...W.ovenSlots]) sl.holder.position.set(...sl.p);
   pan.x = 1.6; pan.z = -2.6; pan.yawTo = pan.yaw = 0; pan.goto = null;
+  $('#keys').classList.toggle('gone', S.day > 2);
   mode = R.reveal.length ? 'reveal' : 'play'; R.revT = 0; music('day'); ui.show('#hud', true);
   if (!first) { ui.dayTitle('Día ' + S.day, `${DIAS[wd]} · ${TIEMPO[wk].n.toLowerCase()}`); sfx('day'); }
   if (S.recipes.length >= 9 && !S.roscaLetter && NEIGH_ORDER.every(id => S.gave[id])) setTimeout(roscaLetter, 3400);
@@ -141,7 +146,7 @@ function refreshBaskets() {
       b.items.add(m);
     }
   }
-  for (const b of W.basketGroups) { const key = b.id ? b.id + priceOf(b.id) + (R.antojo === b.id) : ''; if (b.tagKey === key) continue; b.tagKey = key; b.tag.visible = !!b.id; if (!b.id) continue; const g = b.tagTex.userData.g; g.clearRect(0, 0, 128, 96); g.fillStyle = R.antojo === b.id ? '#ffe9a8' : '#fffdf5'; g.beginPath(); g.roundRect(3, 3, 122, 90, 12); g.fill(); g.strokeStyle = '#c98a5a'; g.lineWidth = 5; g.stroke(); g.fillStyle = '#7a4a2a'; g.textAlign = 'center'; g.font = '800 17px ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.fillText(BREADS[b.id].n.replace('Pan de ', '').replace(' de aceitunas', '').replace(' de chocolate', '').replace(' de semillas', '').replace(' de la Hornada', ''), 64, 27, 112); g.font = '900 50px ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.fillStyle = '#e2664f'; g.fillText(String(priceOf(b.id)), 52, 78); g.fillStyle = '#f5c33b'; g.beginPath(); g.arc(96, 62, 13, 0, 7); g.fill(); g.strokeStyle = '#c98a2a'; g.lineWidth = 3; g.stroke(); b.tagTex.needsUpdate = true; }
+  for (const b of W.basketGroups) { const key = b.id ? b.id + priceOf(b.id) + (R.antojo === b.id) : ''; if (b.tagKey === key) continue; b.tagKey = key; b.tag.visible = !!b.id; if (!b.id) continue; const g = b.tagTex.userData.g; g.clearRect(0, 0, 128, 96); g.fillStyle = R.antojo === b.id ? '#ffe9a8' : '#fffdf5'; g.beginPath(); g.roundRect(3, 3, 122, 90, 12); g.fill(); g.strokeStyle = '#c98a5a'; g.lineWidth = 5; g.stroke(); g.fillStyle = '#7a4a2a'; g.textAlign = 'center'; g.font = '800 17px "Baloo 2", ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.fillText(BREADS[b.id].n.replace('Pan de ', '').replace(' de aceitunas', '').replace(' de chocolate', '').replace(' de semillas', '').replace(' de la Hornada', ''), 64, 27, 112); g.font = '900 50px "Baloo 2", ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.fillStyle = '#e2664f'; g.fillText(String(priceOf(b.id)), 52, 78); g.fillStyle = '#f5c33b'; g.beginPath(); g.arc(96, 62, 13, 0, 7); g.fill(); g.strokeStyle = '#c98a2a'; g.lineWidth = 3; g.stroke(); b.tagTex.needsUpdate = true; }
   ui.setShelf(R.shelf);
 }
 
@@ -189,7 +194,7 @@ function kneadHit(miss, wrong = 0) {
   // la masa se estira hacia la mano que empuja y vuelve
   (side === 'a' ? K.sx : K.sz).kick(gr === 'p' ? 11 : 7); doughSq.kick(gr === 'p' ? -10 : -6); pan.pop(gr === 'p' ? 3 : 1.5);
   burst('flour', W.doughWorld[0] + (side === 'a' ? -0.25 : 0.25), W.doughWorld[1], W.doughWorld[2], gr === 'p' ? 14 : 6);
-  if (gr === 'p') { burst('spark', ...W.doughWorld, 8); cam.shake = 0.4; } else cam.shake = 0.15;
+  if (gr === 'p') { burst('spark', ...W.doughWorld, 8); cam.shake = 0.4; hit(0.05); } else cam.shake = 0.15;
   if (K.combo >= 3 && gr !== 'm') ui.float(`¡×${K.combo}!`, W.doughWorld[0], W.doughWorld[1] + 0.5, W.doughWorld[2], 'star');
   K.beat++; K.t = -0.22;
   if (K.beat >= K.n) { K.phase = 'hold'; K.t = 0; ui.kneadHoldMode(); ui.kneadTitle('Bolea la masa: mantén E y suelta en el dorado'); }
@@ -402,7 +407,7 @@ function updateTill(dt) {
   const T = R.till; T.t += dt / 0.95; T.g.querySelector('i').style.left = Math.min(100, T.t * 100) + '%';
   const end = (hit) => {
     ui.unanchor(T.g); R.till = null;
-    if (hit) { R.streak = (R.streak || 0) + 1; const bonus = Math.max(1, Math.round(T.price * 0.15)) + Math.floor(R.streak / 3); S.money += bonus; R.today.tips += bonus; S.total.earned += bonus; ui.setMoney(S.money, true); sfx('ding'); sfx('coin'); note(Math.min(10, R.streak)); W.regOpen = 1; cam.shake = 0.25; burst('spark', W.register[0], W.register[1] - 0.3, W.register[2], 14); ui.float(`¡Cling! +${bonus}${R.streak > 1 ? ` <small>racha ×${R.streak}</small>` : ''}`, W.register[0], W.register[1] + 0.5, W.register[2], 'star'); pan.pop(3); W.tipFill.scale.y = Math.min(1, 0.05 + R.today.tips / 45); W.tipFill.position.y = 0.01 + 0.13 * W.tipFill.scale.y; if (R.streak === 5 || R.streak === 10) ui.toast(`Racha de caja ×${R.streak}: cada tres seguidas, una moneda más de propina`, 'gold'); }
+    if (hit) { R.streak = (R.streak || 0) + 1; const bonus = Math.max(1, Math.round(T.price * 0.15)) + Math.floor(R.streak / 3); S.money += bonus; R.today.tips += bonus; S.total.earned += bonus; ui.setMoney(S.money, true); sfx('ding'); sfx('coin'); note(Math.min(10, R.streak)); W.regOpen = 1; cam.shake = 0.25; hit(0.05); burst('spark', W.register[0], W.register[1] - 0.3, W.register[2], 14); ui.float(`¡Cling! +${bonus}${R.streak > 1 ? ` <small>racha ×${R.streak}</small>` : ''}`, W.register[0], W.register[1] + 0.5, W.register[2], 'star'); pan.pop(3); W.tipFill.scale.y = Math.min(1, 0.05 + R.today.tips / 45); W.tipFill.position.y = 0.01 + 0.13 * W.tipFill.scale.y; if (R.streak === 5 || R.streak === 10) ui.toast(`Racha de caja ×${R.streak}: cada tres seguidas, una moneda más de propina`, 'gold'); }
     else { if (R.streak > 2) ui.float('racha perdida', W.register[0], W.register[1] + 0.4, W.register[2]); R.streak = 0; }
   };
   if (pressE) { pressE = false; end(T.t > 0.6 && T.t < 0.84); } else if (T.t > 1.08) end(false);
@@ -423,7 +428,7 @@ function updateChop(dt) {
   else if (C.state === 'swing') {
     C.st += dt / 0.13; pan.chopK = Math.min(1, C.st);
     if (C.st >= 1) {
-      const perfect = C.acc > 0.84, ok = C.acc > 0.5, n = perfect ? 3 : ok ? 2 : 1; S.wood += n; refreshWood(); C.combo = perfect ? C.combo + 1 : 0; cam.shake = perfect ? 0.55 : 0.3; sfx('place'); sfx(perfect ? 'perfect' : ok ? 'good' : 'meh'); if (perfect) note(Math.min(10, C.combo + 2));
+      const perfect = C.acc > 0.84, ok = C.acc > 0.5, n = perfect ? 3 : ok ? 2 : 1; S.wood += n; refreshWood(); C.combo = perfect ? C.combo + 1 : 0; cam.shake = perfect ? 0.55 : 0.3; hit(perfect ? 0.09 : 0.04); sfx('place'); sfx(perfect ? 'perfect' : ok ? 'good' : 'meh'); if (perfect) note(Math.min(10, C.combo + 2));
       burst('crumb', sp[0], sp[1] + 0.5, sp[2], perfect ? 16 : 8); burst('dust', sp[0], sp[1] + 0.2, sp[2], 6);
       ui.float(perfect ? `¡Limpio! +3 leña${C.combo > 1 ? ` <small>×${C.combo}</small>` : ''}` : ok ? '+2 leña' : 'Astillado… +1', sp[0], sp[1] + 1.3, sp[2], perfect ? 'star' : '');
       if (ok) { W.stumpLog.visible = false; for (const sd of [-1, 1]) { const h = W.halfProto.clone(true); h.position.set(sp[0], sp[1] + 0.25, sp[2]); h.rotation.y = sd > 0 ? 0 : Math.PI; scene.add(h); debris.push({ o: h, vx: sd * (1.6 + Math.random()), vy: 2.6 + Math.random(), vz: 0.4 - Math.random() * 0.8, t: 0, rz: sd * -5 }); } } else { W.stumpLog.rotation.z = (Math.random() - 0.5) * 0.3; W.stumpLog.scale.set(1, 0.92, 1); }
@@ -636,7 +641,7 @@ function findAction() {
   const px = pan.x, pz = pan.z, c = R.carry;
   if (R.inHome) {
     const H = W.home.st, near = (k, d = 1.25) => Math.hypot(px - H[k][0], pz - H[k][1]) < d;
-    if (near('cama')) return R.time < 12 * 60 ? { text: 'Tu cama. Aún es pronto para acostarse', ok: false, pos: [62.4, 1.9, -4.7], fn: () => sfx('no') } : { text: 'Acostarse y cerrar el día', pos: [62.4, 1.9, -4.7], fn: endDay };
+    if (near('cama')) return R.time < 12 * 60 ? { text: 'Tu cama. Aún es pronto para acostarse', ok: false, pos: [62.4, 1.9, -4.7], fn: () => sfx('no') } : { text: 'Acostarse y cerrar el día', pos: [62.4, 1.9, -4.7], fn: endDay, hold: true };
     if (near('lata')) return { text: 'La lata de la abuela', pos: [56.9, 2.0, -5.4], fn: openLata };
     if (near('vitrina')) return { text: 'Vitrina y diario', pos: [59.4, 2.9, -5.8], fn: openVitrina };
     if (near('catalogo')) return { text: 'Hojear el catálogo de muebles', pos: [63.2, 1.6, -1.5], fn: openCatalog };
@@ -713,6 +718,18 @@ function openCatalog(keep) {
   if (keep) sh.style.animation = 'none'; sh.querySelector('.x').onclick = () => ui.closeModal();
   sh.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { const id = b.dataset.buy, m = MUEBLES[id]; if (S.money < m.p) return sfx('no'); S.money -= m.p; R.today.spent += m.p; S.home[id] = true; ui.setMoney(S.money, true); W.home.fur[id].visible = true; const wp = new THREE.Vector3(); W.home.fur[id].getWorldPosition(wp); sfx('stamp'); sfx('fanfare'); burst('confetti', wp.x, 1.6, wp.z, 50); burst('spark', wp.x, 1, wp.z, 16); save(); openCatalog(true); });
 }
+function openPause() {
+  const saveCfg = () => { localStorage.setItem('pantastic-cfg', JSON.stringify(CFG)); setVolume(CFG.mus, CFG.sfx); setQuality(CFG.q); };
+  const sh = ui.modal(`<button class="x">✕</button><h2>Pausa</h2><div class="sub">El obrador espera. Día ${S.day} · ${S.money} ${coin}</div>
+    <div class="set"><span>Música</span><input type="range" min="0" max="1" step="0.05" value="${CFG.mus}" id="v-m"><span>Efectos</span><input type="range" min="0" max="1" step="0.05" value="${CFG.sfx}" id="v-s"><span>Gráficos</span><span class="seg"><button data-q="alta" class="btn sm ${CFG.q === 'alta' ? 'main' : ''}">Nítidos</button> <button data-q="media" class="btn sm ${CFG.q === 'media' ? 'main' : ''}">Ligeros</button></span></div>
+    <div class="lbl">Controles</div><div class="ctl"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>moverse (o clic en el suelo)</span><span><kbd>E</kbd></span><span>acción; mantener para confirmar</span><span><kbd>L</kbd></span><span>libreta</span><span><kbd>B</kbd></span><span>cartel «Vuelvo enseguida»</span><span><kbd>M</kbd></span><span>silenciar</span><span><kbd>Esc</kbd></span><span>pausa</span></div>
+    <div class="bfoot"><button class="btn" id="p-title">Volver al título</button><span class="grow">La partida se guarda sola.</span><button class="btn main" id="p-go">Seguir horneando</button></div>`, 'paper');
+  sh.querySelector('.x').onclick = sh.querySelector('#p-go').onclick = () => ui.closeModal(); sh.querySelector('#p-title').onclick = () => { saveMid(); location.reload(); };
+  sh.querySelector('#v-m').oninput = (e) => { CFG.mus = Number(e.target.value); saveCfg(); }; sh.querySelector('#v-s').oninput = (e) => { CFG.sfx = Number(e.target.value); saveCfg(); sfx('pop'); };
+  sh.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { CFG.q = b.dataset.q; saveCfg(); sh.querySelectorAll('[data-q]').forEach(x => x.classList.toggle('main', x === b)); });
+  ui.onKey = (k) => { if (k === 'e' || k === 'enter') ui.closeModal(); }; sfx('page');
+}
+function saveMid() { save(); }
 function toggleBrb() { R.brb = !R.brb; W.brb.visible = R.brb; $('#brb').classList.toggle('hide', !R.brb); sfx(R.brb ? 'place' : 'bell'); ui.toast(R.brb ? (miga ? 'Cartel puesto. Miga se queda al mando.' : 'Cartel puesto: nadie entra ni se impacienta. A pasear.') : 'Cartel fuera: ¡abierto otra vez!'); }
 function chat(st) {
   const N = NEIGH[st.nb]; R.chatted[st.nb] = true; st.to = null; st.t = 6; pan.yawTo = Math.atan2(st.ch.x - pan.x, st.ch.z - pan.z);
@@ -748,13 +765,22 @@ function updatePlay(dt) {
   }
   if (pan.goto) {
     const g = pan.goto, dx = g.x - pan.x, dz = g.z - pan.z, d = Math.hypot(dx, dz);
-    if (d < 0.06) { pan.yawTo = g.yaw; pan.speed = 0; pan.goto = null; } else { const s = Math.min(d, 4 * dt); pan.x += dx / d * s; pan.z += dz / d * s; pan.yawTo = Math.atan2(dx, dz); pan.speed = 2.2; }
-  } else if (mx || mz) {
-    const l = Math.hypot(mx, mz), sp = (R.carry ? 3.1 : 3.6) * (1 + comfort() * 0.03); const p = collide(pan.x + mx / l * sp * dt, pan.z + mz / l * sp * dt, 0.3, R.inHome);
-    const moved = Math.hypot(p[0] - pan.x, p[1] - pan.z); pan.x = p[0]; pan.z = p[1]; pan.yawTo = Math.atan2(mx, mz); pan.speed = moved / dt > 0.4 ? sp : 0;
-    if (pan.action === 'wave') pan.action = null;
-    pan.stepT = (pan.stepT || 0) - dt; if (pan.stepT < 0 && pan.speed) { pan.stepT = 0.27; sfx('step'); if (Math.random() < 0.5) burst('dust', pan.x, 0.08, pan.z, 1, { color: pan.z > 0.7 ? 0xe9dcc0 : 0xf6ead6 }); }
-  } else pan.speed = 0;
+    pan.vx = pan.vz = 0; pan.moveTo = null; if (d < 0.06) { pan.yawTo = g.yaw; pan.speed = 0; pan.goto = null; } else { const s = Math.min(d, 4 * dt); pan.x += dx / d * s; pan.z += dz / d * s; pan.yawTo = Math.atan2(dx, dz); pan.speed = 2.2; }
+  } else {
+    if (joy.on && !busy && mode === 'play') { mx = joy.x; mz = joy.y; }
+    if (mx || mz) pan.moveTo = null;
+    else if (pan.moveTo && !busy && mode === 'play') { const dx = pan.moveTo.x - pan.x, dz = pan.moveTo.z - pan.z; if (Math.hypot(dx, dz) < 0.18 || (pan.stuck || 0) > 0.4) { pan.moveTo = null; pan.stuck = 0; } else { mx = dx; mz = dz; } }
+    const l = Math.hypot(mx, mz), sp = (R.carry ? 3.1 : 3.6) * (1 + comfort() * 0.03) * (joy.on ? Math.min(1, l) : 1);
+    const tx = l ? mx / l * sp : 0, tz = l ? mz / l * sp : 0, k = 1 - Math.exp(-dt * (l ? 12 : 17));
+    pan.vx = (pan.vx || 0) + (tx - (pan.vx || 0)) * k; pan.vz = (pan.vz || 0) + (tz - (pan.vz || 0)) * k;
+    const v = Math.hypot(pan.vx, pan.vz);
+    if (v > 0.06) {
+      const p = collide(pan.x + pan.vx * dt, pan.z + pan.vz * dt, 0.3, R.inHome), moved = Math.hypot(p[0] - pan.x, p[1] - pan.z) / dt; pan.x = p[0]; pan.z = p[1];
+      if (l) pan.yawTo = Math.atan2(mx, mz); pan.speed = moved > 0.4 ? moved : 0; pan.stuck = moved < v * 0.35 ? (pan.stuck || 0) + dt : 0; if (moved < v * 0.35) { pan.vx *= 0.7; pan.vz *= 0.7; }
+      if (pan.action === 'wave') pan.action = null;
+      pan.stepT = (pan.stepT || 0) - dt * (moved / 3.4); if (pan.stepT < 0 && pan.speed) { pan.stepT = 0.27; sfx('step'); if (Math.random() < 0.5) burst('dust', pan.x, 0.08, pan.z, 1, { color: pan.z > 0.7 ? 0xe9dcc0 : 0xf6ead6 }); }
+    } else { pan.speed = 0; pan.vx = pan.vz = 0; }
+  }
   if (R.chopping && (mx || mz)) endChop();
   updateChar(pan, dt); updateFlying(dt); updateDebris(dt);
   if (busy) { ui.prompt(null); pressE = false; return; }
@@ -762,7 +788,7 @@ function updatePlay(dt) {
   if (mode === 'knead') { updateKnead(dt); pressE = false; ui.prompt(null); return; }
   // reloj
   R.time += dt * MIN_PER_SEC; ui.setTime(R.time);
-  if (!R.open && R.time >= T_OPEN) { R.open = true; sfx('bell'); ui.toast('¡Abierto! Suena la campanilla.'); }
+  if (!R.open && R.time >= T_OPEN) { R.open = true; sfx('bell'); ui.float('¡Abierto!', -7.4, 3.2, 1.5, 'star'); }
   if (R.time > 17.5 * 60) music('eve');
   // fermentadora y horno
   R.fermOpen = Math.max(0, (R.fermOpen || 0) - dt); updateTweens(dt);
@@ -789,7 +815,14 @@ function updatePlay(dt) {
   if (R.till) { updateTill(dt); }
   cur = findAction();
   pan.lookAt = cur?.cust ? cur.cust.ch : (pan.x > -1.6 && pan.x < -0.3 ? (R.slots.find(c => c && c.st === 'wait')?.ch || null) : null);
-  if (cur) { ui.prompt(cur.text, cur.pos, cur.ok !== false); if (pressE) { if (cur.st && cur.fn !== openRecipes) { pan.goto = { x: cur.st.x, z: cur.st.z, yaw: cur.st.yaw }; } if (cur.face != null) pan.yawTo = cur.face; cur.fn(); } } else ui.prompt(null);
+  if (pressE) eBuf = 0.2; else eBuf -= dt;
+  if (cur?.cust && cur.cust !== lastCust) cur.cust.ch.pop(2); lastCust = cur?.cust || null;
+  if (cur) {
+    const ok = cur.ok !== false, run = () => { eBuf = 0; holdT = 0; if (cur.st && cur.fn !== openRecipes) { pan.goto = { x: cur.st.x, z: cur.st.z, yaw: cur.st.yaw }; } if (cur.face != null) pan.yawTo = cur.face; cur.fn(); };
+    if (cur.hold && ok) { const down = keys.has('e') || keys.has(' ') || keys.has('enter') || joy.e; holdT = down ? holdT + dt / 0.8 : Math.max(0, holdT - dt * 3); if (down && Math.floor(holdT * 8) !== Math.floor((holdT - dt / 0.8) * 8)) sfx('tick'); ui.prompt(cur.text + ' (mantén)', cur.pos, true, Math.min(1, holdT)); if (holdT >= 1) run(); }
+    else { holdT = 0; ui.prompt(cur.text, cur.pos, ok); if (ok ? eBuf > 0 : pressE) run(); }
+    marker.visible = ok; marker.position.set(cur.pos[0], cur.pos[1] - 0.52 + Math.sin(tSec * 6) * 0.05, cur.pos[2]); marker.rotation.y = tSec * 2;
+  } else { ui.prompt(null); holdT = 0; marker.visible = false; }
   pressE = false;
   const g = goalText(); ui.setGoal(g[0], g[1]);
   // fiesta y cierre
@@ -797,6 +830,7 @@ function updatePlay(dt) {
   if (R.time >= T_CLOSE && (!R.cust.some(c => c.st === 'wait' || c.st === 'toSlot' || c.st === 'find') || R.time > T_CLOSE + 30)) endDay();
 }
 function frame(dt) {
+  if (hitstop > 0) { hitstop -= dt; dt *= 0.06; }
   tSec += dt; windU.value = tSec * (R?.weather === 'viento' ? 2.2 : 1);
   if (mode === 'play' || mode === 'knead') updatePlay(dt);
   else if (mode === 'reveal') { updateReveal(dt); updateChar(pan, dt); if (miga) updateChar(miga, dt); ui.prompt(null); }
@@ -805,7 +839,7 @@ function frame(dt) {
   else { updateChar(pan, dt); if (R) for (const c of R.cust) updateChar(c.ch, dt); }
   const hour = R ? R.time / 60 : 9.5, wd = R ? { lluvia: 0.85, nubes: 0.45 }[R.weather] || 0 : 0;
   const inside = pan.z < 0.8 && Math.abs(pan.x) < 6.6, inHome = R?.inHome && mode !== 'reveal';
-  const focus = inHome ? { x: clamp(pan.x, 58.6, 61.4), z: clamp(pan.z - 0.5, -4.2, -2.2) } : mode === 'reveal' && R.reveal[0] ? { x: clamp(UPG[R.reveal[0]].at[0], -11, 11), z: clamp(UPG[R.reveal[0]].at[2], -3.4, 8) } : mode === 'title' ? { x: 0, z: 0.5 } : mode === 'knead' ? { x: 0.0, z: -4.5 } : mode === 'fiesta' && fiesta ? { x: fiesta.cx, z: fiesta.cz + 0.3 } : ui.dialogOpen && cur?.cust ? { x: -2, z: cur.cust.ch.z + 0.3 } : { x: clamp(pan.x, -11, 11), z: clamp(pan.z + (inside ? -0.6 : 0.2), -3.4, 8) };
+  const focus = inHome ? { x: clamp(pan.x, 58.6, 61.4), z: clamp(pan.z - 0.5, -4.2, -2.2) } : mode === 'reveal' && R.reveal[0] ? { x: clamp(UPG[R.reveal[0]].at[0], -11, 11), z: clamp(UPG[R.reveal[0]].at[2], -3.4, 8) } : mode === 'title' ? { x: 0, z: 0.5 } : mode === 'knead' ? { x: 0.0, z: -4.5 } : mode === 'fiesta' && fiesta ? { x: fiesta.cx, z: fiesta.cz + 0.3 } : ui.dialogOpen && cur?.cust ? { x: -2, z: cur.cust.ch.z + 0.3 } : { x: clamp(pan.x + (pan.vx || 0) * 0.32, -11, 11), z: clamp(pan.z + (pan.vz || 0) * 0.22 + (inside ? -0.6 : 0.2), -3.4, 8) };
   updateCamera(dt, focus, frame.snap); frame.snap = false;
   setTimeOfDay(hour, wd);
   updateWorld(dt, hour, { wind: R?.weather === 'viento', baking: R ? [!!R.oven[0], !!R.oven[1]] : null, fire: R?.fire, home: !!R?.inHome, fermOpen: R?.fermOpen > 0, fermBusy: R?.ferm.some(x => x) });
@@ -817,7 +851,7 @@ function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now;
 // ---------- arranque ----------
 function boot() {
   initGfx(document.getElementById('c')); initParticles(); buildWorld(); ui.init(renderIcons(), renderExtras(200, Object.fromEntries(Object.entries(W.home.fur).map(([id, g]) => { const c = g.clone(true); c.visible = true; c.position.set(0, 0, 0); c.rotation.set(0, id === 'sillon' ? 0.5 : 0, 0); return [id, c]; }))));
-  scene.add(pan.root);
+  scene.add(pan.root, marker);
   addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase(); if (k === 'tab') e.preventDefault(); if (e.repeat) return; initAudio(); resumeAudio();
     if (k === 'm') return ui.toast(toggleMute() ? 'Sin sonido' : 'Con sonido');
@@ -827,11 +861,29 @@ function boot() {
     if (k === 'e' || k === ' ' || k === 'enter') pressE = true;
     if ((k === 'l' || k === 'tab') && mode === 'play') openBook();
     if (k === 'b' && mode === 'play') toggleBrb();
+    if (k === 'escape' && mode === 'play') openPause();
     
   });
   addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
   addEventListener('blur', () => keys.clear());
   addEventListener('pointerdown', () => { initAudio(); resumeAudio(); });
+  setVolume(CFG.mus, CFG.sfx); setQuality(CFG.q);
+  const fit = () => document.documentElement.style.setProperty('--z', clamp(Math.min(innerWidth / 1280, innerHeight / 720), 0.55, 1.3).toFixed(3)); fit(); addEventListener('resize', fit);
+  const cv = document.getElementById('c'), touch = matchMedia('(pointer: coarse)').matches; if (touch) $('#touch').classList.remove('hide');
+  $('#prompt').addEventListener('pointerdown', (e) => { e.stopPropagation(); pressE = true; });
+  cv.addEventListener('pointerdown', (e) => {
+    if (ui.dialogOpen) return ui.dlgNext?.(); if (ui.modalOpen) return;
+    if (mode === 'knead') { if (K?.phase === 'hold') keys.add('e'); else kneadKey(e.clientX < innerWidth / 2 ? 'a' : 'd'); return; }
+    if (mode === 'reveal') { pressE = true; return; }
+    if (mode !== 'play') return;
+    if (e.pointerType === 'touch' && e.clientX < innerWidth * 0.5) { joy.on = true; joy.id = e.pointerId; joy.ox = e.clientX; joy.oy = e.clientY; joy.x = joy.y = 0; return; }
+    if (R.chopping || R.till) { pressE = true; return; }
+    const g = groundAt(e.clientX, e.clientY); if (g) { pan.moveTo = { x: g.x, z: g.z }; pan.stuck = 0; burst('dust', g.x, 0.1, g.z, 3); }
+  });
+  addEventListener('pointermove', (e) => { if (joy.on && e.pointerId === joy.id) { const dx = e.clientX - joy.ox, dy = e.clientY - joy.oy, d = Math.hypot(dx, dy), m = Math.min(1, d / 46); joy.x = d > 6 ? dx / d * m : 0; joy.y = d > 6 ? dy / d * m : 0; $('#stick i').style.transform = `translate(${joy.x * 34}px, ${joy.y * 34}px)`; } });
+  const up = (e) => { if (joy.on && e.pointerId === joy.id) { joy.on = false; joy.x = joy.y = 0; $('#stick i').style.transform = ''; } keys.delete('e'); joy.e = false; };
+  addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  $('#tapE').addEventListener('pointerdown', (e) => { e.stopPropagation(); initAudio(); resumeAudio(); if (ui.dialogOpen) return ui.dlgNext?.(); if (mode === 'knead') { if (K?.phase === 'hold') keys.add('e'); else kneadKey('e'); return; } pressE = true; joy.e = true; });
   $('#btn-lib').onclick = () => { if (mode === 'play' && !ui.modalOpen && !ui.dialogOpen) openBook(); };
   $('#modal').addEventListener('pointerdown', (e) => { if (e.target.id === 'modal' && mode === 'play') ui.closeModal(); });
 
@@ -858,5 +910,6 @@ function boot() {
     spawn(nb) { spawn(nb ? { nb } : { seed: Math.floor(Math.random() * 999) }); }, openBook, openShop, openLib: openBook, goHome, openLata, openVitrina, openCatalog, endDay, startFiesta, unlock, startKnead, serve, letter,
   };
   if (!TEST) requestAnimationFrame(loop); else { frame(1 / 30); render(); }
+  const bt = document.getElementById('boot'); bt.classList.add('out'); setTimeout(() => bt.remove(), 600);
 }
-boot();
+Promise.race([Promise.all([document.fonts.load('800 20px "Baloo 2"'), document.fonts.load('20px "Patrick Hand"')]), new Promise(r => setTimeout(r, 2500))]).then(() => requestAnimationFrame(() => requestAnimationFrame(boot)));

@@ -1,8 +1,10 @@
+@font-face { font-family: "Baloo 2"; src: url("../fonts/baloo2.woff2") format("woff2"); font-weight: 500 800; font-display: block; }
+@font-face { font-family: "Patrick Hand"; src: url("../fonts/patrickhand.woff2") format("woff2"); font-display: block; }
 :root {
   --paper: #fdf4dc; --paper2: #f7e8c4; --kraft: #dcb98a; --kraft2: #c9a06c; --ink: #5a3a28; --soft: #9a7a62; --red: #e2664f; --red2: #b9483a;
   --gold: #f2b84b; --green: #5fae6e; --teal: #6fbfae; --line: #ead3a6; --wood: #c58a58; --wood2: #a36b42; --chalk: #3d5a4c; --shadow: rgba(100, 60, 25, .3);
-  --font: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", system-ui, sans-serif;
-  --hand: "Bradley Hand", "Noteworthy", "Chalkboard SE", "Marker Felt", var(--font);
+  --font: "Baloo 2", ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", system-ui, sans-serif;
+  --hand: "Patrick Hand", "Bradley Hand", "Noteworthy", "Chalkboard SE", "Marker Felt", var(--font);
   --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5 0 0 0 0 .32 0 0 0 0 .15 0 0 0 .1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   --woodtex: repeating-linear-gradient(2deg, rgba(90, 45, 15, .09) 0 2px, transparent 2px 11px), repeating-linear-gradient(-1deg, rgba(255, 230, 190, .12) 0 1px, transparent 1px 17px);
 }
@@ -278,3 +280,15 @@ body.kneading #goal, body.kneading #keys, body.kneading #btn-lib, body.kneading 
 .tillbar i, .chopbar i { position: absolute; top: -5px; bottom: -5px; width: 7px; margin-left: -3.5px; border-radius: 4px; background: var(--red); box-shadow: 0 0 0 2px #fff; }
 .chopbar { width: 190px; } .chopbar .zone { position: absolute; left: 26%; width: 48%; top: 0; bottom: 0; background: #f6dba0; border-radius: 6px; } .chopbar .zone2 { position: absolute; left: 42.5%; width: 15%; top: -2px; bottom: -2px; border-radius: 6px; background: repeating-linear-gradient(115deg, #f2b84b 0 7px, #ffd97a 7px 14px); box-shadow: 0 0 0 2px #fff; }
 .tk { font-size: 11.5px; font-weight: 800; color: var(--soft); margin-top: 5px; white-space: nowrap; display: flex; gap: 5px; align-items: center; justify-content: center; }
+
+/* carga, pausa, táctil, escalado y salidas */
+#boot { position: fixed; inset: 0; z-index: 50; background: #f6e3c0; display: grid; place-items: center; align-content: center; gap: 22px; color: #7a4a2a; font: 800 22px "Baloo 2", ui-rounded, sans-serif; transition: opacity .5s; } #boot.out { opacity: 0; pointer-events: none; }
+#boot .loaf { width: 120px; height: 58px; border-radius: 60px 60px 22px 22px; background: linear-gradient(#e9a94e, #c9772a); box-shadow: inset 0 -8px 0 rgba(120, 60, 10, .3), 0 8px 0 rgba(120, 70, 20, .2); position: relative; animation: loafb .9s ease-in-out infinite alternate; } #boot .loaf::before { content: ''; position: absolute; left: 22px; right: 22px; top: 12px; height: 9px; border-radius: 9px; background: #f6dfae; box-shadow: 0 16px 0 #f6dfae; transform: rotate(-8deg); } @keyframes loafb { to { transform: translateY(-14px) scale(1.06, .95); } }
+#cal, #topright, #goal, #keys, #btn-lib, #dialog, #toasts, #knead, .sheet, #title > * { zoom: var(--z, 1); }
+#modal.out { opacity: 0; transition: opacity .13s; } #modal.out .sheet { transform: scale(.94) translateY(10px); transition: transform .13s; }
+#keys { transition: opacity .6s; } #keys.gone { opacity: 0 !important; }
+#prompt { pointer-events: none !important; } #prompt .in { pointer-events: auto; cursor: pointer; position: relative; overflow: hidden; } #prompt .in::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--h, 0) * 100%); background: rgba(242, 184, 75, .55); z-index: 0; } #prompt .in > * { position: relative; z-index: 1; }
+.toast { animation-duration: 2.6s; }
+.set { display: grid; grid-template-columns: auto 1fr; gap: 12px 18px; align-items: center; font-weight: 800; font-size: 17px; margin: 6px 0 16px; } .set input[type=range] { width: 100%; accent-color: var(--red); height: 26px; } .ctl { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 6px 12px; font-weight: 700; font-size: 15px; align-items: center; }
+#touch { position: fixed; inset: 0; pointer-events: none !important; z-index: 1; } #stick { position: absolute; left: 26px; bottom: 96px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255, 247, 230, .35); border: 3px solid rgba(255, 255, 255, .7); } #stick i { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px; border-radius: 50%; background: var(--paper); box-shadow: 0 4px 0 var(--shadow); }
+#tapE { position: absolute; right: 26px; bottom: 110px; width: 92px; height: 92px; border-radius: 50%; border: 4px solid #fff; background: var(--red); color: #fff; font: 800 34px var(--font); box-shadow: 0 6px 0 var(--red2); pointer-events: auto; }

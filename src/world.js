@@ -585,9 +585,9 @@ function outside() {
   for (let i = 0; i < 3; i++) { mesh(G.cyl(0.13, 0.12, 0.3, 12), mat(['#93a35a', '#6f5f40', '#ffe27a'][i], { rough: 0.5 }), { parent: Ca, p: [0.35 + i * 0.3, 1.22, 0.1] }); mesh(G.cyl(0.14, 0.14, 0.05, 12), mat('#e2664f'), { parent: Ca, p: [0.35 + i * 0.3, 1.39, 0.1] }); }
   W.obstacles.push([7.3, 6.3, 9.5, 7.75]); W.pipaSpot = [8.9, 8.15];
   // cartel de «Vuelvo enseguida» y casa de Pan
-  const brbT = canvasTex(256, 128, (g) => { g.fillStyle = '#fff3d8'; g.beginPath(); g.roundRect(4, 4, 248, 120, 22); g.fill(); g.strokeStyle = '#c98a5a'; g.lineWidth = 9; g.stroke(); g.fillStyle = '#e2664f'; g.font = '900 42px ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.textAlign = 'center'; g.fillText('VUELVO', 128, 56); g.fillText('ENSEGUIDA', 128, 100, 220); });
+  const brbT = canvasTex(256, 128, (g) => { g.fillStyle = '#fff3d8'; g.beginPath(); g.roundRect(4, 4, 248, 120, 22); g.fill(); g.strokeStyle = '#c98a5a'; g.lineWidth = 9; g.stroke(); g.fillStyle = '#e2664f'; g.font = '900 42px "Baloo 2", ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.textAlign = 'center'; g.fillText('VUELVO', 128, 56); g.fillText('ENSEGUIDA', 128, 100, 220); });
   W.brb = group({ parent: scene, p: [-7.35, 2.05, 1.5] }); for (const sd of [-1, 1]) mesh(G.plane(0.9, 0.45), basic('#ffffff', { map: brbT }), { parent: W.brb, p: [0, -0.3, sd * 0.02], r: [0, sd > 0 ? 0 : Math.PI, 0], cast: false }); mesh(G.box(0.92, 0.47, 0.03, 0.01), mat('#c98a5a'), { parent: W.brb, p: [0, -0.3, 0] }); W.brb.visible = false;
-  const hs = canvasTex(256, 96, (g) => { g.fillStyle = '#fff3d8'; g.beginPath(); g.roundRect(4, 4, 248, 88, 20); g.fill(); g.strokeStyle = '#c98a5a'; g.lineWidth = 8; g.stroke(); g.fillStyle = '#7a4a2a'; g.font = '900 44px ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.textAlign = 'center'; g.fillText('Casa de Pan', 128, 62, 226); });
+  const hs = canvasTex(256, 96, (g) => { g.fillStyle = '#fff3d8'; g.beginPath(); g.roundRect(4, 4, 248, 88, 20); g.fill(); g.strokeStyle = '#c98a5a'; g.lineWidth = 8; g.stroke(); g.fillStyle = '#7a4a2a'; g.font = '900 44px "Baloo 2", ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.textAlign = 'center'; g.fillText('Casa de Pan', 128, 62, 226); });
   const Hs = group({ parent: scene, p: [12.1, 0, -3.5], r: [0, -0.5, 0] }); mesh(G.cyl(0.05, 0.06, 1.1, 6), mat('#8f6a4a'), { parent: Hs, p: [0, 0.55, 0] }); mesh(G.box(1.0, 0.4, 0.06, 0.02), mat('#c98a5a'), { parent: Hs, p: [0, 1.15, 0] }); mesh(G.plane(0.94, 0.35), basic('#ffffff', { map: hs }), { parent: Hs, p: [0, 1.15, 0.035], cast: false });
   mesh(G.box(0.9, 0.04, 0.6, 0.02), mat('#e2664f', { rough: 1 }), { parent: scene, p: [12.55, 0.03, -5.15], r: [0, 0.05, 0], cast: false });
   W.circles.push([12.1, -3.5, 0.25]); W.homeSpot = [12.4, -5.1];
@@ -798,9 +798,9 @@ export function drawBoard(title, lines) {
   const g = W.boardTex.userData.g;
   g.fillStyle = '#3d5a4c'; g.fillRect(0, 0, 512, 384);
   g.fillStyle = 'rgba(255,255,255,.05)'; for (let i = 0; i < 40; i++) g.fillRect((i * 97) % 512, (i * 53) % 384, 90, 8);
-  g.textAlign = 'center'; g.fillStyle = '#fff6da'; g.font = '800 50px ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.fillText(title, 256, 70, 470);
+  g.textAlign = 'center'; g.fillStyle = '#fff6da'; g.font = '800 50px "Baloo 2", ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.fillText(title, 256, 70, 470);
   g.strokeStyle = '#ffd98a'; g.lineWidth = 5; g.setLineDash([14, 10]); g.beginPath(); g.moveTo(70, 96); g.lineTo(442, 96); g.stroke(); g.setLineDash([]);
-  g.font = '700 38px ui-rounded, "Arial Rounded MT Bold", sans-serif';
+  g.font = '700 38px "Baloo 2", ui-rounded, "Arial Rounded MT Bold", sans-serif';
   lines.forEach((l, i) => { g.fillStyle = ['#ffd98a', '#ffffff', '#ffc2c2', '#c9f0d0'][i % 4]; g.fillText(l, 256, 160 + i * 62, 470); });
   W.boardTex.needsUpdate = true;
 }

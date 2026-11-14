@@ -27,6 +27,7 @@ jobs:
           mkdir -p _site/node_modules/three/examples
           cp index.html _site/
           cp -r src _site/src
+          cp -r fonts _site/fonts
           cp -r node_modules/three/build _site/node_modules/three/build
           cp -r node_modules/three/examples/jsm _site/node_modules/three/examples/jsm
           touch _site/.nojekyll
