@@ -24,9 +24,11 @@ export const BREADS = {
   nueces: { n: 'Pan de nueces', art: 'un', pl: 'panes de nueces', price: 15, ing: { integral: 2, harina: 1, levadura: 1, nueces: 2 }, sweet: 0, d: 'Un pan para llevar en el zurrón por caminos largos.' },
   brioche: { n: 'Brioche', art: 'un', pl: 'brioches', price: 14, ing: { harina: 2, levadura: 1, mantequilla: 2, azucar: 1 }, sweet: 1, d: 'Con su moñete arriba. Brilla como un libro recién forrado.' },
   caracola: { n: 'Caracola de chocolate', art: 'una', pl: 'caracolas', price: 17, ing: { harina: 2, levadura: 1, mantequilla: 2, azucar: 1, chocolate: 2 }, sweet: 1, d: 'Se desenrolla despacito. El centro es lo mejor y se guarda.' },
+  coca: { n: 'Coca de verano', art: 'una', pl: 'cocas', price: 13, ing: { harina: 2, levadura: 1, azucar: 2, nueces: 1 }, sweet: 1, d: 'Fina, con su azúcar tostado y piñones. Se come de pie y a la sombra.' },
+  calabaza: { n: 'Pan de calabaza', art: 'un', pl: 'panes de calabaza', price: 14, ing: { integral: 2, harina: 1, levadura: 1, semillas: 1, azucar: 1 }, sweet: 0, d: 'Naranja por dentro, de gajos por fuera. Sabe a primer frío.' },
   rosca: { n: 'Rosca de la Hornada', art: 'una', pl: 'roscas', price: 22, ing: { harina: 3, levadura: 1, mantequilla: 2, azucar: 2, nueces: 1 }, sweet: 1, d: 'El pan de la fiesta. Se parte entre todos o no se parte.' },
 };
-export const BREAD_ORDER = ['barra', 'hogaza', 'mollete', 'centeno', 'semillas', 'chapata', 'nueces', 'brioche', 'caracola', 'rosca'];
+export const BREAD_ORDER = ['barra', 'hogaza', 'mollete', 'centeno', 'semillas', 'chapata', 'nueces', 'brioche', 'caracola', 'coca', 'calabaza', 'rosca'];
 
 export const PRICE_LV = [
   { n: 'Popular', k: 0.8, d: 'Más barato: el pueblo te coge cariño antes.' },
@@ -191,7 +193,7 @@ export const TRACKS = {
   horno: { n: 'El horno', base: 50, g: 1.6, max: 10, d: 'Cada nivel: el pan llega al dorado un 8 % antes.' },
   bandejas: { n: 'Las bandejas', base: 80, g: 1.8, max: 8, d: 'Cada dos niveles: una pieza más por hornada.' },
   ferment: { n: 'La fermentadora', base: 40, g: 1.6, max: 10, d: 'Cada nivel: la masa sube un 7 % más rápido.' },
-  mostrador: { n: 'El mostrador', base: 60, g: 1.65, max: 10, d: 'Cada nivel: la clientela espera un 8 % más y suelta algo más de propina.' },
+  mostrador: { n: 'El mostrador', base: 60, g: 1.65, max: 10, d: 'Cada nivel: la clientela espera un 8 % más y suelta algo más de propina. En los niveles 4 y 8, un hueco más para atender.' },
   fama: { n: 'Carteles por el pueblo', base: 45, g: 1.6, max: 12, d: 'Cada nivel: un cliente más al día.' },
   lena: { n: 'La leñera', base: 35, g: 1.55, max: 8, d: 'Cada nivel: el fuego aguanta un 12 % más.' },
 };
@@ -206,8 +208,8 @@ export const STAFF_ORDER = ['lenador', 'amasadora', 'brasa', 'chispa'];
 
 export const SEASONS = [
   { n: 'primavera', ground: [1, 1, 1], leaf: null, wheat: '#b9d36a', up: ['semillas', 'brioche'], cheap: 'semillas', fx: 'petal' },
-  { n: 'verano', ground: [1.06, 1.0, 0.86], leaf: [1.0, 1.02, 0.86], wheat: null, up: ['mollete', 'chapata'], cheap: 'aceitunas', fx: null },
-  { n: 'otoño', ground: [1.26, 0.93, 0.56], leaf: [1.6, 0.84, 0.38], wheat: '#c9a05a', up: ['nueces', 'centeno'], cheap: 'nueces', fx: 'leaf' },
+  { n: 'verano', ground: [1.06, 1.0, 0.86], leaf: [1.0, 1.02, 0.86], wheat: null, up: ['coca', 'mollete', 'chapata'], cheap: 'aceitunas', fx: null },
+  { n: 'otoño', ground: [1.26, 0.93, 0.56], leaf: [1.6, 0.84, 0.38], wheat: '#c9a05a', up: ['calabaza', 'nueces', 'centeno'], cheap: 'nueces', fx: 'leaf' },
   { n: 'invierno', ground: [0.74, 0.8, 0.9], leaf: [1.2, 1.38, 1.5], wheat: '#e9eef2', up: ['caracola', 'brioche', 'hogaza'], cheap: 'chocolate', fx: 'snow' },
 ];
 // Lazos: lo que cambia al llegar a tres y a cinco corazones con cada vecino.
@@ -229,3 +231,14 @@ export const LOGROS = [
   ['racha', 'Dedos de cajera', 'Racha de caja de 10', 50], ['hacha', 'Leñadora fina', 'Cinco troncos limpios seguidos', 40], ['gato', 'Amiga del gato', 'Acaricia al gato 5 días', 30], ['brillo', 'Ojo de urraca', 'Recoge 20 hallazgos', 40],
   ['anio', 'Las cuatro estaciones', 'Hornea un año entero en Migas', 150], ['hornada', 'La Hornada', 'Celebra la Hornada', 150], ['hornada3', 'Tradición', 'Celebra tres Hornadas', 300], ['m3', 'Maestra de un pan', 'Tres estrellas de maestría en un pan', 80], ['equipo', 'Buena jefa', 'Ten a todo el equipo', 150],
 ];
+
+// Historias que cuentan con cuatro corazones.
+export const STORY = {
+  lana: ['¿Sabes por qué llevo siempre estas gafas rojas? Me las regaló tu abuela el día que dejé de ver los puntos del revés.', 'Me dijo: «Lana, ahora ya no tienes excusa para tejerme una bufanda». Se la tejí. Nunca se la quitó.'],
+  tejo: ['El molino lo paré el día que se apagó tu horno. No lo he dicho nunca.', 'Un molino sin panadera a la que molerle es un ventilador muy caro. Hmf. Me alegra que vuelva a tener oficio.'],
+  brinco: ['¡Te cuento una cosa! La primera carrera de la Hornada la perdí. ¡Llegué el último!', 'Tu abuela me esperó en la meta con un integral caliente y me dijo: «El último es el que más ha corrido». Desde entonces no paro.'],
+  charca: ['La fonda era de mi madre. Las aceitunas, de la suya. El croar, eso ya es mío.', 'Tu abuela decía que un pueblo se mide por lo que rebaña. Mira los platos: estamos midiendo bien.'],
+  pua: ['¿Quieres saber un secreto? Me dan miedo las tormentas. Mucho.', 'Cuando truena vengo hasta tu puerta porque el horno suena más fuerte que los rayos. No se lo digas a mi abuelo.'],
+  zarza: ['He repartido cartas de amor, de pleitos y de herencias. La que más me pesó fue la de tu abuela para ti.', 'La llevé seis años en la saca. Cada mañana la miraba y pensaba: hoy tampoco. Hasta que un día, sí.'],
+  ulular: ['En cuarenta años de escuela solo suspendí a una alumna en paciencia. Era tu abuela.', 'Luego abrió un horno, que es el oficio más paciente del mundo. La vida corrige mejor que yo.'],
+};

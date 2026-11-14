@@ -150,6 +150,19 @@ const MAKE = {
       G.sph(0.016, 7, 6), ['#4a2a1b', '#3a1f14', '#5c3524'], { rough: 0.3, flat: 0.8 });
     return g;
   },
+  coca() {
+    const pos = (x, y, z) => [x * 0.33, y > 0 ? y * 0.045 : y * 0.025, z * 0.2];
+    const g = group({}, shaped((x, y, z) => { const n = smoothNoise(x * 9, y * 9, z * 9), edge = ss(Math.hypot(x, z * 1.1), 0.7, 1); return [pos(x, y, z), C('#f6dfae').lerp(C('#dd9a3c'), edge * 0.9 + ss(n, 0.1, 0.7) * 0.35).lerp(C('#fff8ea'), ss(n, -0.6, -0.1) * 0.5 * (1 - edge))]; }, { rough: 0.6 }));
+    sprinkle(g, 46, 4, (r) => { const a = r() * 6.28, d = Math.sqrt(r()) * 0.8; tmp.set(Math.cos(a) * d, 0.6, Math.sin(a) * d).normalize(); const p = pos(tmp.x, tmp.y, tmp.z); return [p[0], p[1] + 0.004, p[2]]; }, G.sph(0.009, 6, 5), ['#ffffff', '#fff6e0'], { rough: 0.4 });
+    sprinkle(g, 16, 9, (r) => { const a = r() * 6.28, d = Math.sqrt(r()) * 0.75; tmp.set(Math.cos(a) * d, 0.7, Math.sin(a) * d).normalize(); const p = pos(tmp.x, tmp.y, tmp.z); return [p[0], p[1] + 0.006, p[2]]; }, G.sph(0.016, 8, 6), ['#f1dcae', '#e9cf9a'], { flat: 0.6, long: 1.9 });
+    return g;
+  },
+  calabaza() {
+    const g = group({}, shaped((x, y, z) => { const a = Math.atan2(z, x), lobe = 1 + Math.cos(a * 8) * 0.07 * (1 - Math.abs(y) * 0.6), groove = gauss(Math.cos(a * 8) + 1, 0.35); return [[x * 0.24 * lobe, y > 0 ? y * 0.17 : y * 0.07, z * 0.24 * lobe], C('#f2b45a').lerp(C('#d9812a'), ss(y, -0.2, 0.7) * 0.8).lerp(C('#a85a1c'), groove * 0.5 * ss(y, 0, 0.5))]; }, { ws: 56, hs: 28 }));
+    mesh(G.cyl(0.02, 0.03, 0.06, 6), mat('#6a7a3a'), { parent: g, p: [0, 0.185, 0] });
+    sprinkle(g, 14, 6, (r) => { const a = r() * 6.28, d = 0.03 + r() * 0.1; return [Math.cos(a) * d, 0.168 - d * 0.25, Math.sin(a) * d]; }, G.sph(0.014, 7, 5), ['#dfe8c0', '#c9d3a0'], { flat: 0.5, long: 1.8 });
+    return g;
+  },
   rosca() {
     const geo = new THREE.TorusGeometry(0.19, 0.08, 18, 48);
     geo.rotateX(-Math.PI / 2); geo.scale(1, 0.82, 1); geo.translate(0, 0.066, 0);
@@ -192,7 +205,7 @@ export function makeDough(proofed = false, tint = '#f6e8cb') {
   if (proofed) m.scale.set(1.25, 1.5, 1.25);
   return m;
 }
-export const DOUGH_TINT = { centeno: '#b99a7c', semillas: '#dcc39a', nueces: '#d2b48c', brioche: '#f8e2a0', caracola: '#f3dba0', rosca: '#f6dfa6' };
+export const DOUGH_TINT = { calabaza: '#f0c27a', coca: '#f8e6b4', centeno: '#b99a7c', semillas: '#dcc39a', nueces: '#d2b48c', brioche: '#f8e2a0', caracola: '#f3dba0', rosca: '#f6dfa6' };
 
 /** Bandeja de madera con n piezas (masa, masa fermentada o pan). */
 export function makeTray(id, n, stage, tone = 0) {
