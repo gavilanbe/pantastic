@@ -311,13 +311,20 @@ function bakery() {
   const deco = [['hogaza', -1.3, 0], ['barra', -0.45, 0, 1], ['centeno', 0.5, 0], ['brioche', 1.3, 0], ['chapata', -1.1, 1], ['rosca', -0.1, 1], ['caracola', 0.75, 1], ['mollete', 1.4, 1]];
   for (const [id, x, row, up] of deco) { const b = makeBread(id); b.position.set(x, 1.1 + row * 0.72, 0.12); b.scale.setScalar(0.9); if (up) { b.scale.setScalar(0.78); b.rotation.y = 0.12; } else b.rotation.y = x; sh.add(b); }
   for (let i = 0; i < 4; i++) { const j = group({ parent: sh, p: [-1.35 + i * 0.9, 2.53, 0.1] }); mesh(G.cyl(0.15, 0.13, 0.3, 12), mat(['#e9785e', '#ffd166', '#9ad1c0', '#c9a0dc'][i], { rough: 0.35, transparent: true, opacity: 0.92 }), { parent: j, p: [0, 0.15, 0] }); mesh(G.cyl(0.16, 0.16, 0.06, 12), woodD, { parent: j, p: [0, 0.32, 0] }); }
-  // pizarra del día
+  // pizarra del día: caballete de cara a la entrada, con sus cuatro patas en el suelo
   W.boardTex = canvasTex(512, 384, (g) => { g.fillStyle = '#3d5a4c'; g.fillRect(0, 0, 512, 384); });
-  const bd = group({ parent: B, p: [-5.25, 1.0, -1.35], r: [0, Math.PI / 2 - 0.25, 0] });
-  mesh(G.box(1.25, 1.0, 0.06, 0.03), woodD, { parent: bd, p: [0, 0.55, 0], r: [-0.16, 0, 0] });
-  mesh(G.plane(1.12, 0.86), basic('#ffffff', { map: W.boardTex }), { parent: bd, p: [0, 0.55, 0.036], r: [-0.16, 0, 0], cast: false });
-  mesh(G.box(0.06, 1.05, 0.06, 0.02), woodD, { parent: bd, p: [-0.5, 0.5, -0.3], r: [0.3, 0, 0] }); mesh(G.box(0.06, 1.05, 0.06, 0.02), woodD, { parent: bd, p: [0.5, 0.5, -0.3], r: [0.3, 0, 0] });
-  W.circles.push([-5.25, -1.35, 0.55]);
+  W.boardPos = [-5.15, -0.55];
+  const bd = group({ parent: B, p: [W.boardPos[0], 0.1, W.boardPos[1]], r: [0, 0.38, 0] });
+  const front = group({ parent: bd, r: [-0.2, 0, 0] });
+  mesh(G.box(1.5, 1.14, 0.06, 0.03), woodD, { parent: front, p: [0, 0.86, 0] });
+  mesh(G.plane(1.36, 1.0), basic('#ffffff', { map: W.boardTex }), { parent: front, p: [0, 0.86, 0.034], cast: false });
+  for (const sx of [-1, 1]) mesh(G.box(0.075, 1.52, 0.075, 0.02), woodM, { parent: front, p: [sx * 0.73, 0.74, -0.01] });
+  mesh(G.box(1.42, 0.05, 0.13, 0.02), woodM, { parent: front, p: [0, 0.27, 0.07] });
+  mesh(G.box(0.12, 0.03, 0.03, 0.01), cream, { parent: front, p: [-0.3, 0.31, 0.09], r: [0, 0.3, 0] }); mesh(G.box(0.09, 0.03, 0.03, 0.01), mat('#ffb3c9'), { parent: front, p: [0.25, 0.31, 0.08], r: [0, -0.4, 0] });
+  const back = group({ parent: bd, p: [0, 1.47, -0.3], r: [0.3, 0, 0] });
+  for (const sx of [-1, 1]) mesh(G.box(0.07, 1.54, 0.07, 0.02), woodD, { parent: back, p: [sx * 0.6, -0.77, 0] });
+  mesh(G.box(1.27, 0.06, 0.06, 0.02), woodD, { parent: back, p: [0, -0.9, 0] }); mesh(G.box(1.5, 0.08, 0.1, 0.03), woodM, { parent: bd, p: [0, 1.47, -0.3] });
+  W.circles.push([W.boardPos[0], W.boardPos[1] - 0.3, 0.62]);
   // reloj
   const ck = group({ parent: B, p: [-1.9, 3.25, -6.0] });
   mesh(G.cyl(0.4, 0.4, 0.1, 28), woodD, { parent: ck, r: [Math.PI / 2, 0, 0] });
@@ -768,10 +775,10 @@ export function drawBoard(title, lines) {
   const g = W.boardTex.userData.g;
   g.fillStyle = '#3d5a4c'; g.fillRect(0, 0, 512, 384);
   g.fillStyle = 'rgba(255,255,255,.05)'; for (let i = 0; i < 40; i++) g.fillRect((i * 97) % 512, (i * 53) % 384, 90, 8);
-  g.textAlign = 'center'; g.fillStyle = '#fff6da'; g.font = '800 50px ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.fillText(title, 256, 70);
+  g.textAlign = 'center'; g.fillStyle = '#fff6da'; g.font = '800 50px ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.fillText(title, 256, 70, 470);
   g.strokeStyle = '#ffd98a'; g.lineWidth = 5; g.setLineDash([14, 10]); g.beginPath(); g.moveTo(70, 96); g.lineTo(442, 96); g.stroke(); g.setLineDash([]);
   g.font = '700 38px ui-rounded, "Arial Rounded MT Bold", sans-serif';
-  lines.forEach((l, i) => { g.fillStyle = ['#ffd98a', '#ffffff', '#ffc2c2', '#c9f0d0'][i % 4]; g.fillText(l, 256, 160 + i * 62); });
+  lines.forEach((l, i) => { g.fillStyle = ['#ffd98a', '#ffffff', '#ffc2c2', '#c9f0d0'][i % 4]; g.fillText(l, 256, 160 + i * 62, 470); });
   W.boardTex.needsUpdate = true;
 }
 /** Colisión de un círculo (radio r) contra el decorado; devuelve posición corregida. */

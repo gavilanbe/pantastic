@@ -604,7 +604,7 @@ function findAction() {
     return null;
   }
   const ord = R.orders.find(o => !o.done && !o.late);
-  if (ord && Math.hypot(px + 5.25, pz + 1.35) < 1.9) { const have = R.shelf[ord.bread]?.length || 0; return have >= ord.n ? { text: `Entregar el encargo de ${NEIGH[ord.who].n}`, pos: [-5.25, 2.2, -1.35], fn: () => deliver(ord) } : { text: `Encargo: ${have} de ${ord.n} ${BREADS[ord.bread].pl} en el mostrador`, ok: false, pos: [-5.25, 2.2, -1.35], fn: () => sfx('no') }; }
+  if (ord && Math.hypot(px - W.boardPos[0], pz - W.boardPos[1]) < 1.9) { const have = R.shelf[ord.bread]?.length || 0; return have >= ord.n ? { text: `Entregar el encargo de ${NEIGH[ord.who].n}`, pos: [W.boardPos[0], 2.3, W.boardPos[1]], fn: () => deliver(ord) } : { text: `Encargo: ${have} de ${ord.n} ${BREADS[ord.bread].pl} en el mostrador`, ok: false, pos: [W.boardPos[0], 2.3, W.boardPos[1]], fn: () => sfx('no') }; }
   const behind = px > -1.5 && px < -0.35 && pz > -5.4 && pz < -0.4;
   if (behind && c && c.stage === 'baked') return { text: 'Dejar en el mostrador', pos: [-1.9, 1.75, pz], fn: placeBread };
   if (behind && !c) {
@@ -635,7 +635,7 @@ function findAction() {
 function drawOrders() { $('#orders').innerHTML = R.orders.map(o => `<div class="ord ${o.done ? 'ok' : o.late ? 'late' : ''}"><span class="pic">${face(o.who)}</span>${o.n}×${img(o.bread)}<small>${o.done ? 'entregado' : 'antes de las ' + Math.floor(o.by) + ':' + (o.by % 1 ? '30' : '00')} · ${o.pay}</small><span class="coin sm"></span></div>`).join(''); }
 function deliver(o) {
   R.shelf[o.bread].splice(-o.n, o.n); refreshBaskets(); o.done = true; S.money += o.pay; R.today.orders = (R.today.orders || 0) + o.pay; ui.setMoney(S.money, true); S.pts[o.who] = (S.pts[o.who] || 0) + 2; addRep(o.n + 2);
-  sfx('stamp'); setTimeout(() => sfx('coin'), 160); pan.act('joy'); pan.say('happy', 2); burst('confetti', -5.25, 1.6, -1.35, 40); ui.float(`+${o.pay}`, -5.25, 2.2, -1.35); ui.toast(`${face(o.who, 'happy')} Encargo entregado: ${NEIGH[o.who].n} pasará a recogerlo. +2 ♥`, 'gold'); drawOrders(); save();
+  sfx('stamp'); setTimeout(() => sfx('coin'), 160); pan.act('joy'); pan.say('happy', 2); burst('confetti', W.boardPos[0], 1.6, W.boardPos[1], 40); ui.float(`+${o.pay}`, W.boardPos[0], 2.2, W.boardPos[1]); ui.toast(`${face(o.who, 'happy')} Encargo entregado: ${NEIGH[o.who].n} pasará a recogerlo. +2 ♥`, 'gold'); drawOrders(); save();
 }
 function goHome(inside) {
   if (mode !== 'play') return; mode = 'move'; ui.prompt(null); ui.fade(1); sfx('whoosh');
