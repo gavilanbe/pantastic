@@ -39,11 +39,11 @@ export const PRICE_LV = [
 export const REP = [
   { at: 0, n: 'Horno recién encendido' },
   { at: 30, n: 'Huele a pan en la calle' },
-  { at: 90, n: 'La panadería del barrio' },
-  { at: 190, n: 'Cola en la puerta' },
-  { at: 340, n: 'El orgullo de Migas' },
-  { at: 540, n: 'Maestra panadera' },
-  { at: 800, n: 'Como la abuela Hogaza' },
+  { at: 110, n: 'La panadería del barrio' },
+  { at: 260, n: 'Cola en la puerta' },
+  { at: 480, n: 'El orgullo de Migas' },
+  { at: 780, n: 'Maestra panadera' },
+  { at: 1150, n: 'Como la abuela Hogaza' },
 ];
 
 // Vecinos. look: ver chars.js
@@ -186,7 +186,10 @@ export const MUEBLES = {
   sillon: { n: 'Sillón orejero', p: 150, d: 'Para la cabezada de después de cerrar.' },
   gramola: { n: 'Gramola', p: 260, d: 'Suena bajito toda la noche. Te levantas tarareando.' },
 };
-export const MUE_ORDER = ['planta', 'alfombra', 'lampara', 'cuadro', 'sillon', 'gramola'];
+MUEBLES.tetera = { n: 'Mesita del té', p: 70, d: 'Una tetera azul y una taza. Para las cartas de la abuela.' };
+MUEBLES.baul = { n: 'Baúl de la abuela', p: 110, d: 'Huele a lavanda y a harina. No se sabe qué orden es.' };
+MUEBLES.libros = { n: 'Librería', p: 180, d: 'Novelas, atlas y un recetario que no es tuyo. Aún.' };
+export const MUE_ORDER = ['planta', 'alfombra', 'tetera', 'lampara', 'baul', 'cuadro', 'sillon', 'libros', 'gramola'];
 
 // Mejoras por niveles (coste = base · g^nivel) y equipo que automatiza (precio de alta + jornal diario).
 export const TRACKS = {
@@ -199,10 +202,10 @@ export const TRACKS = {
 };
 export const TRACK_ORDER = ['horno', 'bandejas', 'ferment', 'mostrador', 'fama', 'lena'];
 export const STAFF = {
-  lenador: { n: 'Roble, el leñador', p: 140, wage: 5, lvl: 1, d: 'Cada mañana deja cinco troncos en la leñera.', look: { sp: 'tejon', fur: '#a98467', skin: '#f3e3c8', shirt: '#b8483a', pat: 'cuadros', acc: 'gorra', brow: 'serio' } },
+  lenador: { n: 'Roble, el leñador', p: 140, wage: 12, lvl: 1, d: 'Cada mañana deja cinco troncos en la leñera.', look: { sp: 'tejon', fur: '#a98467', skin: '#f3e3c8', shirt: '#b8483a', pat: 'cuadros', acc: 'gorra', brow: 'serio' } },
   amasadora: { n: 'La amasadora', p: 300, wage: 0, lvl: 1, d: 'Los panes que ya dominas (una estrella de maestría) se pueden amasar a máquina: sin minijuego y con masa correcta, no de campeonato.' },
-  brasa: { n: 'Brasa, la hornera', p: 380, wage: 10, lvl: 2, d: 'Saca el pan en dorado, lo deja en el carro y echa leña cuando el fuego baja. El punto exacto sigue siendo cosa tuya.', look: { sp: 'zorro', fur: '#c96a3a', skin: '#fff6ea', shirt: '#4a4654', pat: 'liso', acc: 'gorro', lash: true, scale: 0.88 } },
-  chispa: { n: 'Chispa, el repartidor', p: 520, wage: 14, lvl: 3, d: 'A mediodía y a media tarde lleva a la fonda hasta seis panes de lo que más haya en el mostrador, al 80 %.', look: { sp: 'liebre', fur: '#c9bfb4', skin: '#fff3df', shirt: '#f2b84b', pat: 'raya', acc: 'cinta' } },
+  brasa: { n: 'Brasa, la hornera', p: 380, wage: 28, lvl: 2, d: 'Saca el pan en dorado, lo deja en el carro y echa leña cuando el fuego baja. El punto exacto sigue siendo cosa tuya.', look: { sp: 'zorro', fur: '#c96a3a', skin: '#fff6ea', shirt: '#4a4654', pat: 'liso', acc: 'gorro', lash: true, scale: 0.88 } },
+  chispa: { n: 'Chispa, el repartidor', p: 520, wage: 36, lvl: 3, d: 'A mediodía y a media tarde lleva a la fonda hasta seis panes de lo que más haya en el mostrador, al 80 %.', look: { sp: 'liebre', fur: '#c9bfb4', skin: '#fff3df', shirt: '#f2b84b', pat: 'raya', acc: 'cinta' } },
 };
 export const STAFF_ORDER = ['lenador', 'amasadora', 'brasa', 'chispa'];
 
@@ -227,8 +230,9 @@ export const LOGROS = [
   ['e500', 'La hucha suena', 'Gana 500 monedas', 25], ['e3000', 'Negocio redondo', 'Gana 3000 monedas', 80], ['e15000', 'Imperio de miga', 'Gana 15 000 monedas', 250],
   ['s10', 'Mano de oro', 'Vende 10 panes de tres estrellas', 30], ['s100', 'Tres estrellas Migas', 'Vende 100 panes de tres estrellas', 120],
   ['rec5', 'Media libreta', 'Reúne 5 recetas', 30], ['rec10', 'La libreta entera', 'Reúne las 10 recetas', 120], ['h2', 'Querida por todos', 'Dos corazones con los siete vecinos', 80], ['h5', 'Uña y carne', 'Cinco corazones con un vecino', 100],
-  ['ob6', 'Manos a la obra', 'Termina 6 obras', 60], ['ob12', 'Migas reluce', 'Termina las 12 obras', 250], ['casa', 'Hogar, dulce horno', 'Ten los seis muebles', 100], ['lata', 'Hormiguita', 'Guarda 200 monedas en la lata', 40],
-  ['racha', 'Dedos de cajera', 'Racha de caja de 10', 50], ['hacha', 'Leñadora fina', 'Cinco troncos limpios seguidos', 40], ['gato', 'Amiga del gato', 'Acaricia al gato 5 días', 30], ['brillo', 'Ojo de urraca', 'Recoge 20 hallazgos', 40],
+  ['ob6', 'Manos a la obra', 'Termina 6 obras', 60], ['ob12', 'Migas reluce', 'Termina las 12 obras', 250], ['casa', 'Hogar, dulce horno', 'Ten todos los muebles', 100], ['lata', 'Hormiguita', 'Guarda 200 monedas en la lata', 40],
+  ['racha', 'Da gusto venir', 'Diez clientes seguidos bien atendidos', 50], ['hacha', 'Leñadora fina', 'Cinco troncos limpios seguidos', 40], ['gato', 'Amiga del gato', 'Acaricia al gato 5 días', 30], ['brillo', 'Ojo de urraca', 'Recoge 20 hallazgos', 40],
+  ['patos', 'La de los patos', 'Da 12 panes a los patos', 60], ['patitos', 'Familia numerosa', 'Que nazcan los seis patitos', 120],
   ['anio', 'Las cuatro estaciones', 'Hornea un año entero en Migas', 150], ['hornada', 'La Hornada', 'Celebra la Hornada', 150], ['hornada3', 'Tradición', 'Celebra tres Hornadas', 300], ['m3', 'Maestra de un pan', 'Tres estrellas de maestría en un pan', 80], ['equipo', 'Buena jefa', 'Ten a todo el equipo', 150],
 ];
 
@@ -241,4 +245,11 @@ export const STORY = {
   pua: ['¿Quieres saber un secreto? Me dan miedo las tormentas. Mucho.', 'Cuando truena vengo hasta tu puerta porque el horno suena más fuerte que los rayos. No se lo digas a mi abuelo.'],
   zarza: ['He repartido cartas de amor, de pleitos y de herencias. La que más me pesó fue la de tu abuela para ti.', 'La llevé seis años en la saca. Cada mañana la miraba y pensaba: hoy tampoco. Hasta que un día, sí.'],
   ulular: ['En cuarenta años de escuela solo suspendí a una alumna en paciencia. Era tu abuela.', 'Luego abrió un horno, que es el oficio más paciente del mundo. La vida corrige mejor que yo.'],
+};
+
+export const ESPINO = {
+  look: { sp: 'erizo', fur: '#b9b3b0', skin: '#f6e4d0', shirt: '#6d7d8f', pat: 'cuadros', acc: 'gorra', scale: 0.96 },
+  hola: ['Buenas tardes, hija. Soy Espino, el abuelo de Púa. Vengo cada tarde a ver a los patos.', 'El pan que no vendas no lo tires: me lo traes en una bolsa y lo repartimos entre estos glotones. Los patos tienen buena memoria.'],
+  charla: ['El macho se llama Almirante. La parda es Bizcocha. La blanca no tiene nombre porque no se deja.', 'Mi nieta dice que los patos traen suerte. Yo digo que traen patitos, que viene a ser lo mismo.', 'Tu abuela venía aquí con los mendrugos de la semana. Los patos de entonces eran los abuelos de estos.', 'El pan muy tostado les gusta más que el bueno. Son como yo.'],
+  gracias: ['¡Mira cómo vienen! Gracias, hija.', 'Almirante te hace una reverencia. Bueno, casi.', 'Así da gusto pasar la tarde.'],
 };

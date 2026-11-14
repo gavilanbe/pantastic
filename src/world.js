@@ -14,7 +14,7 @@ export const W = {
     carro: { x: 4.95, z: -0.45, ox: 5.9, oz: -0.45, yaw: Math.PI / 2, label: 'Carro' },
   },
   slots: [-4.35, -3.3, -2.25, -1.2].map(z => ({ x: -3.0, z })),
-  slotSets: { 4: [-4.35, -3.3, -2.25, -1.2], 5: [-5.0, -4.05, -3.1, -2.15, -1.2], 6: [-5.2, -4.4, -3.6, -2.8, -2.0, -1.2] }, zones: {}, travel: { fonda: [16.3, 4.3], molino: [-16.3, 4.3] },
+  slotSets: { 4: [-4.35, -3.3, -2.25, -1.2], 5: [-5.0, -4.05, -3.1, -2.15, -1.2], 6: [-5.2, -4.4, -3.6, -2.8, -2.0, -1.2] }, zones: {}, travel: { fonda: [23.2, 4.3], molino: [-23.2, 4.3], rio: [2.0, 13.3] }, homes: { tejo: { out: [-26, 4.3], edge: true }, charca: { out: [26, 4.3], edge: true } }, benchSeats: [],
   baskets: [-5.0, -4.2, -3.4, -2.6, -1.8].map(z => ({ x: -1.9, z })),
   fermSlots: [], ovenSlots: [], cartSlots: [], basketGroups: [], wips: {}, leafReg: new Map(),
 };
@@ -191,6 +191,9 @@ function house(x, z, o = {}) {
     mesh(G.box(1.05, 0.2, 0.3, 0.06), mat('#c98a5a'), { parent: g, p: [wx, 0.88, d / 2 + 0.14] });
     for (let i = 0; i < 4; i++) mesh(G.sph(0.11, 8, 6), mat(['#ff7b8a', '#ffd166', '#ff9ac1', '#fff'][i]), { parent: g, p: [wx - 0.36 + i * 0.24, 1.04, d / 2 + 0.16] });
   }
+  if (o.owner) { const th = o.rot || 0, wp = (lx, lz) => [x + lx * Math.cos(th) + lz * Math.sin(th), z - lx * Math.sin(th) + lz * Math.cos(th)]; W.homes[o.owner] = { out: wp(-w * 0.18, d / 2 + 1.1), door: wp(-w * 0.18, d / 2 + 0.2), yaw: th };
+    const nt = canvasTex(256, 80, (c) => { c.fillStyle = '#fff3d8'; c.beginPath(); c.roundRect(4, 4, 248, 72, 18); c.fill(); c.strokeStyle = '#c98a5a'; c.lineWidth = 7; c.stroke(); c.fillStyle = '#7a4a2a'; c.font = '800 36px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.fillText(o.name, 128, 52, 228); });
+    mesh(G.box(0.86, 0.28, 0.05, 0.02), mat('#c98a5a'), { parent: g, p: [-w * 0.18, 1.62, d / 2 + 0.05] }); mesh(G.plane(0.82, 0.25), basic('#ffffff', { map: nt }), { parent: g, p: [-w * 0.18, 1.62, d / 2 + 0.08], cast: false }); mesh(G.box(0.9, 0.04, 0.5, 0.02), mat('#e2664f', { rough: 1 }), { parent: g, p: [-w * 0.18, 0.03, d / 2 + 0.4], cast: false }); }
   scene.add(g);
   const cs = Math.abs(Math.cos(o.rot || 0)), sn = Math.abs(Math.sin(o.rot || 0)), ww = (w * cs + d * sn) / 2 + 0.2, dd = (d * cs + w * sn) / 2 + 0.2;
   W.obstacles.push([x - ww, z - dd, x + ww, z + dd]);
@@ -212,6 +215,7 @@ function bench(x, z, rot = 0) {
   for (let i = 0; i < 2; i++) mesh(G.box(1.5, 0.14, 0.05, 0.02), wm, { parent: g, p: [0, 0.72 + i * 0.2, -0.3], r: [-0.12, 0, 0] });
   for (const s of [-1, 1]) { mesh(G.box(0.06, 0.46, 0.45, 0.02), im, { parent: g, p: [s * 0.62, 0.23, -0.02] }); mesh(G.box(0.06, 0.6, 0.06, 0.02), im, { parent: g, p: [s * 0.62, 0.7, -0.3], r: [-0.12, 0, 0] }); }
   scene.add(g); W.obstacles.push(rot ? [x - 0.4, z - 0.85, x + 0.4, z + 0.85] : [x - 0.85, z - 0.4, x + 0.85, z + 0.3]);
+  for (const sd of [-1, 1]) W.benchSeats.push({ x: x + sd * 0.4 * Math.cos(rot), z: z - sd * 0.4 * Math.sin(rot), yaw: rot, used: null });
   return g;
 }
 function flowers(list, parent = scene) {
@@ -310,6 +314,11 @@ function bakery() {
   W.tipFill = mesh(G.cyl(0.12, 0.11, 0.26, 16), mat('#f5c33b', { rough: 0.35, metal: 0.6 }), { parent: W.tipJar, p: [0, 0.14, 0] }); W.tipFill.scale.y = 0.05;
   mesh(G.cyl(0.145, 0.13, 0.3, 16), mat('#e8f6ff', { transparent: true, opacity: 0.28, rough: 0.05 }), { parent: W.tipJar, p: [0, 0.15, 0], cast: false });
   mesh(G.box(0.17, 0.09, 0.01, 0.004), cream, { parent: W.tipJar, p: [0.07, 0.15, 0.125], r: [0, 0.5, 0] }); mesh(G.box(0.1, 0.02, 0.012, 0.004), mat('#e2664f'), { parent: W.tipJar, p: [0.07, 0.15, 0.131], r: [0, 0.5, 0] });
+  // cubo con tapa: basura, o compost cuando hay huerto
+  const Bn = group({ parent: B, p: [-0.92, 0.1, -5.42] }); W.binMat = mat('#8f6a4a', { rough: 0.85, nocache: true });
+  mesh(G.lathe([[0.001, 0], [0.24, 0], [0.3, 0.62], [0.32, 0.64], [0.001, 0.64]], 16, false), W.binMat, { parent: Bn }); for (const y of [0.14, 0.5]) mesh(G.tor(0.27 + y * 0.06, 0.018, 6, 18), mat('#4a4654', { metal: 0.5, rough: 0.4 }), { parent: Bn, p: [0, y, 0], r: [Math.PI / 2, 0, 0] });
+  W.binLid = group({ parent: Bn, p: [0, 0.66, -0.3] }); mesh(G.cyl(0.33, 0.33, 0.05, 16), W.binMat, { parent: W.binLid, p: [0, 0, 0.3] }); mesh(G.sph(0.05, 8, 6), mat('#4a4654'), { parent: W.binLid, p: [0, 0.05, 0.3] });
+  W.binLeaf = mesh(G.sph(1, 8, 6), mat('#58b368'), { parent: Bn, p: [0, 0.4, 0.3], s: [0.1, 0.13, 0.02] }); W.binLeaf.visible = false; W.binPos = [-0.92, 1.0, -5.42]; W.binOpen = 0; W.circles.push([-0.92, -5.42, 0.36]);
   // caja registradora de las de palanca: cajón que salta, visor y campanilla
   const reg = W.reg = group({ parent: B, p: [-1.9, 1.09, -0.98], r: [0, Math.PI / 2 - 0.45, 0] }), red = mat('#e2664f', { rough: 0.45 }), brass = mat('#e9b949', { metal: 0.75, rough: 0.28 });
   mesh(G.box(0.58, 0.19, 0.46, 0.04), red, { parent: reg, p: [0, 0.095, 0] });
@@ -504,8 +513,8 @@ function outside() {
   // casas
   house(-3.5, -12.8, { wall: '#ffe9d6', roof: '#d9714e' }); house(3.6, -13.4, { wall: '#e7f1e1', roof: '#c9805a', w: 3.6, door: '#5d7a55' });
   house(14.6, -5.6, { wall: '#fde3c9', roof: '#b8604a', rot: -Math.PI / 2, w: 3.8 }); house(-13.5, -12.5, { wall: '#f6e6f0', roof: '#d9714e', w: 3.4, door: '#7b5ea7' });
-  house(11.5, -14.5, { wall: '#fff3c9', roof: '#c9623f', w: 3.6, door: '#5873b8' }); house(-22, -3, { wall: '#e3eefa', roof: '#d9714e', rot: Math.PI / 2 });
-  house(22, 2, { wall: '#ffe9d6', roof: '#c9805a', rot: -Math.PI / 2 }); house(-21, 12, { wall: '#fff0d8', roof: '#d9714e', rot: Math.PI / 2 * 0.9 }); house(20.5, 12.5, { wall: '#f1e9da', roof: '#b8604a', rot: -Math.PI / 2 });
+  house(11.5, -14.5, { wall: '#fff3c9', roof: '#c9623f', w: 3.6, door: '#5873b8' }); house(-22, -3, { wall: '#e3eefa', roof: '#d9714e', rot: Math.PI / 2, owner: 'lana', name: 'Doña Lana' });
+  house(22, 2, { wall: '#ffe9d6', roof: '#c9805a', rot: -Math.PI / 2, owner: 'brinco', name: 'Brinco' }); house(-21, 12, { wall: '#fff0d8', roof: '#d9714e', rot: Math.PI / 2, owner: 'pua', name: 'Púa y su abuelo' }); house(20.5, 12.5, { wall: '#f1e9da', roof: '#b8604a', rot: -Math.PI / 2, owner: 'zarza', name: 'Zarza' }); house(22, -5.3, { wall: '#efe6f6', roof: '#7b5ea7', rot: -Math.PI / 2, w: 3.4, door: '#7b5ea7', owner: 'ulular', name: 'Don Ulular' });
   // molino
   const mill = group({ parent: scene, p: [-14.5, 0, -19.5] });
   mesh(G.lathe([[1.9, 0], [1.75, 0.6], [1.35, 4.4], [1.3, 5], [0.001, 5]], 20, false), mat('#fff6ea', { rough: 0.95 }), { parent: mill });
@@ -532,7 +541,7 @@ function outside() {
   mesh(G.sph(0.24, 12, 10), mat('#f1e2c4', { rough: 1 }), { parent: sc, p: [0, 2.15, 0] }); mesh(G.cone(0.4, 0.3, 12), mat('#e2b140'), { parent: sc, p: [0, 2.42, 0] });
   mesh(G.box(0.7, 0.75, 0.2, 0.08), mat('#e9785e', { rough: 1 }), { parent: sc, p: [0, 1.3, 0] });
   // árboles
-  const trees = [[-11.5, 1.2, 1.05, 'naranjo'], [11.6, 0.6, 1.1, 'naranjo'], [-14.5, 9.4, 1.15, 'naranjo'], [15.3, 3.2, 1, 'naranjo'], [3.2, 8.6, 1.1, 'naranjo'], [-4.5, 9.6, 0.95, 'alamo'], [16.5, 9.5, 1.2, 'alamo'], [-17.5, 3.4, 1.1, 'alamo'],
+  const trees = [[-11.5, 1.2, 1.05, 'naranjo'], [11.6, 0.6, 1.1, 'naranjo'], [-14.5, 9.4, 1.15, 'naranjo'], [15.3, 3.2, 1, 'naranjo'], [3.2, 8.6, 1.1, 'naranjo'], [-4.5, 9.6, 0.95, 'alamo'], [18.6, 11.6, 1.2, 'alamo'], [-17.5, 3.4, 1.1, 'alamo'],
   [8.8, -8.8, 1.2, 'alamo'], [-8.8, -15, 1.1, 'naranjo'], [0, -17.5, 1.2, 'alamo'], [8, -17.5, 1.1, 'naranjo'], [18, -10.5, 1.2, 'alamo'], [-20, -13, 1.2, 'alamo'], [-25, 5, 1.2, 'alamo'], [25, 8, 1.2, 'naranjo'], [-9, 13, 1.2, 'alamo'], [9, 13.5, 1.2, 'alamo'], [-1, 13, 1.1, 'naranjo'], [24, -6, 1.1, 'alamo'],
   [10.6, -4.6, 1, 'cipres'], [-9.6, -11.6, 1.1, 'cipres'], [7.3, -12.6, 1.05, 'cipres'], [17.6, -3, 0.9, 'cipres'], [-17.3, -11.3, 1, 'cipres']];
   trees.forEach((t, i) => tree(t[0], t[1], t[2], t[3], i + 1));
@@ -616,14 +625,26 @@ function outside() {
   W.pond = waterMat('#6cc7ea'); mesh(pg, W.pond, { parent: P, p: [0, 0.085, 0], s: [2.75, 1, 2.15], cast: false });
   for (let i = 0; i < 9; i++) { const a = 2.2 + i * 0.32, x = Math.cos(a) * 2.7, z = Math.sin(a) * 2.1 - 0.2; mesh(G.cyl(0.02, 0.03, 1 + (i % 3) * 0.3, 5), mat('#6aa84f', { sway: 0.06 }), { parent: P, p: [x, 0.5, z] }); if (i % 2) mesh(G.cap(0.05, 0.2, 6), mat('#8a5a34', { sway: 0.06 }), { parent: P, p: [x, 1.05 + (i % 3) * 0.14, z] }); }
   for (const [x, z, s] of [[-0.9, 0.5, 0.5], [0.7, -0.8, 0.4], [1.3, 0.7, 0.45]]) { mesh(G.cyl(s, s, 0.02, 14), mat('#5cb85c'), { parent: P, p: [x, 0.05, z], cast: false }); mesh(G.sph(0.09, 8, 6), mat('#ffb3c9'), { parent: P, p: [x + 0.1, 0.1, z], s: [1, 0.7, 1] }); }
-  for (let i = 0; i < 2; i++) {
-    const d = group({ parent: P, s: i ? 0.8 : 1 });
-    mesh(blob((x, y, z, vv) => vv.set(x * 0.2, y * 0.15 + 0.14, z * 0.3 + (y > 0 && z < 0 ? -0.05 : 0)), { ws: 14, hs: 10 }), mat('#fffdf5', { rough: 0.9 }), { parent: d });
-    mesh(G.sph(0.13, 12, 10), mat('#fffdf5', { rough: 0.9 }), { parent: d, p: [0, 0.36, 0.2] });
-    mesh(G.cone(0.06, 0.14, 8), mat('#ff9d2e'), { parent: d, p: [0, 0.34, 0.36], r: [Math.PI / 2, 0, 0], s: [1.3, 1, 0.6] });
-    for (const s of [-1, 1]) mesh(G.sph(0.022, 6, 5), mat('#2a1d1a'), { parent: d, p: [s * 0.08, 0.4, 0.29] });
-    W.ducks.push({ g: d, a: i * 3, r: 1.1 + i * 0.5 });
-  }
+  const duck = (kind, sc) => {
+    const C = { macho: ['#d8d0c2', '#2f7d4f', '#8a5a3c', '#f2c14e'], hembra: ['#b9946a', '#a37f58', '#8f6a48', '#e9a53a'], blanco: ['#fffdf5', '#fffdf5', '#f1ece0', '#ff9d2e'], pollo: ['#ffd95a', '#ffe27a', '#f2c14e', '#ff9d2e'] }[kind];
+    const d = group({ parent: P, s: sc }), body = group({ parent: d });
+    mesh(blob((x, y, z, vv) => { const tail = z < -0.3 ? (-z - 0.3) * 0.5 : 0; return vv.set(x * 0.2 * (1 - tail * 0.5), y * 0.15 + 0.13 + tail * 0.16, z * 0.32); }, { ws: 16, hs: 12 }), mat(C[0], { rough: 0.9, rim: 0.4 }), { parent: body });
+    if (kind === 'macho') mesh(G.sph(0.13, 12, 8), mat(C[2], { rough: 0.9 }), { parent: body, p: [0, 0.13, 0.2], s: [1.1, 0.9, 0.8] });
+    const wings = [-1, 1].map(sd => mesh(blob((x, y, z, vv) => vv.set(x * 0.04, y * 0.09, z * 0.2), { ws: 10, hs: 8 }), mat(kind === 'macho' ? '#9a8f84' : C[2], { rough: 0.95 }), { parent: body, p: [sd * 0.17, 0.19, -0.05], r: [0, sd * 0.12, sd * -0.25] }));
+    if (kind === 'macho') mesh(G.tor(0.05, 0.02, 6, 10, Math.PI * 1.3), mat('#3a3a44'), { parent: body, p: [0, 0.3, -0.34], r: [0, Math.PI / 2, 0.6] });
+    const neck = group({ parent: d, p: [0, 0.22, 0.2] }); mesh(G.cyl(0.055, 0.07, 0.2, 10), mat(C[1], { rough: 0.9 }), { parent: neck, p: [0, 0.08, 0.02], r: [0.25, 0, 0] });
+    if (kind === 'macho') mesh(G.tor(0.062, 0.012, 6, 14), mat('#fffdf5'), { parent: neck, p: [0, 0.07, 0.02], r: [Math.PI / 2 - 0.25, 0, 0] });
+    const head = group({ parent: neck, p: [0, 0.21, 0.07] }); mesh(G.sph(0.11, 14, 10), mat(C[1], { rough: 0.85, rim: 0.4 }), { parent: head, s: [1, 0.95, 1.05] });
+    mesh(G.box(0.1, 0.03, 0.14, 0.012), mat(C[3], { rough: 0.5 }), { parent: head, p: [0, -0.02, 0.14] }); mesh(G.box(0.085, 0.02, 0.11, 0.008), mat('#d98a2a', { rough: 0.5 }), { parent: head, p: [0, -0.045, 0.12] });
+    for (const sd of [-1, 1]) { mesh(G.sph(0.022, 8, 6), mat('#1f1512', { rough: 0.3 }), { parent: head, p: [sd * 0.075, 0.03, 0.065] }); mesh(G.sph(0.008, 5, 4), mat('#ffffff'), { parent: head, p: [sd * 0.083, 0.04, 0.078] }); if (kind !== 'macho') mesh(G.sph(0.03, 6, 5), mat('#ff9c8e', { transparent: true, opacity: 0.5 }), { parent: head, p: [sd * 0.085, -0.02, 0.05], s: [0.4, 1, 1] }); }
+    const ring = mesh(G.tor(0.3, 0.018, 4, 22), mat('#ffffff', { transparent: true, opacity: 0.5, rough: 1 }), { parent: P, r: [Math.PI / 2, 0, 0], cast: false });
+    return { g: d, body, neck, head, wings, ring, kind, sc, x: 0, z: 0, yaw: 0, dab: 0, dabT: 3 + Math.random() * 6 };
+  };
+  W.ducks.push(Object.assign(duck('macho', 1), { a: 0, r: 1.2 }), Object.assign(duck('hembra', 0.95), { a: 2.4, r: 0.8 }), Object.assign(duck('blanco', 0.9), { a: 4.3, r: 1.5 }));
+  W.ducklings = []; for (let i = 0; i < 6; i++) { const dk = duck('pollo', 0.42); dk.g.visible = dk.ring.visible = false; dk.lag = (i + 1) * 0.55; W.ducklings.push(dk); }
+  W.duckFeedT = 0; W.duckTrail = [];
+  // banco de Don Espino, mirando al estanque
+  bench(15.35, 7.7, -Math.PI / 2); W.benchSeats.splice(-2, 2); W.espinoSeat = { x: 15.35, z: 7.5, yaw: -Math.PI / 2 - 0.15 }; W.duckShore = [1.75, -0.6];
   W.circles.push([12, 8.6, 2.75]); W.pondPos = [12, 8.6];
 
   // ---- mejoras visibles ----
@@ -753,7 +774,10 @@ function home() {
   mesh(G.box(1.0, 1.15, 0.08, 0.03), mat('#e9b949', { rough: 0.35, metal: 0.5 }), { parent: cu, p: [0, 2.12, 0] }); mesh(G.plane(0.82, 0.97), basic('#ffffff', { map: pt }), { parent: cu, p: [0, 2.12, 0.045], cast: false });
   const si = f('sillon', -3.0, 1.2, Math.PI / 2), sm = mat('#8fa8ff', { rough: 1 }); mesh(G.box(1.1, 0.5, 1.0, 0.16), sm, { parent: si, p: [0, 0.3, 0] }); mesh(G.box(1.1, 1.0, 0.3, 0.14), sm, { parent: si, p: [0, 0.75, -0.42] }); for (const sx of [-1, 1]) { mesh(G.box(0.26, 0.5, 0.95, 0.12), sm, { parent: si, p: [sx * 0.55, 0.52, 0.02] }); mesh(G.box(0.2, 0.5, 0.22, 0.09), sm, { parent: si, p: [sx * 0.5, 1.12, -0.36] }); } mesh(G.box(0.7, 0.16, 0.6, 0.07), mat('#f2b84b', { rough: 1 }), { parent: si, p: [0, 0.6, 0.08] });
   const gr = f('gramola', 1.15, -2.72); mesh(G.box(0.7, 0.75, 0.55, 0.05), woodD, { parent: gr, p: [0, 0.38, 0] }); mesh(G.cyl(0.24, 0.24, 0.03, 20), mat('#2a1d1a', { rough: 0.3 }), { parent: gr, p: [0, 0.78, 0.02] }); mesh(G.cyl(0.07, 0.07, 0.035, 12), mat('#e2664f'), { parent: gr, p: [0, 0.785, 0.02] }); const horn = new THREE.ConeGeometry(0.34, 0.6, 16, 1, true); mesh(horn, mat('#e9b949', { rough: 0.3, metal: 0.7, side: THREE.DoubleSide }), { parent: gr, p: [0.25, 1.25, -0.1], r: [0.5, 0, -2.4] }); mesh(G.cyl(0.02, 0.02, 0.4, 6), mat('#e9b949', { metal: 0.7, rough: 0.3 }), { parent: gr, p: [0.26, 0.95, -0.2] });
-  for (const id in F) F[id].visible = false;
+  const ba = f('baul', 1.3, -0.2); mesh(G.box(1.1, 0.5, 0.6, 0.06), woodD, { parent: ba, p: [0, 0.25, 0] }); mesh(G.box(1.14, 0.2, 0.64, 0.1), wood, { parent: ba, p: [0, 0.56, 0] }); for (const sx of [-1, 1]) mesh(G.box(0.08, 0.72, 0.66, 0.02), mat('#e9b949', { metal: 0.6, rough: 0.3 }), { parent: ba, p: [sx * 0.36, 0.34, 0] }); mesh(G.box(0.12, 0.14, 0.04, 0.02), mat('#e9b949', { metal: 0.6, rough: 0.3 }), { parent: ba, p: [0, 0.42, 0.31] });
+  const li = f('libros', -1.9, 2.45, 0); mesh(G.box(1.3, 1.7, 0.4, 0.04), woodD, { parent: li, p: [0, 0.85, 0] }); for (let r2 = 0; r2 < 3; r2++) { mesh(G.box(1.18, 0.05, 0.36, 0.01), wood, { parent: li, p: [0, 0.3 + r2 * 0.5, 0.03] }); for (let b2 = 0; b2 < 7; b2++) mesh(G.box(0.12, 0.3 + (b2 % 3) * 0.05, 0.24, 0.015), mat(['#e2664f', '#6fbfae', '#f2b84b', '#8fa8ff', '#fff6e4', '#c9556b', '#7fae6a'][(b2 + r2 * 2) % 7], { rough: 0.8 }), { parent: li, p: [-0.48 + b2 * 0.16, 0.5 + r2 * 0.5, 0.08], r: [0, 0, b2 === 5 ? 0.25 : 0] }); }
+  const te = f('tetera', 1.2, 2.2); mesh(G.cyl(0.36, 0.36, 0.05, 16), wood, { parent: te, p: [0, 0.55, 0] }); mesh(G.cyl(0.05, 0.07, 0.55, 8), woodD, { parent: te, p: [0, 0.27, 0] }); mesh(G.cyl(0.2, 0.24, 0.04, 12), woodD, { parent: te, p: [0, 0.02, 0] }); mesh(G.sph(0.14, 12, 10), mat('#8fa8ff', { rough: 0.35 }), { parent: te, p: [-0.05, 0.7, 0], s: [1, 0.85, 1] }); mesh(G.tor(0.07, 0.018, 6, 12, Math.PI), mat('#8fa8ff', { rough: 0.35 }), { parent: te, p: [-0.2, 0.7, 0], r: [0, 0, Math.PI / 2] }); mesh(G.cone(0.03, 0.14, 6), mat('#8fa8ff', { rough: 0.35 }), { parent: te, p: [0.11, 0.73, 0], r: [0, 0, -1.1] }); mesh(G.cyl(0.06, 0.045, 0.07, 10), cream, { parent: te, p: [0.17, 0.615, 0.12] });
+  for (const id in F) { F[id].visible = false; F[id].userData.home = [F[id].position.x, F[id].position.z, F[id].rotation.y]; }
   W.home.light = new THREE.PointLight(0xffe2bd, 0, 14, 1.2); W.home.light.position.set(HX, 2.6, HZ + 0.5); scene.add(W.home.light);
   W.zones.home = { b: [56.45, 63.55, -5.6, -0.15], obst: W.home.obst, cam: [58.6, 61.4, -4.2, -2.2], zoom: 0.62, enter: [60, -0.9, Math.PI], back: [12.2, -4.6, -1.2] };
   W.home.st = { cama: [HX + 1.35, HZ - 1.7, Math.PI / 2], lata: [HX - 3.1, HZ - 1.55, Math.PI], vitrina: [HX - 0.6, HZ - 2.1, Math.PI], catalogo: [HX + 2.35, HZ + 1.5, Math.PI / 2], armario: [HX - 2.75, HZ - 0.55, -Math.PI / 2], salir: [HX, HZ + 2.6, 0] };
@@ -781,7 +805,7 @@ function places() {
       for (const sd of [-1, 1]) { const ch = group({ parent: t, p: [sd * 1.0, 0, 0] }); mesh(G.cyl(0.26, 0.26, 0.06, 14), woodD, { parent: ch, p: [0, 0.4, 0] }); for (let i = 0; i < 4; i++) mesh(G.cyl(0.03, 0.03, 0.4, 5), woodD, { parent: ch, p: [Math.cos(i * 1.57 + 0.78) * 0.18, 0.2, Math.sin(i * 1.57 + 0.78) * 0.18] }); mesh(G.box(0.06, 0.5, 0.46, 0.03), woodD, { parent: ch, p: [sd * 0.24, 0.66, 0] }); W.fondaSeats.push([HX + x + sd * 1.0, HZ + z, -sd * Math.PI / 2]); } obst.push([HX + x - 0.75, HZ + z - 0.7, HX + x + 0.75, HZ + z + 0.7]); }
     mesh(G.box(1.5, 0.04, 0.7, 0.02), mat('#7fae6a', { rough: 1 }), { parent: H, p: [0, 0.12, 2.95], cast: false });
     W.fondaLight = new THREE.PointLight(0xffe2bd, 0, 14, 1.2); W.fondaLight.position.set(HX, 2.7, HZ + 0.5); scene.add(W.fondaLight);
-    W.zones.fonda = { b: [HX - 4.4, HX + 4.4, HZ - 0.95, HZ + 2.95], obst, cam: [HX - 1.6, HX + 1.6, HZ - 1.4, HZ + 0.6], zoom: 0.66, enter: [HX, HZ + 2.3, Math.PI], back: [15.3, 4.3, -Math.PI / 2], st: { charca: [HX - 2.1, HZ - 0.85], salir: [HX, HZ + 2.75] }, npc: [HX - 2.1, HZ - 2.5, 0] }; }
+    W.zones.fonda = { b: [HX - 4.4, HX + 4.4, HZ - 0.95, HZ + 2.95], obst, cam: [HX - 1.6, HX + 1.6, HZ - 1.4, HZ + 0.6], zoom: 0.66, enter: [HX, HZ + 2.3, Math.PI], back: [22.0, 4.3, -Math.PI / 2], st: { charca: [HX - 2.1, HZ - 0.85], salir: [HX, HZ + 2.75] }, npc: [HX - 2.1, HZ - 2.5, 0] }; }
   // --- molino ---
   { const HX = -92, HZ = -3, H = group({ parent: scene, p: [HX, 0, HZ] }), obst = [];
     mesh(G.zbox(90, 0.1, 60, 1, 60), mat('#93d46c', { rough: 1, rim: 0 }), { parent: H, p: [0, -0.05, -6], cast: false });
@@ -796,11 +820,29 @@ function places() {
     for (let k = 0; k < 2; k++) { const fx = k ? 5.6 : -5.6; for (let i = 0; i < 8; i++) { mesh(G.box(0.12, 0.8, 0.12, 0.04), cream, { parent: H, p: [fx, 0.4, -3 + i * 0.9] }); } mesh(G.zbox(0.05, 0.08, 6.4, 1, 8), cream, { parent: H, p: [fx, 0.5, 0.1] }); }
     const NW = 900, wh = new THREE.InstancedMesh(G.cone(0.05, 0.9, 5), mat('#f3cf63', { sway: 0.16, rough: 0.9 }), NW), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), rr = rnd(5);
     for (let i = 0; i < NW; i++) { const sd = i % 2 ? 1 : -1; e.set(0, rr() * 6, (rr() - 0.5) * 0.2); q.setFromEuler(e); m4.compose(new THREE.Vector3(HX + sd * (6.4 + rr() * 6), 0.42, HZ - 4 + rr() * 8), q, new THREE.Vector3(1.3, 0.8 + rr() * 0.5, 1.3)); wh.setMatrixAt(i, m4); } wh.frustumCulled = false; scene.add(wh);
-    W.zones.molino = { b: [HX - 5.2, HX + 5.2, HZ - 1.3, HZ + 5.6], obst, cam: [HX - 2.2, HX + 2.2, HZ - 0.4, HZ + 3], zoom: 0.8, enter: [HX, HZ + 4.8, Math.PI], back: [-15.3, 4.3, Math.PI / 2], st: { tejo: [HX + 2.0, HZ + 1.1], salir: [HX, HZ + 5.3] }, npc: [HX + 1.6, HZ + 0.1, 0.4] }; }
+    W.zones.molino = { b: [HX - 5.2, HX + 5.2, HZ - 1.3, HZ + 5.6], obst, cam: [HX - 2.2, HX + 2.2, HZ - 0.4, HZ + 3], zoom: 0.8, enter: [HX, HZ + 4.8, Math.PI], back: [-22.0, 4.3, Math.PI / 2], st: { tejo: [HX + 2.0, HZ + 1.1], salir: [HX, HZ + 5.3] }, npc: [HX + 1.6, HZ + 0.1, 0.4] }; }
+  // --- río ---
+  { const HX = 0, HZ = 92, H = group({ parent: scene, p: [HX, 0, HZ] }), obst = [];
+    mesh(G.zbox(90, 0.1, 60, 1, 60), mat('#93d46c', { rough: 1, rim: 0 }), { parent: H, p: [0, -0.05, 4], cast: false });
+    mesh(G.zbox(90, 0.06, 1.6, 1, 3), mat('#e3d2a4', { rough: 1 }), { parent: H, p: [0, 0.03, -0.8], cast: false });
+    W.river = waterMat('#6cc7ea'); W.river.map.repeat.set(14, 2); mesh(G.zbox(90, 0.04, 9, 1, 10), W.river, { parent: H, p: [0, 0.035, -5.9], cast: false });
+    mesh(G.zbox(90, 0.1, 30, 1, 30), mat('#8ccf68', { rough: 1, rim: 0 }), { parent: H, p: [0, 0.03, -25.4], cast: false });
+    for (let i = 0; i < 6; i++) { mesh(G.box(1.5, 0.08, 0.46, 0.03), wood, { parent: H, p: [0, 0.26, -0.5 - i * 0.5], r: [0, (i % 2 ? 0.03 : -0.03), 0] }); } for (const sx of [-1, 1]) for (const z of [-0.6, -1.9, -3.1]) mesh(G.cyl(0.07, 0.07, 0.9, 7), woodD, { parent: H, p: [sx * 0.72, 0.1, z] });
+    for (let i = 0; i < 14; i++) { const x = -9 + i * 1.4 + (i % 3) * 0.3; if (Math.abs(x) < 1.4) continue; mesh(G.cyl(0.02, 0.03, 1 + (i % 3) * 0.3, 5), mat('#6aa84f', { sway: 0.06 }), { parent: H, p: [x, 0.5, -1.3 - (i % 2) * 0.3] }); if (i % 2) mesh(G.cap(0.05, 0.2, 6), mat('#8a5a34', { sway: 0.06 }), { parent: H, p: [x, 1.05 + (i % 3) * 0.14, -1.3 - (i % 2) * 0.3] }); }
+    for (const [x, z, sc] of [[-3.2, -3.6, 0.5], [3.8, -5.4, 0.7], [-5.5, -6.6, 0.45], [5.6, -2.9, 0.4]]) mesh(blob((bx, by, bz) => 1 + smoothNoise(bx * 2, by * 2, bz * 2) * 0.18, { ws: 12, hs: 8 }), mat('#b9b3a6', { rough: 1 }), { parent: H, p: [x, 0.05, z], s: [sc, sc * 0.6, sc * 0.8] });
+    for (const [x, z, sc] of [[-2.2, -4.8, 0.45], [2.4, -3.4, 0.38], [1.2, -7.2, 0.5]]) { mesh(G.cyl(sc, sc, 0.02, 14), mat('#5cb85c'), { parent: H, p: [x, 0.02, z], cast: false }); mesh(G.sph(0.08, 8, 6), mat('#ffb3c9'), { parent: H, p: [x + 0.1, 0.07, z], s: [1, 0.7, 1] }); }
+    W.fishSh = []; for (let i = 0; i < 4; i++) W.fishSh.push({ m: mesh(G.sph(1, 8, 6), mat('#2f6f8f', { transparent: true, opacity: 0.45, rough: 1 }), { parent: H, p: [0, 0.005, -5], s: [0.3, 0.01, 0.1], cast: false }), a: i * 1.7, r: 1.5 + i * 0.9, z: -4 - i * 0.9 });
+    W.bobber = group({ parent: H, p: [1.3, 0.1, -4.4] }); mesh(G.sph(0.09, 10, 8), mat('#e2664f', { rough: 0.4 }), { parent: W.bobber }); mesh(G.sph(0.091, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat('#fff6e4', { rough: 0.4 }), { parent: W.bobber }); W.bobber.visible = false;
+    const bn = group({ parent: H, p: [3.6, 0, 1.4] }); for (let i = 0; i < 3; i++) mesh(G.box(1.5, 0.06, 0.15, 0.025), wood, { parent: bn, p: [0, 0.46, -0.16 + i * 0.17] }); for (const sx of [-1, 1]) mesh(G.box(0.06, 0.46, 0.45, 0.02), iron, { parent: bn, p: [sx * 0.62, 0.23, -0.02] });
+    mesh(G.box(0.5, 0.36, 0.36, 0.05), mat('#9ad1c0', { rough: 0.6 }), { parent: H, p: [1.3, 0.18, 0.5] }); mesh(G.tor(0.16, 0.02, 6, 14, Math.PI), mat('#4a4654'), { parent: H, p: [1.3, 0.36, 0.5] });
+    obst.push([HX - 30, HZ - 4, HX - 0.75, HZ - 0.35], [HX + 0.75, HZ - 4, HX + 30, HZ - 0.35], [HX + 2.8, HZ + 1.0, HX + 4.4, HZ + 1.75]);
+    tree(HX - 4.6, HZ + 1.8, 1.45, 'alamo', 61); tree(HX + 6.4, HZ + 3.4, 1.2, 'alamo', 62); tree(HX - 7.5, HZ + 4.6, 1.1, 'naranjo', 63);
+    W.zones.rio = { b: [HX - 8, HX + 8, HZ - 3.25, HZ + 5.6], obst, cam: [HX - 3, HX + 3, HZ - 2.2, HZ + 2.4], zoom: 0.78, enter: [HX, HZ + 4.8, Math.PI], back: [2.0, 12.3, Math.PI], st: { muelle: [HX, HZ - 2.9], salir: [HX, HZ + 5.3] }, bob: [HX + 1.3, HZ - 4.4] }; }
   // indicadores en los dos extremos de la calle
-  for (const [x, z, txt, ry] of [[15.4, 2.4, 'Fonda  ›', -0.3], [-15.4, 6.3, '‹  Molino', 0.3]]) { const g = group({ parent: scene, p: [x, 0, z], r: [0, ry, 0] }); mesh(G.cyl(0.06, 0.08, 1.9, 6), mat('#8f6a4a'), { parent: g, p: [0, 0.95, 0] }); const tx = canvasTex(256, 96, (c) => { c.fillStyle = '#fff3d8'; c.beginPath(); c.roundRect(4, 4, 248, 88, 20); c.fill(); c.strokeStyle = '#c98a5a'; c.lineWidth = 8; c.stroke(); c.fillStyle = '#7a4a2a'; c.font = '800 46px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.fillText(txt, 128, 64); }); mesh(G.box(1.2, 0.46, 0.06, 0.02), mat('#c98a5a'), { parent: g, p: [0, 1.7, 0] }); mesh(G.plane(1.14, 0.42), basic('#ffffff', { map: tx }), { parent: g, p: [0, 1.7, 0.035], cast: false }); W.circles.push([x, z, 0.25]); }
+  for (const [x, z, txt, ry] of [[15.4, 2.4, 'Fonda  ›', -0.3], [-15.4, 6.3, '‹  Molino', 0.3], [22.4, 6.3, 'Fonda  ›', -0.3], [-22.4, 2.4, '‹  Molino', 0.3], [3.3, 12.4, 'Al río', 0]]) { const g = group({ parent: scene, p: [x, 0, z], r: [0, ry, 0] }); mesh(G.cyl(0.06, 0.08, 1.9, 6), mat('#8f6a4a'), { parent: g, p: [0, 0.95, 0] }); const tx = canvasTex(256, 96, (c) => { c.fillStyle = '#fff3d8'; c.beginPath(); c.roundRect(4, 4, 248, 88, 20); c.fill(); c.strokeStyle = '#c98a5a'; c.lineWidth = 8; c.stroke(); c.fillStyle = '#7a4a2a'; c.font = '800 46px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.fillText(txt, 128, 64); }); mesh(G.box(1.2, 0.46, 0.06, 0.02), mat('#c98a5a'), { parent: g, p: [0, 1.7, 0] }); mesh(G.plane(1.14, 0.42), basic('#ffffff', { map: tx }), { parent: g, p: [0, 1.7, 0.035], cast: false }); W.circles.push([x, z, 0.25]); }
 }
 /** Estilo del obrador tras la reforma. */
+export function setDucklings(n) { W.ducklings.forEach((d, i) => { d.g.visible = d.ring.visible = i < n; }); }
 export function setStyle(st) { const P = { miel: ['#ffffff', '#9fc4e8', '#ffffff'], mar: ['#cfe6f7', '#6f9fd1', '#eef6ff'], fresa: ['#ffd9dc', '#f2a3b3', '#fff1f1'], menta: ['#d6f2e2', '#7fbfa6', '#f1fff6'] }[st] || null; if (!P) return; W.floorMat.color.set(P[0]); W.wainM.color.set(P[1]); W.wallMat.color.set(P[2]); }
 
 // ---------- API ----------
@@ -816,6 +858,8 @@ export function setUpgrade(id, on) {
   if (id === 'fuente') { W.fountainWet.visible = on; W.fountainDry.visible = !on; }
   if (id === 'horno2') { W.mouth2.visible = on; W.logs.visible = !on; }
   if (id === 'miga') W.stool.visible = on;
+  if (id === 'huerto') { W.binMat.color.set(on ? '#6fa878' : '#8f6a4a'); W.binLeaf.visible = on; }
+  if (id === 'reforma' && !on) { W.floorMat.color.set('#ffffff'); W.wallMat.color.set('#ffffff'); }
   if (id === 'reforma') { W.floorMat.map = on ? T.tile : T.wood; W.wallMat.map = on ? T.wall2 : T.wall; W.wainM.color.set(on ? '#9fc4e8' : '#a8d0b0'); W.floorMat.needsUpdate = W.wallMat.needsUpdate = true; }
   if (id === 'molino') W.millFast = on;
 }
@@ -836,11 +880,25 @@ export function updateWorld(dt, hour, o = {}) {
   W.sails.rotation.z -= dt * (o.wind ? 1.1 : 0.45) * (W.millFast ? 1.8 : 1);
   W.sign.rotation.z = Math.sin(t * 1.3) * (o.wind ? 0.12 : 0.04);
   for (const w of [W.water, W.pond]) { w.map.offset.x = t * 0.03; w.map.offset.y = Math.sin(t * 0.5) * 0.04; }
-  for (const d of W.ducks) { d.a += dt * 0.25; d.g.position.set(Math.cos(d.a) * d.r * 1.3, 0.02 + Math.sin(t * 3 + d.r) * 0.012, Math.sin(d.a) * d.r * 0.9); d.g.rotation.y = -d.a + Math.PI; d.g.rotation.z = Math.sin(t * 2 + d.r) * 0.05; }
+  W.duckFeedT = Math.max(0, W.duckFeedT - dt);
+  W.ducks.forEach((d, i) => {
+    d.a += dt * (0.22 + i * 0.03); let tx = Math.cos(d.a) * d.r * 1.3, tz = Math.sin(d.a) * d.r * 0.9;
+    if (W.duckFeedT > 0) { tx = W.duckShore[0] - (i % 2) * 0.55; tz = W.duckShore[1] - 0.5 + i * 0.55; }
+    const k = 1 - Math.exp(-dt * (W.duckFeedT > 0 ? 1.6 : 3)), ox = d.x, oz = d.z; d.x += (tx - d.x) * k; d.z += (tz - d.z) * k;
+    const mv = Math.hypot(d.x - ox, d.z - oz) / Math.max(dt, 0.001); if (mv > 0.05) d.yaw = Math.atan2(d.x - ox, d.z - oz);
+    d.dabT -= dt; if (d.dabT < 0) { d.dabT = 4 + Math.random() * 7; d.dab = W.duckFeedT > 0 ? 0.7 : 1.5; } d.dab = Math.max(0, d.dab - dt);
+    const dk = d.dab > 0 ? Math.sin(Math.min(1, (W.duckFeedT > 0 ? 0.7 : 1.5) - d.dab < 0.3 ? ((W.duckFeedT > 0 ? 0.7 : 1.5) - d.dab) / 0.3 : d.dab / 0.3) * Math.PI / 2) : 0;
+    d.g.position.set(d.x, 0.06 + Math.sin(t * 3 + i) * 0.012, d.z); d.g.rotation.y += (((d.yaw - d.g.rotation.y + Math.PI * 3) % (Math.PI * 2)) - Math.PI) * (1 - Math.exp(-dt * 4)); d.g.rotation.x = dk * 1.15; d.g.rotation.z = Math.sin(t * 2 + i) * 0.05;
+    d.neck.rotation.x = Math.sin(t * 1.3 + i * 2) * 0.12 - dk * 0.4; d.head.rotation.y = Math.sin(t * 0.7 + i) * 0.5; d.wings.forEach((w, q) => w.rotation.z = (q ? 1 : -1) * (-0.25 + (W.duckFeedT > 6.5 ? Math.sin(t * 30) * 0.7 : 0)));
+    d.ring.position.set(d.x, 0.092, d.z); const rs = 0.6 + ((t * 0.7 + i * 0.37) % 1) * 1.0; d.ring.scale.setScalar(rs * d.sc); d.ring.material.opacity = 0.5 * (1 - ((t * 0.7 + i * 0.37) % 1));
+    if (i === 1) { W.duckTrail.unshift([d.x, d.z, d.yaw]); if (W.duckTrail.length > 400) W.duckTrail.pop(); }
+  });
+  W.ducklings.forEach((d, i) => { if (!d.g.visible) return; const p = W.duckTrail[Math.min(W.duckTrail.length - 1, Math.round(d.lag / Math.max(dt, 0.016)))] || [0, 0, 0]; d.g.position.set(p[0] + Math.sin(i * 2.1) * 0.12, 0.07 + Math.sin(t * 5 + i) * 0.012, p[1] + Math.cos(i * 1.7) * 0.12); d.g.rotation.y = p[2]; d.head.rotation.y = Math.sin(t * 1.7 + i) * 0.6; d.ring.position.set(d.g.position.x, 0.092, d.g.position.z); const rs = 0.3 + ((t + i * 0.3) % 1) * 0.4; d.ring.scale.setScalar(rs); d.ring.material.opacity = 0.4 * (1 - ((t + i * 0.3) % 1)); });
+  if (W.binOpen > 0) { W.binOpen -= dt; } W.binLid.rotation.x += ((W.binOpen > 0 ? -1.5 : 0) - W.binLid.rotation.x) * (1 - Math.exp(-dt * 14));
   for (const m of W.lamps) m.emissiveIntensity = 0.25 + n * 2.6;
   for (const m of W.windows) m.emissiveIntensity = n * 1.8;
   for (let i = 0; i < W.lanterns.length; i += 2) { W.lanterns[i].emissiveIntensity = 0.3 + n * 2.2 * (0.85 + Math.sin(t * 2 + i) * 0.15); W.lanterns[i + 1].rotation.z = Math.sin(t * 1.6 + i) * (o.wind ? 0.25 : 0.1); }
-  W.home.light.intensity = o.zone === 'home' ? 1.0 + n * 2.6 : 0; W.fondaLight.intensity = o.zone === 'fonda' ? 1.2 + n * 2.6 : 0; W.sails2.rotation.z -= dt * 0.6;
+  W.home.light.intensity = o.zone === 'home' ? 1.0 + n * 2.6 : 0; W.fondaLight.intensity = o.zone === 'fonda' ? 1.2 + n * 2.6 : 0; W.sails2.rotation.z -= dt * 0.6; W.river.map.offset.x = t * 0.06; for (const f of W.fishSh) { f.a += dt * 0.5; f.m.position.set(Math.sin(f.a) * f.r * 2.4, 0.005, f.z + Math.cos(f.a * 0.7) * 0.5); f.m.rotation.y = Math.cos(f.a) > 0 ? 0 : Math.PI; }
   W.fermGlow.emissiveIntensity = 0.3 + Math.sin(t * 2) * 0.05;
   W.fermDoor.rotation.y += ((o.fermOpen ? 1.75 : 0) - W.fermDoor.rotation.y) * (1 - Math.exp(-dt * 12)); W.fermDial.rotation.z = -0.9 + Math.sin(t * 0.7) * 0.08 - (o.fermBusy ? 0.7 : 0);
   for (const fs of W.flames) { const pw = (o.fire ?? 0.6) * (fs.lower ? (o.baking?.[1] ? 1.15 : 0.85) : (o.baking?.[0] ? 1.15 : 0.9)); fs.list.forEach((fl, i) => { const k = 0.25 + pw * (0.85 + Math.sin(t * 11 + i * 2.1) * 0.22 + Math.sin(t * 23 + i) * 0.12); fl.scale.set(0.7 + pw * 0.5, Math.max(0.05, k * 1.5), 0.7 + pw * 0.5); fl.rotation.z = Math.sin(t * 7 + i) * 0.14; }); }
@@ -881,6 +939,6 @@ export function collide(x, z, r = 0.3, zone = null) {
     }
     for (const c of [...W.circles, ...(W.up.farolillos.visible ? W.condCircles.farolillos : [])]) { const dx = x - c[0], dz = z - c[1], d = Math.hypot(dx, dz), m = r + c[2]; if (d < m && d > 0.0001) { x = c[0] + dx / d * m; z = c[1] + dz / d * m; } }
   }
-  x = Math.max(-17, Math.min(17, x)); z = Math.max(-5.6, Math.min(11.5, z));
+  x = Math.max(-23.6, Math.min(23.6, x)); z = Math.max(-5.6, Math.min(13.8, z));
   return [x, z];
 }
