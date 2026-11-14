@@ -63,6 +63,8 @@ const FX = {
   day: () => [[69, 0], [72, 0.16], [77, 0.32], [81, 0.56]].forEach(([m, d]) => tone({ f: M(m), t: ac.currentTime + d, d: 0.9, g: 0.12 })),
 };
 export function sfx(name) { if (!ac || muted) return; try { FX[name]?.(); } catch (e) { /* sin sonido */ } }
+const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+export function note(i, g = 0.16) { if (!ac || muted) return; const f = M(72 + PENTA[Math.min(PENTA.length - 1, i)]); tone({ f, d: 0.35, g, type: 'triangle' }); tone({ f: f * 2, d: 0.18, g: g * 0.35 }); }
 export function blip(pitch = 1) { if (!ac || muted) return; tone({ f: (380 + Math.random() * 90) * pitch, to: (430 + Math.random() * 60) * pitch, d: 0.055, g: 0.09, type: 'triangle', lp: 2600 }); }
 
 // ---------- música ----------

@@ -48,7 +48,7 @@ export const REP = [
 export const NEIGH = {
   lana: {
     n: 'Doña Lana', lvl: 0, gives: 'mollete', favs: ['mollete', 'hogaza', 'brioche'], pitch: 1.25,
-    look: { sp: 'oveja', fur: '#fbf3e4', skin: '#f0d5c0', shirt: '#c96f7c', pat: 'punto', acc: 'gafas' },
+    look: { lash: true, sp: 'oveja', fur: '#fbf3e4', skin: '#f0d5c0', shirt: '#c96f7c', pat: 'punto', acc: 'gafas' },
     hola: ['¡Ay, hija, que el horno echa humo otra vez!', 'Soy Lana, la de las bufandas. Llevo años comprando pan de gasolinera. No se lo cuentes a nadie.'],
     gracias: ['Esto sí que es pan, criatura.', 'Me llevo el calorcito en el bolso.', 'Te tejo unas manoplas para el horno, ya verás.', 'Qué manos tienes, Pan.'],
     charla: ['Estoy tejiendo una bufanda para el espantapájaros. No me mires así, pasa frío.', 'De joven bailé en la Hornada con un pastor de Villaseca. Bailaba fatal. Me casé con él.', 'Si te duelen las manos de amasar, agua tibia y sal. Receta de tu abuela, no mía.'],
@@ -56,7 +56,7 @@ export const NEIGH = {
   },
   tejo: {
     n: 'Tejo', lvl: 0, gives: 'centeno', favs: ['centeno', 'hogaza', 'nueces'], pitch: 0.7,
-    look: { sp: 'tejon', fur: '#8d8f96', skin: '#f4f1ea', shirt: '#5d7a55', pat: 'cuadros', acc: 'gorra' },
+    look: { brow: 'serio', sp: 'tejon', fur: '#8d8f96', skin: '#f4f1ea', shirt: '#5d7a55', pat: 'cuadros', acc: 'gorra' },
     hola: ['Hmf. Así que tú eres la nieta.', 'Tejo. Llevo el molino. Bueno, lo llevaba cuando había a quién molerle.'],
     gracias: ['Hmf. No está mal.', 'Corteza seria. Bien.', 'El molino vuelve a tener trabajo, chiquilla.', 'Tu abuela lo habría dejado un minuto más. Pero vale.'],
     charla: ['El molino cruje. Buena señal. Lo que no cruje está muerto o es nuevo.', 'Tu abuela me debía una partida de dominó. Te la apunto a ti.', 'Hmf. El pueblo huele distinto desde que encendiste el horno. Mejor. No se lo digas a nadie.'],
@@ -80,7 +80,7 @@ export const NEIGH = {
   },
   pua: {
     n: 'Púa', lvl: 2, gives: 'caracola', favs: ['caracola', 'brioche', 'mollete'], pitch: 1.9,
-    look: { sp: 'erizo', fur: '#8a6a55', skin: '#f6dcc0', shirt: '#ffd166', pat: 'punto', acc: 'lazo' },
+    look: { lash: true, sp: 'erizo', fur: '#8a6a55', skin: '#f6dcc0', shirt: '#ffd166', pat: 'punto', acc: 'lazo' },
     hola: ['Hola. Tengo seis años y medio y dos monedas.', 'Me llamo Púa. No pincho si no me asustan.'],
     gracias: ['¡Hala!', 'Me lo voy a comer por el borde primero.', 'Hoy no comparto. Bueno, un poquito.', 'Eres la mayor que mejor me cae.'],
     charla: ['He contado las baldosas de tu porche. Son muchas. Me he perdido en la treinta.', 'Mi abuelo dice que tu abuela regañaba con cariño. ¿Tú también sabes?', 'Si te doy un dibujo, ¿me das el centro de una caracola?'],
@@ -88,7 +88,7 @@ export const NEIGH = {
   },
   zarza: {
     n: 'Zarza', lvl: 2, gives: 'nueces', favs: ['nueces', 'semillas', 'barra'], pitch: 1.1,
-    look: { sp: 'zorro', fur: '#e58b4a', skin: '#fff6ea', shirt: '#5873b8', pat: 'liso', acc: 'cartera' },
+    look: { lash: true, iris: '#7a5a2a', sp: 'zorro', fur: '#e58b4a', skin: '#fff6ea', shirt: '#5873b8', pat: 'liso', acc: 'cartera' },
     hola: ['Carta para… ah, no, hoy vengo a comprar.', 'Zarza, cartera de Migas y de cuatro pueblos más. Conozco todos los caminos y casi todos los perros.'],
     gracias: ['Esto viaja conmigo hasta el último buzón.', 'Certificado y con acuse de recibo.', 'Hoy reparto de buen humor.', 'Te traigo saludos de tres pueblos. Y pedidos.'],
     charla: ['Traigo cartas de cuatro pueblos y en las cuatro preguntan por tu pan.', 'El buzón de tu puerta tiene nido de gorriones. Lo abro con cuidado.', 'Ruta larga hoy. Menos mal que sé dónde desayunar.'],
@@ -96,7 +96,7 @@ export const NEIGH = {
   },
   ulular: {
     n: 'Don Ulular', lvl: 3, gives: 'brioche', favs: ['brioche', 'centeno', 'caracola'], pitch: 0.8,
-    look: { sp: 'buho', fur: '#a98467', skin: '#f3e3c8', shirt: '#7b5ea7', pat: 'rombos', acc: 'pajarita' },
+    look: { brow: 'sabio', iris: '#c98a2a', sp: 'buho', fur: '#a98467', skin: '#f3e3c8', shirt: '#7b5ea7', pat: 'rombos', acc: 'pajarita' },
     hola: ['Buenas tardes. O días. A mi edad uno ya ulula a cualquier hora.', 'Fui el maestro de este pueblo. A tu abuela le puse un diez en fracciones: partía el pan en partes exactamente iguales.'],
     gracias: ['Sobresaliente.', 'Un pan con muy buena caligrafía.', 'Notable alto. El alto es por la corteza.', 'Esto merece matrícula.'],
     charla: ['De noche oigo el horno enfriarse. Hace tic, tic. Es un sonido muy bien educado.', 'Pon atención a la corteza, Pan. La corteza es la letra; la miga, lo que quiere decir.', 'He corregido el cartel de la plaza. Tenía una falta. La puse yo hace cuarenta años.'],
@@ -122,7 +122,7 @@ export const UPG = {
 };
 export const UPG_ORDER = ['bandeja', 'jardin', 'fermenta', 'huerto', 'horno2', 'reforma', 'molino', 'miga', 'terraza', 'puesto', 'farolillos', 'fuente'];
 export const CAPS = ['Primeros arreglos', 'El obrador crece', 'La plaza revive'];
-export const PIPA_LOOK = { sp: 'raton', fur: '#d9b08a', skin: '#fff3e2', shirt: '#6fbfae', pat: 'punto', acc: 'lazo' };
+export const PIPA_LOOK = { lash: true, sp: 'raton', fur: '#d9b08a', skin: '#fff3e2', shirt: '#6fbfae', pat: 'punto', acc: 'lazo' };
 export const PIPA = {
   hola: ['¡La nieta de Hogaza! Soy Pipa, la del colmado. Dime qué te subo.'],
   abre: ['¿Qué te pongo hoy, Pan?', '¡Buenas! Recién repuesto todo.', 'Pide por esa boquita.', 'Hoy el género ha venido precioso.'],

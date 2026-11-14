@@ -8,7 +8,9 @@ import { ING, BREADS, BREAD_ORDER, PRICE_LV, REP, NEIGH, NEIGH_ORDER, HEART_AT, 
 import { renderExtras } from './icons.js';
 import { logoURL } from './logo.js';
 import { ui, img, coin, stars, ingChip, $, ICON, XI } from './ui.js';
-import { initAudio, resumeAudio, sfx, blip, music, toggleMute } from './audio.js';
+import { initAudio, resumeAudio, sfx, blip, note, music, toggleMute } from './audio.js';
+import { DOUGH_TINT } from './breads.js';
+import { toScreen } from './gfx.js';
 
 const Q = new URLSearchParams(location.search), TEST = Q.has('test');
 const SAVE = 'pantastic-v1';
@@ -50,7 +52,7 @@ function startDay(first = false) {
   for (const s of [...W.fermSlots, ...W.ovenSlots]) s.holder.clear();
   if (R) { for (const c of R.cust) scene.remove(c.ch.root); for (const c of R.stroll) scene.remove(c.ch.root); }
   for (const s of W.cartSlots) s.holder.clear();
-  R = { time: 7 * 60, shelf: {}, carry: null, ferm: [null, null, null], oven: [null, null], cart: [null, null, null], reveal: [], fire: 0.55, brb: false, stroll: [], chatted: {}, finds: [], mail: null, chop: 0, disc: 1, cust: [], spawns: [], slots: [null, null, null, null], waits: [], weather: wk, antojo, market, wd, open: false, ended: false, today: { sold: 0, income: 0, tips: 0, spent: 0, lost: 0, rep: 0, by: {} }, migaT: 0, leafT: 0 };
+  R = { time: 7 * 60, shelf: {}, carry: null, ferm: [null, null, null], oven: [null, null], cart: [null, null, null], reveal: [], fire: 0.7, brb: false, stroll: [], chatted: {}, finds: [], mail: null, chop: 0, disc: 1, cust: [], spawns: [], slots: [null, null, null, null], waits: [], weather: wk, antojo, market, wd, open: false, ended: false, today: { sold: 0, income: 0, tips: 0, spent: 0, lost: 0, rep: 0, by: {} }, migaT: 0, leafT: 0 };
   setCarry(null); refreshBaskets();
   // llegadas
   const L = lvl();
@@ -147,22 +149,61 @@ function openRecipes() {
   sfx('page');
 }
 function startKnead(id) {
-  for (const [k, n] of Object.entries(BREADS[id].ing)) S.ing[k] -= n;
-  K = { id, beat: 0, t: -0.5, scores: [], n: 4, done: 0 }; mode = 'knead';
-  pan.goto = { x: -0.74, z: -4.82, yaw: Math.PI / 2 }; pan.act('knead');
-  W.dough.visible = true; W.dough.scale.setScalar(0.6); ui.knead(true, K.n); cam.zoomTo = 0.44; cam.pitchTo = 0.3; sfx('poof'); burst('flour', ...W.doughWorld, 10);
+  const ing = Object.entries(BREADS[id].ing); for (const [k, n] of ing) S.ing[k] -= n;
+  K = { id, phase: 'pour', beat: 0, t: 0, scores: [], n: 6, done: 0, combo: 0, hold: 0, holding: false, sx: new Spring(1, 200, 11), sz: new Spring(1, 200, 11) }; mode = 'knead';
+  pan.goto = { x: -0.74, z: -4.72, yaw: 1.0 }; pan.act('knead');
+  W.dough.visible = true; W.dough.scale.setScalar(0.05); W.dough.material.color.set(DOUGH_TINT[id] || '#f6e8cb');
+  document.body.classList.add('kneading');
+  ui.knead(true, K.n, 'Al montón: ' + ing.map(([k]) => ING[k].n.toLowerCase().replace('harina de ', '').replace('harina ', '')).join(', ')); cam.zoomTo = 0.42; cam.pitchTo = 0.32;
+  // los ingredientes saltan de la despensa a la mesa
+  const a0 = toScreen(6.0, 1.8, -2.2);
+  ing.forEach(([k], i) => { const b = toScreen(W.doughWorld[0], W.doughWorld[1], W.doughWorld[2]); ui.fly(XI.ing[k], { x: innerWidth * 0.88, y: innerHeight * (0.3 + i * 0.08) }, { x: innerWidth * 0.5, y: innerHeight * 0.42 }, 620, i * 190); setTimeout(() => { if (!K) return; sfx('poof'); note(i); burst('flour', ...W.doughWorld, 9); W.dough.scale.setScalar(0.2 + (i + 1) / ing.length * 0.4); doughSq.kick(-5); cam.shake = 0.2; }, 620 + i * 190); });
+  K.pourEnd = 0.9 + ing.length * 0.19;
 }
-function kneadHit(miss) {
-  const err = Math.abs(K.t - 0.72), sc = miss ? 0.1 : err < 0.075 ? 1 : err < 0.17 ? 0.7 : 0.35, gr = sc === 1 ? 'p' : sc === 0.7 ? 'g' : 'm';
-  K.scores.push(sc); ui.kneadHit(K.beat, gr); sfx('squish'); sfx(gr === 'p' ? 'perfect' : gr === 'g' ? 'good' : 'meh');
-  doughSq.kick(gr === 'p' ? -9 : -6); burst('flour', ...W.doughWorld, gr === 'p' ? 14 : 6); if (gr === 'p') { burst('spark', ...W.doughWorld, 6); cam.shake = 0.35; }
-  K.beat++; K.t = -0.3; W.dough.scale.setScalar(0.6 + K.beat * 0.1);
-  if (K.beat >= K.n) K.done = 0.0001;
+function kneadKey(k) {
+  if (!K || K.phase !== 'beat' || K.t < 0.15) return;
+  const side = K.beat % 2 ? 'd' : 'a', hit = k === 'a' || k === 'arrowleft' ? 'a' : k === 'd' || k === 'arrowright' ? 'd' : k === 'e' || k === ' ' ? 'e' : null; if (!hit) return;
+  document.querySelector('.k-hand.' + (side === 'a' ? 'l' : 'r')).animate([{ transform: 'scale(.8)' }, { transform: 'scale(1.18)' }], { duration: 160 });
+  kneadHit(false, hit === side ? 0 : hit === 'e' ? 1 : 2);
+}
+function kneadHit(miss, wrong = 0) {
+  const side = K.beat % 2 ? 'd' : 'a', err = Math.abs(K.t - 0.72);
+  let sc = miss || wrong === 2 ? 0.1 : err < 0.08 ? 1 : err < 0.18 ? 0.7 : 0.35; if (wrong === 1) sc = Math.min(sc, 0.7);
+  const gr = sc === 1 ? 'p' : sc === 0.7 ? 'g' : 'm';
+  K.combo = gr === 'm' ? 0 : K.combo + 1; K.scores.push(sc); ui.kneadHit(K.beat, gr, side, K.combo); sfx('squish'); if (gr === 'm') sfx('meh'); else note(K.combo + (gr === 'p' ? 1 : 0));
+  // la masa se estira hacia la mano que empuja y vuelve
+  (side === 'a' ? K.sx : K.sz).kick(gr === 'p' ? 11 : 7); doughSq.kick(gr === 'p' ? -10 : -6); pan.pop(gr === 'p' ? 3 : 1.5);
+  burst('flour', W.doughWorld[0] + (side === 'a' ? -0.25 : 0.25), W.doughWorld[1], W.doughWorld[2], gr === 'p' ? 14 : 6);
+  if (gr === 'p') { burst('spark', ...W.doughWorld, 8); cam.shake = 0.4; } else cam.shake = 0.15;
+  if (K.combo >= 3 && gr !== 'm') ui.float(`¡×${K.combo}!`, W.doughWorld[0], W.doughWorld[1] + 0.5, W.doughWorld[2], 'star');
+  K.beat++; K.t = -0.22;
+  if (K.beat >= K.n) { K.phase = 'hold'; K.t = 0; ui.kneadHoldMode(); ui.kneadTitle('Bolea la masa: mantén E y suelta en el dorado'); }
+}
+function kneadRelease() {
+  const e = Math.abs(K.hold - 0.79), sc = e < 0.09 ? 1 : e < 0.2 ? 0.7 : 0.35; K.holdScore = sc; K.phase = 'out'; K.t = 0;
+  ui.kneadWord(sc === 1 ? '¡Bola perfecta!' : sc === 0.7 ? 'Bien boleada' : K.hold > 0.9 ? 'Se pasó de vueltas' : 'Le faltaba un poco'); sfx(sc === 1 ? 'perfect' : sc === 0.7 ? 'good' : 'meh');
+  doughSq.kick(sc === 1 ? 12 : 6); burst('flour', ...W.doughWorld, 16); if (sc === 1) { burst('spark', ...W.doughWorld, 18); burst('confetti', W.doughWorld[0], W.doughWorld[1] + 0.3, W.doughWorld[2], 14); cam.shake = 0.5; }
+}
+function updateKnead(dt) {
+  doughSq.step(Math.min(dt, 0.03)); K.sx.step(Math.min(dt, 0.03)); K.sz.step(Math.min(dt, 0.03));
+  const sq = clamp(doughSq.v, 0.45, 1.5), ex = clamp(K.sx.v, 0.6, 1.9), ez = clamp(K.sz.v, 0.6, 1.9);
+  if (K.phase === 'pour') { K.t += dt; ui.kneadRing(0, null); if (K.t > K.pourEnd) { K.phase = 'beat'; K.t = -0.5; ui.kneadTitle('¡Amasa! Empuja con A y con D cuando el aro toque la masa'); } const b = W.dough.scale.x; W.dough.scale.set(b, b * sq, b); return; }
+  const base = 0.62 + Math.min(K.beat, K.n) * 0.045;
+  if (K.phase === 'beat') {
+    K.t += dt / 0.85; ui.kneadRing(Math.max(0, K.t), K.beat % 2 ? 'd' : 'a'); if (K.t > 1.12) kneadHit(true);
+    W.dough.scale.set(base * ex / Math.sqrt(sq), base * sq / Math.sqrt(ex * ez), base * ez / Math.sqrt(sq)); W.dough.rotation.y += dt * 0.6;
+  } else if (K.phase === 'hold') {
+    const down = keys.has('e') || keys.has(' ');
+    if (down) { if (!K.holding) { K.holding = true; sfx('whoosh'); } K.hold += dt / 1.5; W.dough.rotation.y += dt * (4 + K.hold * 14); if (Math.random() < dt * 14) burst('flour', ...W.doughWorld, 1); if (Math.floor(K.hold * 12) !== Math.floor((K.hold - dt / 1.5) * 12)) sfx('tick'); }
+    ui.kneadHold(K.hold); const r = base * (1 - K.hold * 0.12); W.dough.scale.set(r / Math.sqrt(sq), r * sq * (1 + K.hold * 0.5), r / Math.sqrt(sq));
+    if ((K.holding && !down) || K.hold > 1.06) kneadRelease();
+  } else { K.t += dt; W.dough.rotation.y += dt * 2; const r = base * 0.9; W.dough.scale.set(r / Math.sqrt(sq), r * sq * 1.4, r / Math.sqrt(sq)); if (K.t > 0.9) endKnead(); }
 }
 function endKnead() {
-  const q = K.scores.reduce((a, b) => a + b, 0) / K.n;
-  ui.knead(false); W.dough.visible = false; pan.action = null; cam.zoomTo = 0.72; cam.yawTo = 0; cam.pitchTo = 0; mode = 'play';
-  setCarry({ id: K.id, n: batchN(), stage: 'dough', knead: q }); pan.pop(4); sfx('pick');
+  const q = (K.scores.reduce((a, b) => a + b, 0) / K.n) * 0.7 + K.holdScore * 0.3;
+  document.body.classList.remove('kneading');
+  ui.knead(false); W.dough.visible = false; W.dough.rotation.y = 0; pan.action = null; cam.zoomTo = 0.72; cam.yawTo = 0; cam.pitchTo = 0; mode = 'play';
+  setCarry({ id: K.id, n: batchN(), stage: 'dough', knead: q }); pan.pop(4); sfx('pick'); burst('flour', pan.x, 1.2, pan.z + 0.4, 10);
   ui.toast(`<img src="${ICON._masa}" alt="">` + (q > 0.85 ? '¡Masa de campeonato!' : q > 0.55 ? 'Buena masa' : 'Masa algo vaga… pero sirve'), q > 0.85 ? 'gold' : '');
   if (S.tut === 0) S.tut = 1; K = null;
 }
@@ -248,7 +289,9 @@ function showWant(c) {
   c.bub = ui.anchor('bub side', `${nm}${img(c.want)}<div class="wait"><i></i></div>`, c.bpos);
 }
 function say(c, text, ms = 2200) { ui.unanchor(c.sayB); c.sayB = ui.anchor('bub say', text, c.pos); c.ch.talking = true; blip(c.nb ? NEIGH[c.nb].pitch : 1.2); setTimeout(() => { c.ch.talking = false; }, 500); setTimeout(() => { ui.unanchor(c.sayB); c.sayB = null; }, ms); }
+function emote(pos, sym, ms = 1400) { const e = ui.anchor('bub emo', sym, pos); setTimeout(() => ui.unanchor(e), ms); }
 function leave(c) {
+  c.ch.lookAt = null;
   ui.unanchor(c.bub); c.bub = null; if (c.slot >= 0) { R.slots[c.slot] = null; c.slot = -1; } const wi = R.waits.indexOf(c); if (wi >= 0) R.waits[wi] = null;
   const seat = c.bought && S.up.terraza && Math.random() < 0.5 ? W.seats.find(s => !s.used) : null;
   if (seat) { seat.used = c; c.seat = seat; c.st = 'toSeat'; c.path = [[-4.6, 1.3], [1, 3.6], [seat.x - Math.sign(seat.x - 11) * 0.0, seat.z + 0.7]]; }
@@ -260,8 +303,8 @@ function updateCustomers(dt) {
   if (R.brb && !miga) { for (const sp of R.spawns) if (sp.t <= R.time + 2) sp.t = R.time + 3; }
   while (R.spawns.length && R.spawns[0].t <= R.time) spawn(R.spawns.shift());
   // vecinos de paseo y Pipa
-  for (const st of R.stroll) { st.t -= dt; st.pos[0] = st.ch.x; st.pos[1] = 2.1; st.pos[2] = st.ch.z; if (st.to) { if (walk(st, st.to[0], st.to[1], dt, 1.3)) { st.to = null; st.t = 7 + Math.random() * 9; st.ch.yawTo = Math.random() * 1.2 - 0.6; } } else if (st.t < 0 && !ui.dialogOpen) { const p = pick(st.hang); st.to = [p[0] + Math.random() - 0.5, p[1] + Math.random() - 0.5]; } else if (Math.hypot(pan.x - st.ch.x, pan.z - st.ch.z) < 2.6) st.ch.yawTo = Math.atan2(pan.x - st.ch.x, pan.z - st.ch.z); updateChar(st.ch, dt); }
-  if (R.pipa) { if (R.time > 14 * 60 && !ui.modalOpen) { R.pipa = false; scene.remove(pipa.root); burst('dust', pipa.x, 0.5, pipa.z, 8); } else { if (Math.hypot(pan.x - pipa.x, pan.z - pipa.z) < 3) pipa.yawTo = Math.atan2(pan.x - pipa.x, pan.z - pipa.z); updateChar(pipa, dt); } }
+  for (const st of R.stroll) { st.t -= dt; st.pos[0] = st.ch.x; st.pos[1] = 2.1; st.pos[2] = st.ch.z; if (st.to) { if (walk(st, st.to[0], st.to[1], dt, 1.3)) { st.to = null; st.t = 7 + Math.random() * 9; st.ch.yawTo = Math.random() * 1.2 - 0.6; } } else if (st.t < 0 && !ui.dialogOpen) { const p = pick(st.hang); st.to = [p[0] + Math.random() - 0.5, p[1] + Math.random() - 0.5]; } else if (Math.hypot(pan.x - st.ch.x, pan.z - st.ch.z) < 2.6) { st.ch.lookAt = pan; if (!st.hi && !R.chatted[st.nb]) { st.hi = true; emote(st.pos, '♪'); st.ch.act('wave'); } } else st.ch.lookAt = null; updateChar(st.ch, dt); }
+  if (R.pipa) { if (R.time > 14 * 60 && !ui.modalOpen) { R.pipa = false; scene.remove(pipa.root); burst('dust', pipa.x, 0.5, pipa.z, 8); } else { pipa.lookAt = Math.hypot(pan.x - pipa.x, pan.z - pipa.z) < 4 ? pan : null; updateChar(pipa, dt); } }
   for (let i = R.cust.length - 1; i >= 0; i--) {
     const c = R.cust[i], ch = c.ch; c.t += dt; c.pos[0] = ch.x; c.pos[1] = 2.02 * ch.scale + (ch.L.sp === 'liebre' ? 0.35 : 0.1); c.pos[2] = ch.z; c.bpos[0] = ch.x - 0.62; c.bpos[1] = 1.35 * ch.scale; c.bpos[2] = ch.z;
     if (c.st === 'enter' || c.st === 'leave' || c.st === 'toSeat') {
@@ -280,11 +323,12 @@ function updateCustomers(dt) {
       else if (!R.waits.includes(c)) { let w = R.waits.findIndex(x => !x); if (w < 0) w = R.waits.length; if (w < WAIT_SPOTS.length) { R.waits[w] = c; c.wspot = w; } else { c.wspot = Math.floor(Math.random() * WAIT_SPOTS.length); R.waits.push(c); } }
       if (c.st === 'find') { const p = WAIT_SPOTS[c.wspot % WAIT_SPOTS.length]; if (walk(c, p[0], p[1], dt, 1.8)) ch.yawTo = 0.6; }
     } else if (c.st === 'toSlot') {
-      const p = W.slots[c.slot]; if (walk(c, p.x, p.z, dt)) { c.st = 'wait'; ch.yawTo = Math.PI / 2 - 0.55; showWant(c); ch.pop(3); sfx('pop'); if (!R.firstCust) { R.firstCust = true; } }
+      const p = W.slots[c.slot]; if (walk(c, p.x, p.z, dt)) { c.st = 'wait'; ch.yawTo = Math.PI / 2 - 0.55; ch.lookAt = pan; showWant(c); ch.pop(3); sfx('pop'); if (!R.firstCust) { R.firstCust = true; } }
     } else if (c.st === 'wait') {
       if (!R.brb) c.wait += dt; ch.speed = 0;
       if (c.bub) { const f = 1 - c.wait / c.max, b = c.bub.querySelector('.wait i'); b.style.width = (f * 100) + '%'; b.style.background = f > 0.5 ? '#7cc47a' : f > 0.22 ? '#f2b84b' : '#e9785e'; }
-      if (c.wait > c.max && !ui.dialogOpen) { say(c, 'Uy, se me hace tarde. ¡Vuelvo otro día!'); R.today.lost++; ch.act('sad'); leave(c); }
+      if (c.wait > c.max * 0.66 && !c.sighed) { c.sighed = true; emote(c.pos, '…'); ch.say('sad', 1.5); }
+      if (c.wait > c.max && !ui.dialogOpen) { say(c, 'Uy, se me hace tarde. ¡Vuelvo otro día!'); R.today.lost++; leave(c); ch.act('sad'); }
     } else if (c.st === 'served') { if (c.t > 1.1 && !ui.dialogOpen) leave(c); }
     else if (c.st === 'sit') { if (Math.sin(c.t * 2) > 0.95 && Math.random() < 0.1) burst('crumb', ch.x, 1.0, ch.z, 2); if (c.t > 16) { ch.sit = false; c.seat.used = null; c.st = 'leave'; c.path = [[ch.x, ch.z + 1.2], [c.side * -20, 4.4]]; } }
     updateChar(ch, dt);
@@ -318,7 +362,7 @@ function serve(c, byMiga = false) {
   addRep(loaf.burnt ? 0 : loaf.q + (fav ? 2 : 0) + (lv === 0 ? 1 : 0) + (hot ? 1 : 0));
   const ch = c.ch; c.bought = true; c.st = 'served'; c.t = 0; ui.unanchor(c.bub); c.bub = null;
   if (!byMiga) { pan.act('give'); pan.say('happy', 1.2); }
-  ch.act(loaf.q === 3 || fav ? 'joy' : 'nod'); ch.say('happy', 1.6); sfx('coin');
+  ch.act(loaf.q === 3 || fav ? 'joy' : 'nod'); ch.say(loaf.q === 3 ? 'wow' : 'happy', 1.6); sfx('coin'); if (fav && !N) emote(c.pos, '♪'); else if (loaf.q === 3) emote(c.pos, '★');
   burst('spark', W.register[0], W.register[1], c.ch.z, 8); ui.setMoney(S.money, true);
   ui.float(`+${price}${tip ? ` <small>+${tip}</small>` : ''}`, -1.9, 1.9, ch.z, ''); if (loaf.q === 3) burst('crumb', ch.x, 1.3, ch.z, 6);
   // se lo lleva en su bolsa de papel; las piezas largas asoman por arriba
@@ -604,20 +648,14 @@ function updatePlay(dt) {
   updateChar(pan, dt);
   if (busy) { ui.prompt(null); pressE = false; return; }
   // amasado
-  if (mode === 'knead') {
-    doughSq.step(Math.min(dt, 0.03)); const sq = clamp(doughSq.v, 0.5, 1.4), base = 0.6 + K.beat * 0.1; W.dough.scale.set(base / Math.sqrt(sq), base * sq, base / Math.sqrt(sq));
-    if (K.done) { K.done += dt; if (K.done > 0.7) endKnead(); pressE = false; return; }
-    K.t += dt / 0.95; ui.kneadRing(Math.max(0, K.t));
-    if (pressE && K.t > 0.2) kneadHit(false); else if (K.t > 1.12) kneadHit(true);
-    pressE = false; ui.prompt(null); return;
-  }
+  if (mode === 'knead') { updateKnead(dt); pressE = false; ui.prompt(null); return; }
   // reloj
   R.time += dt * MIN_PER_SEC; ui.setTime(R.time);
   if (!R.open && R.time >= T_OPEN) { R.open = true; sfx('bell'); ui.toast('¡Abierto! Suena la campanilla.'); }
   if (R.time > 17.5 * 60) music('eve');
   // fermentadora y horno
   R.ferm.forEach((b, i) => { if (!b) return; const was = b.t >= b.need; b.t += dt; const f = Math.min(1, b.t / b.need); b.g.querySelector('.track i').style.width = f * 100 + '%'; const it = W.fermSlots[i].holder.children[0]?.userData.items; if (it) for (const d of it) { const k = 1 + f * 0.3; d.scale.set(k * 0.9, (1 + f * 0.55) * 0.9, k * 0.9); } if (!was && b.t >= b.need) { b.g.classList.add('ready'); b.g.querySelector('span').textContent = '¡Ha subido!'; sfx('pop'); } });
-  const bakingNow = R.oven.some(x => x); R.fire = Math.max(0, R.fire - dt * (bakingNow ? 0.0075 : 0.0011)); const heat = R.fire < 0.12 ? 0.25 : 0.6 + R.fire * 0.6;
+  const bakingNow = R.oven.some(x => x); R.fire = Math.max(0, R.fire - dt * (bakingNow ? 0.004 : 0.0006)); const heat = R.fire < 0.12 ? 0.25 : 0.6 + R.fire * 0.6;
   if (R.fireG) { const fi = R.fireG.querySelector('.track i'); fi.style.width = (R.fire * 100) + '%'; R.fireG.classList.toggle('low', R.fire < 0.25); }
   if (R.fire < 0.2 && !R.fireWarn) { R.fireWarn = true; ui.toast('El fuego del horno flojea. Hay leña en la leñera, fuera a la derecha.'); sfx('no'); }
   if (W.axe.userData.t > 0) { W.axe.userData.t -= dt; W.axe.rotation.z = 0.5 - Math.sin(Math.max(0, W.axe.userData.t) / 0.25 * Math.PI) * 1.3; }
@@ -634,6 +672,7 @@ function updatePlay(dt) {
   if (R.weather === 'viento') { R.leafT -= dt; if (R.leafT < 0) { R.leafT = 0.25; burst('leaf', camTarget.x - 12 + Math.random() * 8, 3 + Math.random() * 3, camTarget.z - 4 + Math.random() * 10, 1, { color: [0xffb7c9, 0xffd98a, 0xb9e38a][Math.floor(Math.random() * 3)] }); } }
   // acción
   cur = findAction();
+  pan.lookAt = cur?.cust ? cur.cust.ch : (pan.x > -1.6 && pan.x < -0.3 ? (R.slots.find(c => c && c.st === 'wait')?.ch || null) : null);
   if (cur) { ui.prompt(cur.text, cur.pos, cur.ok !== false); if (pressE) { if (cur.st && cur.fn !== openRecipes) { pan.goto = { x: cur.st.x, z: cur.st.z, yaw: cur.st.yaw }; } if (cur.face != null) pan.yawTo = cur.face; cur.fn(); } } else ui.prompt(null);
   pressE = false;
   const g = goalText(); ui.setGoal(g[0], g[1]);
@@ -668,7 +707,7 @@ function boot() {
     if (k === 'm') return ui.toast(toggleMute() ? 'Sin sonido' : 'Con sonido');
     if (ui.dialogOpen) { if (k === 'e' || k === ' ' || k === 'enter') ui.dlgNext?.(); return; }
     if (ui.modalOpen) { if (k === 'escape') return ui.closeModal(); ui.onKey?.(k); return; }
-    keys.add(k);
+    keys.add(k); if (mode === 'knead') return kneadKey(k);
     if (k === 'e' || k === ' ' || k === 'enter') pressE = true;
     if ((k === 'l' || k === 'tab') && mode === 'play') openBook();
     if (k === 'b' && mode === 'play') toggleBrb();
@@ -694,7 +733,7 @@ function boot() {
   }
   // API de pruebas
   window.game = {
-    ready: true, get S() { return S; }, get R() { return R; }, get mode() { return mode; }, pan, W, ui, cam,
+    ready: true, get S() { return S; }, get R() { return R; }, get mode() { return mode; }, get K() { return K; }, pan, W, ui, cam,
     step(sec, h = 1 / 30) { for (let t = 0; t < sec; t += h) frame(h); render(); },
     tp(x, z, yaw) { pan.x = x; pan.z = z; if (yaw != null) pan.yaw = pan.yawTo = yaw; frame.snap = true; },
     key(k) { if (ui.dialogOpen) return ui.dlgNext?.(); if (ui.modalOpen) return ui.onKey?.(k); if (k === 'e') pressE = true; else if (k === 'l') openBook(); },

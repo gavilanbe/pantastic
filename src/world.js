@@ -347,6 +347,11 @@ function bakery() {
   for (const s of [-1, 1]) mesh(G.cyl(0.022, 0.022, 0.14, 8), woodD, { parent: pin, p: [s * 0.29, 0, 0], r: [0, 0, Math.PI / 2] });
   mesh(G.lathe([[0.001, 0], [0.16, 0], [0.26, 0.16], [0.24, 0.16], [0.15, 0.03], [0.001, 0.03]], 18, false), mat('#9ad1c0', { rough: 0.4 }), { parent: M, p: [0.2, 0.92, -0.3] });
   mesh(G.sph(0.2, 12, 8), mat('#fffaf0', { rough: 1 }), { parent: M, p: [0.2, 0.98, -0.3], s: [1, 0.4, 1] });
+  // báscula, rasqueta, montón de harina y bote de utensilios
+  const sc = group({ parent: M, p: [0.75, 0.92, 0.3], r: [0, -0.3, 0] }); mesh(G.box(0.34, 0.1, 0.26, 0.03), mat('#e2664f', { rough: 0.5 }), { parent: sc, p: [0, 0.05, 0] }); mesh(G.cyl(0.03, 0.03, 0.08, 8), iron, { parent: sc, p: [0, 0.13, 0] }); mesh(G.lathe([[0.001, 0], [0.1, 0], [0.19, 0.07], [0.18, 0.07], [0.09, 0.012], [0.001, 0.012]], 16, false), mat('#cfd8df', { metal: 0.5, rough: 0.3 }), { parent: sc, p: [0, 0.17, 0] }); mesh(G.cyl(0.07, 0.07, 0.02, 14), cream, { parent: sc, p: [0, 0.06, 0.135], r: [Math.PI / 2, 0, 0] });
+  mesh(G.cone(0.2, 0.16, 14), mat('#fffaf0', { rough: 1 }), { parent: M, p: [-0.05, 0.99, -0.34] });
+  mesh(G.box(0.22, 0.012, 0.14, 0.004), mat('#cfd8df', { metal: 0.5, rough: 0.3 }), { parent: M, p: [-0.2, 0.93, 0.42], r: [0, 0.4, 0] }); mesh(G.box(0.22, 0.03, 0.04, 0.012), woodD, { parent: M, p: [-0.23, 0.94, 0.48], r: [0, 0.4, 0] });
+  const ut = group({ parent: M, p: [1.0, 0.92, -0.38] }); mesh(G.cyl(0.1, 0.09, 0.22, 12), mat('#9ad1c0', { rough: 0.4 }), { parent: ut, p: [0, 0.11, 0] }); for (let i = 0; i < 3; i++) { mesh(G.cyl(0.012, 0.012, 0.34, 5), woodM, { parent: ut, p: [-0.04 + i * 0.04, 0.3, 0], r: [0, 0, -0.2 + i * 0.2] }); mesh(G.sph(0.04, 8, 6), woodM, { parent: ut, p: [-0.075 + i * 0.075, 0.47, 0], s: [1, 1.3, 0.5] }); }
   // saco y cajas bajo la mesa
   sack(M, -0.6, 0.23, 0.05, 0.75); mesh(G.box(0.6, 0.36, 0.5, 0.04), woodM, { parent: M, p: [0.45, 0.41, 0.0] });
   W.dough = mesh(blob((x, y, z, v) => v.set(x * 0.3, y > 0 ? y * 0.2 : y * 0.08, z * 0.28), { ws: 24, hs: 16 }), mat('#f6e8cb', { rough: 0.9, rim: 0.4, nocache: true }), { parent: M, p: [-0.62, 1.0, 0.1] });

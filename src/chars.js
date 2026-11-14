@@ -8,7 +8,7 @@ const faceCache = new Map();
 function ell(g, x, y, rx, ry, fill, rot = 0) { g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fillStyle = fill; g.fill(); }
 function arc(g, x, y, r, a0, a1, col, w) { g.beginPath(); g.arc(x, y, r, a0, a1); g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.stroke(); }
 
-function drawFace(g, L, ex) {
+function drawFace(g, L, ex, look = 0) {
   const W = 512, H = 256, cx = 128, sp = L.sp;
   g.fillStyle = L.fur; g.fillRect(0, 0, W, H);
   if (sp === 'liebre' || sp === 'raton') { g.fillStyle = L.skin; g.fillRect(0, 180, 256, 80); }
@@ -46,56 +46,67 @@ function drawFace(g, L, ex) {
     g.globalAlpha = 0.85; ell(g, cx + dx + 30, ey + 40, 9, 5, '#fffaf0', -0.4); g.globalAlpha = 1;
   }
   // ojos
-  const blink = ex === 'blink', happy = ex === 'happy', wow = ex === 'wow';
+  const blink = ex === 'blink', happy = ex === 'happy', wow = ex === 'wow', sad = ex === 'sad', talk = ex === 'talk';
+  const dark = '#2a1d1a';
   if (drawEyes) for (const s of [-1, 1]) {
-    const x = cx + s * dx;
-    if (blink) arc(g, x, ey - 2, 11, 0.15, Math.PI - 0.15, eyeCol, 4.5);
-    else if (happy) arc(g, x, ey + 6, 12, Math.PI + 0.25, -0.25, eyeCol, 5);
+    const x = cx + s * dx + look * 3.5, k = wow ? 1.15 : 1;
+    if (blink) arc(g, x, ey - 2, 11, 0.15, Math.PI - 0.15, sp === 'tejon' ? dark : eyeCol, 4.5);
+    else if (happy) arc(g, x, ey + 6, 12, Math.PI + 0.25, -0.25, sp === 'tejon' ? dark : eyeCol, 5);
+    else if (sp === 'tejon') { ell(g, x, ey, eyeRx * k, eyeRy * k, '#fdfaf2'); ell(g, x + look * 2.5, ey + 1, 6.5, 9.5, dark); ell(g, x - 2 + look * 2, ey - 3, 2.4, 3, '#fff'); }
     else {
-      ell(g, x, ey, eyeRx * (wow ? 1.1 : 1), eyeRy * (wow ? 1.12 : 1), eyeCol);
-      if (sp === 'pan') ell(g, x, ey + 2, eyeRx - 3.5, eyeRy - 4.5, '#5a3622');
-      if (sp === 'pan') ell(g, x, ey + 3, 5, 7, '#24140f');
-      ell(g, x - 3.5, ey - 6, 4, 5, sp === 'tejon' ? '#3b3a42' : '#ffffff');
-      if (sp !== 'tejon') ell(g, x + 4, ey + 6, 2, 2.5, 'rgba(255,255,255,.75)');
-      if (sp === 'tejon') ell(g, x, ey + 1, 6, 9, '#2a1d1a');
+      ell(g, x, ey, eyeRx * k, eyeRy * k, eyeCol);
+      g.save(); g.beginPath(); g.ellipse(x, ey, eyeRx * k, eyeRy * k, 0, 0, 7); g.clip();
+      ell(g, x, ey + eyeRy * 0.8, eyeRx * 1.2, eyeRy * 0.62, sp === 'pan' ? '#8a5632' : (L.iris || '#6b4634')); ell(g, x + look * 2, ey + 2, eyeRx * 0.5, eyeRy * 0.5, '#1c110d'); g.restore();
+      ell(g, x - 3.5 - look, ey - 6.5, 4.3, 5.3, '#ffffff'); ell(g, x + 4 - look, ey + 7, 2.2, 2.7, 'rgba(255,255,255,.85)');
     }
+    g.lineCap = 'round'; g.lineJoin = 'round';
     if (sp === 'pan') {
-      // pestaña con rabillo y ceja
-      if (!blink && !happy) { g.beginPath(); g.moveTo(x - s * 11, ey - 12); g.quadraticCurveTo(x, ey - 20, x + s * 13, ey - 10); g.lineTo(x + s * 19, ey - 14); g.strokeStyle = '#24140f'; g.lineWidth = 3.6; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(); }
-      g.beginPath(); g.moveTo(x - s * 13, ey - 33 - (wow ? 5 : 0)); g.quadraticCurveTo(x + s * 2, ey - 41 - (wow ? 5 : 0), x + s * 17, ey - 32 - (wow ? 4 : 0)); g.strokeStyle = '#33221c'; g.lineWidth = 4.2; g.stroke();
+      if (!blink && !happy) { g.beginPath(); g.moveTo(x - s * 11, ey - 12); g.quadraticCurveTo(x, ey - 20, x + s * 13, ey - 10); g.lineTo(x + s * 19, ey - 14); g.strokeStyle = '#24140f'; g.lineWidth = 3.6; g.stroke(); }
+      const up = wow ? 6 : 0, tilt = sad ? 7 : 0;
+      g.beginPath(); g.moveTo(x - s * 13, ey - 33 - up - tilt); g.quadraticCurveTo(x + s * 2, ey - 41 - up, x + s * 17, ey - 32 - up + tilt * 0.6); g.strokeStyle = '#33221c'; g.lineWidth = 4.2; g.stroke();
+    } else {
+      if (L.lash && !blink && !happy) { g.strokeStyle = sp === 'tejon' ? dark : eyeCol; g.lineWidth = 3; for (const [a, b] of [[0.55, 0.95], [0.2, 0.75]]) { g.beginPath(); g.moveTo(x + s * eyeRx * 0.75, ey - eyeRy * a); g.lineTo(x + s * (eyeRx + 8), ey - eyeRy * b - 2); g.stroke(); } }
+      if (sad || wow || L.brow) {
+        const y0 = ey - eyeRy - 9 - (wow ? 7 : 0), inn = sad ? -8 : L.brow === 'serio' && !wow ? 6 : 0, out = sad ? 4 : L.brow === 'serio' && !wow ? -3 : 0;
+        g.beginPath(); g.moveTo(x - s * 11, y0 + inn); g.quadraticCurveTo(x, y0 - 3 + (inn + out) / 2, x + s * 11, y0 + out); g.strokeStyle = sp === 'oveja' || sp === 'erizo' ? 'rgba(70,45,40,.8)' : sp === 'tejon' ? '#fdfaf2' : 'rgba(40,25,20,.75)'; g.lineWidth = L.brow === 'serio' ? 5.5 : 4; g.stroke();
+      }
     }
-    if (sp === 'oveja') { g.beginPath(); g.moveTo(x - 12, ey - 24); g.lineTo(x + 12, ey - 26); g.strokeStyle = 'rgba(60,40,40,.5)'; g.lineWidth = 3; g.stroke(); }
   }
   // hocico y boca
-  const talk = ex === 'talk';
   const mc = sp === 'pan' ? '#a84a48' : '#3a2622';
+  g.lineCap = 'round';
   if (sp === 'pan') {
     arc(g, cx - 1, ey + 21, 4, 0.3, Math.PI - 0.6, 'rgba(160,100,80,.7)', 2.2);
     ell(g, cx - 8, ey + 21, 2.3, 2.3, '#e8b23c'); ell(g, cx - 8.6, ey + 20.4, 0.9, 0.9, '#fff3c0');
-    if (happy || talk || wow) {
+    if (wow) { ell(g, cx, mouthY + 4, 8, 10, '#7c2f33'); ell(g, cx, mouthY + 9, 5, 4, '#e77b7b'); }
+    else if (sad) { g.beginPath(); g.moveTo(cx - 13, mouthY + 6); g.quadraticCurveTo(cx, mouthY - 4, cx + 13, mouthY + 6); g.strokeStyle = mc; g.lineWidth = 4; g.stroke(); }
+    else if (happy || talk) {
       g.beginPath(); g.moveTo(cx - 19, mouthY - 5); g.quadraticCurveTo(cx, mouthY - 1, cx + 19, mouthY - 5); g.quadraticCurveTo(cx + 14, mouthY + (talk ? 12 : 15), cx, mouthY + (talk ? 13 : 16)); g.quadraticCurveTo(cx - 14, mouthY + (talk ? 12 : 15), cx - 19, mouthY - 5); g.fillStyle = '#7c2f33'; g.fill();
       g.save(); g.clip(); g.fillStyle = '#fff'; g.fillRect(cx - 20, mouthY - 6, 40, 8); ell(g, cx, mouthY + 15, 11, 6, '#e77b7b'); g.restore();
       g.strokeStyle = mc; g.lineWidth = 2.5; g.stroke();
-    } else { g.beginPath(); g.moveTo(cx - 16, mouthY - 3); g.quadraticCurveTo(cx, mouthY + 9, cx + 16, mouthY - 3); g.strokeStyle = mc; g.lineWidth = 4; g.lineCap = 'round'; g.stroke(); }
+    } else { g.beginPath(); g.moveTo(cx - 16, mouthY - 3); g.quadraticCurveTo(cx, mouthY + 9, cx + 16, mouthY - 3); g.strokeStyle = mc; g.lineWidth = 4; g.stroke(); }
   } else if (sp === 'rana') {
-    g.beginPath(); g.moveTo(cx - 62, mouthY - 6); g.quadraticCurveTo(cx, mouthY + (happy ? 34 : 16), cx + 62, mouthY - 6);
-    if (talk || happy) { g.quadraticCurveTo(cx, mouthY + (talk ? 44 : 40), cx - 62, mouthY - 6); g.fillStyle = '#7c2f33'; g.fill(); }
-    g.strokeStyle = '#2f4a22'; g.lineWidth = 4; g.lineCap = 'round'; g.stroke();
+    g.beginPath(); g.moveTo(cx - 62, mouthY - 6 + (sad ? 12 : 0)); g.quadraticCurveTo(cx, mouthY + (sad ? -8 : happy ? 34 : 16), cx + 62, mouthY - 6 + (sad ? 12 : 0));
+    if (talk || happy || wow) { g.quadraticCurveTo(cx, mouthY + (talk ? 44 : 40), cx - 62, mouthY - 6); g.fillStyle = '#7c2f33'; g.fill(); g.save(); g.clip(); ell(g, cx, mouthY + 34, 30, 12, '#e77b7b'); g.restore(); }
+    g.strokeStyle = '#2f4a22'; g.lineWidth = 4; g.stroke();
     ell(g, cx - 9, 140, 2.5, 3.5, '#2f4a22'); ell(g, cx + 9, 140, 2.5, 3.5, '#2f4a22');
     g.globalAlpha = 0.5; ell(g, cx - 74, 150, 15, 10, '#ff9c8e'); ell(g, cx + 74, 150, 15, 10, '#ff9c8e'); g.globalAlpha = 1;
   } else if (sp !== 'buho') {
     const ny = ey + 26;
+    if (sp === 'raton' || sp === 'liebre' || sp === 'zorro') { g.strokeStyle = 'rgba(70,45,35,.42)'; g.lineWidth = 2.2; for (const s of [-1, 1]) for (const dy of [-3, 8]) { g.beginPath(); g.moveTo(cx + s * 22, ny + 4); g.lineTo(cx + s * 50, ny + dy); g.stroke(); } }
     ell(g, cx, ny, sp === 'oveja' ? 8 : 9, 6.5, sp === 'raton' || sp === 'liebre' ? '#e88a96' : '#2a1d1a');
     ell(g, cx - 2.5, ny - 2, 2.5, 1.6, 'rgba(255,255,255,.55)');
-    g.strokeStyle = mc; g.lineWidth = 3.2; g.lineCap = 'round';
+    g.strokeStyle = mc; g.lineWidth = 3.2;
     g.beginPath(); g.moveTo(cx, ny + 6); g.lineTo(cx, ny + 13); g.stroke();
-    if (talk || happy) { g.beginPath(); g.moveTo(cx - 13, ny + 13); g.quadraticCurveTo(cx, ny + 15, cx + 13, ny + 13); g.quadraticCurveTo(cx, ny + (talk ? 34 : 38), cx - 13, ny + 13); g.fillStyle = '#7c2f33'; g.fill(); g.stroke(); }
+    if (wow) { ell(g, cx, ny + 23, 7, 9, '#7c2f33'); g.beginPath(); g.ellipse(cx, ny + 23, 7, 9, 0, 0, 7); g.stroke(); }
+    else if (sad) { g.beginPath(); g.moveTo(cx - 12, ny + 21); g.quadraticCurveTo(cx, ny + 11, cx + 12, ny + 21); g.stroke(); }
+    else if (talk || happy) { g.beginPath(); g.moveTo(cx - 13, ny + 13); g.quadraticCurveTo(cx, ny + 15, cx + 13, ny + 13); g.quadraticCurveTo(cx, ny + (talk ? 34 : 38), cx - 13, ny + 13); g.fillStyle = '#7c2f33'; g.fill(); g.save(); g.clip(); ell(g, cx, ny + 33, 8, 6, '#e77b7b'); g.restore(); g.stroke(); }
     else { g.beginPath(); g.moveTo(cx - 13, ny + 11); g.quadraticCurveTo(cx - 6, ny + 19, cx, ny + 13); g.quadraticCurveTo(cx + 6, ny + 19, cx + 13, ny + 11); g.stroke(); }
   }
 }
-function faceTex(L, ex) {
-  const key = L.key + ex;
-  if (!faceCache.has(key)) faceCache.set(key, canvasTex(512, 256, (g) => drawFace(g, L, ex)));
+function faceTex(L, ex, look = 0) {
+  const key = L.key + ex + look;
+  if (!faceCache.has(key)) faceCache.set(key, canvasTex(512, 256, (g) => drawFace(g, L, ex, look)));
   return faceCache.get(key);
 }
 
@@ -289,6 +300,11 @@ export function makeChar(look) {
     // nariz en relieve
     if (sp !== 'buho' && sp !== 'rana') mesh(G.sph(0.035, 10, 8), sp === 'raton' || sp === 'liebre' ? mat('#e88a96', { rough: 0.4 }) : mat('#2a1d1a', { rough: 0.35 }), { parent: head, p: [0, -0.068, 0.39], s: [1.25, 0.9, 0.7] });
   }
+  if (!isPan) {
+    mesh(G.tor(0.14, 0.04, 8, 20), mat('#fff6e4', { rough: 0.95 }), { parent: body, p: [0, 0.775, 0.0], r: [Math.PI / 2, 0, 0], s: [1.05, 1, 1] });
+    if (sp !== 'buho' && L.acc !== 'pajarita') for (const y of [0.62, 0.48]) mesh(G.sph(0.022, 8, 6), mat('#fff6e4', { rough: 0.5 }), { parent: body, p: [0, y, y > 0.5 ? 0.205 : 0.262] });
+    if (sp === 'zorro') for (const s of [-1, 1]) mesh(G.cone(0.1, 0.22, 8), mat('#fff6ea', { rough: 0.95 }), { parent: head, p: [s * 0.4, -0.13, 0.08], r: [0, 0, s * -1.9], s: [1, 1, 0.6] });
+  }
   // accesorios
   const A = L.acc;
   if (A === 'gafas') {
@@ -343,7 +359,7 @@ export function makeChar(look) {
     L, root, body, head, arms, legs, tail, torso, carryAnchor, faceMat,
     x: 0, z: 0, yaw: 0, yawTo: 0, speed: 0, phase: Math.random() * 6, t: Math.random() * 10,
     carry: false, action: null, at: 0, talking: false, expr: 'idle', exprT: 0, blinkT: 1 + Math.random() * 3,
-    sq: new Spring(1, 220, 13), scale: L.scale || 1, sit: false, lookAt: null,
+    sq: new Spring(1, 220, 13), scale: L.scale || 1, sit: false, lookAt: null, headYaw: 0, fidT: 4 + Math.random() * 6, fidYaw: 0, eyeX: 0,
     say(ex, time = 1.2) { this.expr = ex; this.exprT = time; },
     act(name) { this.action = name; this.at = 0; },
     pop(f = 3) { this.sq.kick(f); },
@@ -371,29 +387,37 @@ export function updateChar(ch, dt) {
   else if (a === 'give') { const k = Math.sin(clamp(at / 0.5, 0, 1) * Math.PI); aR = -1.4 * k; azR = 0.1; lean = 0.12 * k; if (at > 0.5) ch.action = null; }
   else if (a === 'nod') { headX = Math.sin(at * 12) * 0.2 * (1 - at / 0.7); if (at > 0.7) ch.action = null; }
   else if (a === 'dance') { by += Math.abs(Math.sin(at * 6)) * 0.12; azL = -1.6 - Math.sin(at * 6) * 0.8; azR = 1.6 - Math.sin(at * 6) * 0.8; aL = aR = 0; roll = Math.sin(at * 6) * 0.12; headZ = Math.sin(at * 6) * 0.14; lL = Math.sin(at * 6) * 0.3; lR = -lL; }
-  else if (a === 'sad') { headX = 0.25; if (at > 1.4) ch.action = null; }
+  else if (a === 'sad') { headX = 0.3; azL = -0.12; azR = 0.12; by -= 0.03; if (at < 0.05) ch.say('sad', 1.6); if (at > 1.5) ch.action = null; }
+  if (ch.talking && !a && !ch.carry) { aR = -0.7 + Math.sin(ch.t * 6.5) * 0.3; azR = 0.5 + Math.sin(ch.t * 4.3) * 0.2; aL = Math.sin(ch.t * 5.1) * 0.15; headX += Math.sin(ch.t * 9) * 0.05; }
   if (ch.sit) { lL = lR = -1.45; by -= 0.14; }
   ch.body.position.y = by; ch.body.rotation.x = lean; ch.body.rotation.z = roll;
   ch.arms[0].rotation.x = aL; ch.arms[1].rotation.x = aR; ch.arms[0].rotation.z = azL; ch.arms[1].rotation.z = azR;
   ch.legs[0].rotation.x = lL; ch.legs[1].rotation.x = lR;
+  // la cabeza y los ojos siguen a quien miran; si no, curiosean de vez en cuando
+  let hy = 0; ch.eyeX = 0;
+  if (ch.lookAt && !a) { let rel = Math.atan2(ch.lookAt.x - ch.x, ch.lookAt.z - ch.z) - ch.yaw; rel = Math.atan2(Math.sin(rel), Math.cos(rel)); if (Math.abs(rel) < 2.3) { hy = clamp(rel, -0.7, 0.7); ch.eyeX = Math.abs(rel) > 0.35 ? Math.sign(rel) : 0; } }
+  else if (!a && mv < 0.05) { ch.fidT -= dt; if (ch.fidT < 0) { ch.fidT = 4 + Math.random() * 7; ch.fidYaw = ch.fidYaw ? 0 : (Math.random() - 0.5) * 1.1; } hy = ch.fidYaw; ch.eyeX = Math.abs(hy) > 0.3 ? Math.sign(hy) : 0; }
+  ch.headYaw += (hy - ch.headYaw) * (1 - Math.exp(-dt * 7));
+  ch.head.rotation.y = ch.headYaw;
   ch.head.rotation.x = headX - 0.2 + Math.sin(ch.t * 0.9) * 0.02; ch.head.rotation.z = headZ - roll * 0.6;
   ch.head.position.y = HEAD_Y + Math.sin(ch.phase * 2) * 0.008 * mv;
-  if (ch.tail) ch.tail.rotation.z = Math.sin(ch.t * 3 + ch.phase) * 0.18;
-  for (const sgn of [-1, 1]) { const e = ch.head.userData['ear' + sgn]; if (e) e.rotation.x = -0.12 + Math.sin(ch.t * 1.7 + sgn) * 0.05 - mv * 0.25 + Math.abs(s) * 0.12 * mv; }
+  if (ch.tail) ch.tail.rotation.z = Math.sin(ch.t * (ch.exprT > 0 && ch.expr === 'happy' ? 14 : 3) + ch.phase) * (ch.exprT > 0 && ch.expr === 'happy' ? 0.4 : 0.18);
+  for (const sgn of [-1, 1]) { const e = ch.head.userData['ear' + sgn]; if (e) e.rotation.x = -0.12 + Math.sin(ch.t * 1.7 + sgn) * 0.05 - mv * 0.25 + Math.abs(s) * 0.12 * mv + (ch.blinkT < 0.12 && sgn > 0 ? 0.25 : 0) + (ch.exprT > 0 && ch.expr === 'sad' ? 0.7 : 0); }
   // cara
   ch.blinkT -= dt; ch.exprT -= dt;
   let ex = ch.exprT > 0 ? ch.expr : 'idle';
   if (ch.talking) ex = Math.sin(ch.t * 22) > 0 ? 'talk' : (ch.exprT > 0 ? ch.expr : 'idle');
   else if (ex === 'idle' && ch.blinkT < 0.12) ex = 'blink';
   if (ch.blinkT < 0) ch.blinkT = 1.6 + Math.random() * 3.5;
-  if (ex !== ch._ex) {
-    ch._ex = ex; ch.faceMat.map = faceTex(ch.L, ex);
+  const lk = ex === 'idle' ? ch.eyeX : 0;
+  if (ex !== ch._ex || lk !== ch._lk) {
+    ch._ex = ex; ch._lk = lk; ch.faceMat.map = faceTex(ch.L, ex, lk);
     if (ch.L.sp === 'rana') for (const sgn of [-1, 1]) ch.head.userData['pup' + sgn].scale.set(1.25, ex === 'blink' || ex === 'happy' ? 0.18 : 1.45, 0.5);
   }
 }
 
 export const PAN_LOOK = { sp: 'pan', fur: '#f4cfae', skin: '#f4cfae', key: 'pan' };
-export const MIGA_LOOK = { sp: 'raton', fur: '#b9b3c4', skin: '#f6eef0', shirt: '#f08a7b', pat: 'raya', acc: 'delantal', scale: 0.72 };
+export const MIGA_LOOK = { lash: true, sp: 'raton', fur: '#b9b3c4', skin: '#f6eef0', shirt: '#f08a7b', pat: 'raya', acc: 'delantal', scale: 0.72 };
 
 const V_SP = ['liebre', 'tejon', 'zorro', 'raton', 'oveja', 'rana', 'erizo', 'buho'];
 const V_FUR = { liebre: ['#e9dccb', '#b89a86', '#f1c9a0'], tejon: ['#77737f', '#9a8f86'], zorro: ['#d9773c', '#c9a27a', '#e9a35e'], raton: ['#c9bfb4', '#a59ab0', '#e6d2bd'], oveja: ['#fbf3e4', '#e9e0ee', '#d9c9b8'], rana: ['#7fc47a', '#a9cf63', '#6bb8a4'], erizo: ['#9a7a62', '#7d6a5c'], buho: ['#b79a7c', '#8f8fa3', '#c9a98a'] };
