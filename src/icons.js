@@ -2,7 +2,7 @@
 import { THREE, mat, mesh, group, G, blob, bend, rnd } from './gfx.js';
 import { makeChar, updateChar, PAN_LOOK, MIGA_LOOK } from './chars.js';
 import { makeTray, makeBread } from './breads.js';
-import { NEIGH, PIPA_LOOK } from './data.js';
+import { NEIGH, PIPA_LOOK, STAFF } from './data.js';
 
 function sack(c, label, mark) {
   const g = group();
@@ -139,6 +139,10 @@ const UP_MODEL = {
     for (const [id, x] of [['hogaza', -0.22], ['barra', 0.18]]) { const b = makeBread(id); b.scale.setScalar(0.42); b.position.set(x, 0.34, 0.03); b.rotation.y = 0.5; g.add(b); }
     return g;
   },
+  t_lena() { const g = group(); for (let i = 0; i < 6; i++) { const row = i < 3 ? 0 : i < 5 ? 1 : 2, col = i < 3 ? i : i < 5 ? i - 3 : 0; const l = group({ parent: g, p: [-0.24 + col * 0.24 + row * 0.12, 0.11 + row * 0.2, 0] }); mesh(G.cyl(0.11, 0.11, 0.6, 9), mat('#b07a4c', { rough: 0.95 }), { parent: l, r: [Math.PI / 2, 0, 0] }); mesh(G.cyl(0.085, 0.085, 0.61, 9), mat('#f0d2a0'), { parent: l, r: [Math.PI / 2, 0, 0] }); } return g; },
+  t_mostrador() { const g = group(); mesh(G.box(0.9, 0.42, 0.44, 0.04), mat('#f4dcae'), { parent: g, p: [0, 0.21, 0] }); mesh(G.box(0.98, 0.05, 0.52, 0.02), mat('#c98a5a'), { parent: g, p: [0, 0.44, 0] }); for (const [id, x] of [['hogaza', -0.24], ['brioche', 0.22]]) { const b = makeBread(id); b.scale.setScalar(0.5); b.position.set(x, 0.47, 0); g.add(b); } return g; },
+  t_fama() { const g = group(); mesh(G.cyl(0.03, 0.04, 0.9, 6), mat('#8f6a4a'), { parent: g, p: [0, 0.45, 0] }); mesh(G.box(0.7, 0.42, 0.05, 0.03), mat('#e2664f'), { parent: g, p: [0, 0.78, 0.03] }); mesh(G.box(0.56, 0.1, 0.02, 0.01), mat('#fff6e2'), { parent: g, p: [0, 0.84, 0.06] }); mesh(G.box(0.4, 0.06, 0.02, 0.01), mat('#f2b84b'), { parent: g, p: [0, 0.7, 0.06] }); return g; },
+  t_amasadora() { const g = group(), rd = mat('#e2664f', { rough: 0.4 }); mesh(G.box(0.5, 0.1, 0.62, 0.04), rd, { parent: g, p: [0, 0.05, 0] }); mesh(G.box(0.2, 0.6, 0.2, 0.06), rd, { parent: g, p: [0, 0.38, -0.2] }); mesh(G.box(0.24, 0.2, 0.5, 0.08), rd, { parent: g, p: [0, 0.68, 0] }); mesh(G.lathe([[0.001, 0], [0.14, 0], [0.24, 0.2], [0.22, 0.2], [0.13, 0.03], [0.001, 0.03]], 16, false), mat('#cfd8df', { metal: 0.5, rough: 0.3 }), { parent: g, p: [0, 0.1, 0.12] }); mesh(G.sph(0.16, 12, 8), mat('#f6e8cb'), { parent: g, p: [0, 0.2, 0.12], s: [1, 0.6, 1] }); mesh(G.cyl(0.02, 0.02, 0.3, 6), mat('#cfd8df', { metal: 0.5, rough: 0.3 }), { parent: g, p: [0, 0.44, 0.12] }); return g; },
   fuente() {
     const g = group(), st = mat('#d9d2c4', { rough: 1 }), w = mat('#7fd3f0', { rough: 0.15 });
     mesh(G.lathe([[0.001, 0], [0.5, 0], [0.52, 0.04], [0.5, 0.18], [0.44, 0.2], [0.4, 0.16], [0.4, 0.06], [0.001, 0.06]], 24, false), st, { parent: g });
@@ -174,7 +178,7 @@ export function renderExtras(size = 200, objs = {}) {
     cam.position.set(0.25, 1.5 + tall * 0.5, 3.1 + tall * 1.6); cam.lookAt(0, 1.06 + tall * 0.5, 0);
     r.render(sc, cam); const url = r.domElement.toDataURL('image/png'); sc.remove(ch.root); return url;
   };
-  const looks = { pan: PAN_LOOK, miga: MIGA_LOOK, pipa: PIPA_LOOK }; for (const id in NEIGH) looks[id] = NEIGH[id].look;
+  const looks = { pan: PAN_LOOK, miga: MIGA_LOOK, pipa: PIPA_LOOK }; for (const id in STAFF) if (STAFF[id].look) looks[id] = STAFF[id].look; for (const id in NEIGH) looks[id] = NEIGH[id].look;
   for (const id in looks) out.face[id] = { idle: bust(looks[id], 'idle'), happy: bust(looks[id], 'happy'), talk: bust(looks[id], 'talk') };
   out.up.miga = out.face.miga.happy;
   out.mue = {}; for (const id in objs) out.mue[id] = shot(objs[id], { fit: 1.05, up: id === 'alfombra' ? 2.2 : 0.8 });

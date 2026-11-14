@@ -381,6 +381,7 @@ function bakery() {
   mesh(G.cone(0.2, 0.16, 14), mat('#fffaf0', { rough: 1 }), { parent: M, p: [-0.05, 0.99, -0.34] });
   mesh(G.box(0.22, 0.012, 0.14, 0.004), mat('#cfd8df', { metal: 0.5, rough: 0.3 }), { parent: M, p: [-0.2, 0.93, 0.42], r: [0, 0.4, 0] }); mesh(G.box(0.22, 0.03, 0.04, 0.012), woodD, { parent: M, p: [-0.23, 0.94, 0.48], r: [0, 0.4, 0] });
   const ut = group({ parent: M, p: [1.0, 0.92, -0.38] }); mesh(G.cyl(0.1, 0.09, 0.22, 12), mat('#9ad1c0', { rough: 0.4 }), { parent: ut, p: [0, 0.11, 0] }); for (let i = 0; i < 3; i++) { mesh(G.cyl(0.012, 0.012, 0.34, 5), woodM, { parent: ut, p: [-0.04 + i * 0.04, 0.3, 0], r: [0, 0, -0.2 + i * 0.2] }); mesh(G.sph(0.04, 8, 6), woodM, { parent: ut, p: [-0.075 + i * 0.075, 0.47, 0], s: [1, 1.3, 0.5] }); }
+  W.mixer = group({ parent: M, p: [0.95, 0.92, 0.05], s: 0.85 }); { const rd = mat('#e2664f', { rough: 0.4 }), stl = mat('#cfd8df', { metal: 0.5, rough: 0.3 }); mesh(G.box(0.5, 0.1, 0.62, 0.04), rd, { parent: W.mixer, p: [0, 0.05, 0] }); mesh(G.box(0.2, 0.6, 0.2, 0.06), rd, { parent: W.mixer, p: [0, 0.38, -0.2] }); mesh(G.box(0.24, 0.2, 0.5, 0.08), rd, { parent: W.mixer, p: [0, 0.68, 0] }); mesh(G.lathe([[0.001, 0], [0.14, 0], [0.24, 0.2], [0.22, 0.2], [0.13, 0.03], [0.001, 0.03]], 16, false), stl, { parent: W.mixer, p: [0, 0.1, 0.12] }); W.mixerHook = mesh(G.box(0.14, 0.03, 0.03, 0.01), stl, { parent: W.mixer, p: [0, 0.3, 0.12] }); mesh(G.cyl(0.02, 0.02, 0.3, 6), stl, { parent: W.mixer, p: [0, 0.44, 0.12] }); } W.mixer.visible = false; W.mixerSpin = 0;
   // saco y cajas bajo la mesa
   sack(M, -0.6, 0.23, 0.05, 0.75); mesh(G.box(0.6, 0.36, 0.5, 0.04), woodM, { parent: M, p: [0.45, 0.41, 0.0] });
   W.dough = mesh(blob((x, y, z, v) => v.set(x * 0.3, y > 0 ? y * 0.2 : y * 0.08, z * 0.28), { ws: 24, hs: 16 }), mat('#f6e8cb', { rough: 0.9, rim: 0.4, nocache: true }), { parent: M, p: [-0.62, 1.0, 0.1] });
@@ -793,6 +794,7 @@ export function updateWorld(dt, hour, o = {}) {
   W.fire[0].emissiveIntensity = f * (o.baking?.[0] ? 1.5 : 0.9) * fl; W.fire[1].emissiveIntensity = f * (o.baking?.[1] ? 1.5 : 0.8) * fl;
   W.ovenLight.intensity = (2.5 + n * 6) * f * 0.5 * fl;
   W.regOpen = Math.max(0, W.regOpen - dt * 1.3); const ro = Math.sin(Math.min(1, W.regOpen * 1.6) * Math.PI / 2); W.regDrawer.position.z = 0.02 + ro * 0.24; W.regCrank.rotation.x = ro * 1.1; W.regBell.scale.y = 0.7 + Math.sin(W.regOpen * 40) * 0.12 * W.regOpen; W.regKeys.forEach((kk, i) => kk.position.y = 0.035 - (W.regOpen > 0.75 && i % 3 === Math.floor(t * 20) % 3 ? 0.015 : 0));
+  if (W.mixerSpin > 0) { W.mixerSpin -= dt; W.mixerHook.rotation.y += dt * 22; W.mixer.rotation.z = Math.sin(t * 40) * 0.012; } else W.mixer.rotation.z = 0;
   for (const m of W.findMesh) if (m.visible) { m.rotation.y = t * 2; m.position.y = 0.35 + Math.sin(t * 3 + m.position.x) * 0.08; }
   W.hh.rotation.z = -(hour % 12) / 12 * Math.PI * 2; W.mh.rotation.z = -(hour % 1) * Math.PI * 2;
   for (const c of W.clouds) { c.g.position.x += dt * c.v; if (c.g.position.x > 52) c.g.position.x = -52; c.m.color.copy(light.skyBot).lerp(new THREE.Color(0xffffff), 0.75 - n * 0.35); }

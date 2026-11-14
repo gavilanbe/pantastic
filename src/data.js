@@ -185,3 +185,21 @@ export const MUEBLES = {
   gramola: { n: 'Gramola', p: 260, d: 'Suena bajito toda la noche. Te levantas tarareando.' },
 };
 export const MUE_ORDER = ['planta', 'alfombra', 'lampara', 'cuadro', 'sillon', 'gramola'];
+
+// Mejoras por niveles (coste = base · g^nivel) y equipo que automatiza (precio de alta + jornal diario).
+export const TRACKS = {
+  horno: { n: 'El horno', base: 50, g: 1.6, max: 10, d: 'Cada nivel: el pan llega al dorado un 8 % antes.' },
+  bandejas: { n: 'Las bandejas', base: 80, g: 1.8, max: 8, d: 'Cada dos niveles: una pieza más por hornada.' },
+  ferment: { n: 'La fermentadora', base: 40, g: 1.6, max: 10, d: 'Cada nivel: la masa sube un 7 % más rápido.' },
+  mostrador: { n: 'El mostrador', base: 60, g: 1.65, max: 10, d: 'Cada nivel: la clientela espera un 8 % más y suelta algo más de propina.' },
+  fama: { n: 'Carteles por el pueblo', base: 45, g: 1.6, max: 12, d: 'Cada nivel: un cliente más al día.' },
+  lena: { n: 'La leñera', base: 35, g: 1.55, max: 8, d: 'Cada nivel: el fuego aguanta un 12 % más.' },
+};
+export const TRACK_ORDER = ['horno', 'bandejas', 'ferment', 'mostrador', 'fama', 'lena'];
+export const STAFF = {
+  lenador: { n: 'Roble, el leñador', p: 140, wage: 5, lvl: 1, d: 'Cada mañana deja cinco troncos en la leñera.', look: { sp: 'tejon', fur: '#a98467', skin: '#f3e3c8', shirt: '#b8483a', pat: 'cuadros', acc: 'gorra', brow: 'serio' } },
+  amasadora: { n: 'La amasadora', p: 300, wage: 0, lvl: 1, d: 'Los panes que ya dominas (una estrella de maestría) se pueden amasar a máquina: sin minijuego y con masa correcta, no de campeonato.' },
+  brasa: { n: 'Brasa, la hornera', p: 380, wage: 10, lvl: 2, d: 'Saca el pan en dorado, lo deja en el carro y echa leña cuando el fuego baja. El punto exacto sigue siendo cosa tuya.', look: { sp: 'zorro', fur: '#c96a3a', skin: '#fff6ea', shirt: '#4a4654', pat: 'liso', acc: 'gorro', lash: true, scale: 0.88 } },
+  chispa: { n: 'Chispa, el repartidor', p: 520, wage: 14, lvl: 3, d: 'A mediodía y a media tarde lleva a la fonda hasta seis panes de lo que más haya en el mostrador, al 80 %.', look: { sp: 'liebre', fur: '#c9bfb4', skin: '#fff3df', shirt: '#f2b84b', pat: 'raya', acc: 'cinta' } },
+};
+export const STAFF_ORDER = ['lenador', 'amasadora', 'brasa', 'chispa'];

@@ -199,12 +199,12 @@ export function makeTray(id, n, stage, tone = 0) {
   const g = group();
   mesh(G.box(0.92, 0.035, 0.6, 0.015), mat('#c9a06a', { rough: 0.7 }), { parent: g, p: [0, 0.018, 0] });
   mesh(G.box(0.88, 0.012, 0.56, 0.005), mat('#f1e6d2', { rough: 0.95 }), { parent: g, p: [0, 0.04, 0] });
-  const cols = n > 4 ? 3 : 2, rows = 2;
+  const cols = n > 6 ? 4 : n > 4 ? 3 : 2, rows = n > 8 ? 3 : 2;
   for (let i = 0; i < n; i++) {
-    const cx = (i % cols - (cols - 1) / 2) * (0.84 / cols), cz = (Math.floor(i / cols) - (rows - 1) / 2) * 0.27;
+    const cx = (i % cols - (cols - 1) / 2) * (0.84 / cols), cz = (Math.floor(i / cols) - (rows - 1) / 2) * (0.54 / rows);
     let it;
-    if (stage === 'baked') { it = makeBread(id, tone); it.scale.setScalar(n > 4 ? 0.5 : 0.62); it.rotation.y = (id === 'barra' || id === 'semillas' || id === 'nueces' || id === 'chapata') ? Math.PI / 2 + (i % 2 ? 0.08 : -0.08) : i * 1.3; }
-    else { it = makeDough(stage === 'proofed', DOUGH_TINT[id]); it.scale.multiplyScalar(n > 4 ? 0.75 : 0.9); }
+    if (stage === 'baked') { it = makeBread(id, tone); it.scale.setScalar(n > 8 ? 0.34 : n > 6 ? 0.4 : n > 4 ? 0.5 : 0.62); it.rotation.y = (id === 'barra' || id === 'semillas' || id === 'nueces' || id === 'chapata') ? Math.PI / 2 + (i % 2 ? 0.08 : -0.08) : i * 1.3; }
+    else { it = makeDough(stage === 'proofed', DOUGH_TINT[id]); it.scale.multiplyScalar(n > 8 ? 0.5 : n > 6 ? 0.6 : n > 4 ? 0.75 : 0.9); }
     it.position.set(cx, 0.046 + (stage === 'baked' ? 0 : 0.04), cz);
     g.add(it);
   }
