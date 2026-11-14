@@ -317,7 +317,7 @@ export function toScreen(x, y, z) {
 }
 
 // ---------- partículas ----------
-const PMAX = 500;
+const PMAX = 1100;
 let pMesh; const parts = []; const pm = new THREE.Matrix4(), pq = new THREE.Quaternion(), ps = new THREE.Vector3(), pp = new THREE.Vector3(), pc = new THREE.Color(), pe = new THREE.Euler();
 export function initParticles() {
   const m = basic(0xffffff, { transparent: true, opacity: 0.95, depthWrite: false });
@@ -337,6 +337,7 @@ export function burst(kind, x, y, z, n = 10, o = {}) {
     else if (kind === 'confetti') { p.x += (Math.random() - 0.5) * (o.spread ?? 1); p.vx = Math.cos(a) * (1 + r * 2.5); p.vz = Math.sin(a) * (1 + r * 2); p.vy = 3 + Math.random() * 4; p.max = 1.6 + Math.random() * 1.2; p.s = 0.06 + Math.random() * 0.05; p.g = -5; p.drag = 1.4; p.c = [0xff7b8a, 0xffd166, 0x7bd3c4, 0x8fa8ff, 0xffa3d1, 0xfff1b8][i % 6]; p.flat = 0.25; }
     else if (kind === 'leaf') { p.x += (Math.random() - 0.5) * 1.6; p.z += (Math.random() - 0.5) * 1.6; p.vx = 0.6 + Math.random() * 0.8; p.vy = -0.4 - Math.random() * 0.4; p.vz = 0.3; p.max = 3 + Math.random() * 2; p.s = 0.07; p.c = o.color ?? 0xffb7c9; p.flat = 0.3; p.drag = 0.2; }
     else if (kind === 'crumb') { p.vx = Math.cos(a) * r * 1.2; p.vz = Math.sin(a) * r * 1.2; p.vy = 1 + Math.random() * 1.5; p.max = 0.5 + Math.random() * 0.3; p.s = 0.035 + Math.random() * 0.03; p.g = -7; p.c = [0xe7b872, 0xd49a52, 0xf6dcae][i % 3]; }
+    else if (kind === 'rain') { p.vy = -16; p.vx = -2; p.max = 0.6; p.s = 0.0065; p.flat = 34; p.c = 0xa9c8e6; p.nr = 1; }
     else if (kind === 'dust') { p.vx = Math.cos(a) * 0.5; p.vz = Math.sin(a) * 0.4; p.vy = 0.25 + Math.random() * 0.3; p.max = 0.45 + Math.random() * 0.2; p.s = 0.06 + Math.random() * 0.04; p.c = o.color ?? 0xf3e7d2; p.grow = 0.2; p.drag = 3; }
     parts.push(p);
   }
@@ -348,12 +349,13 @@ export function updateParticles(dt) {
     if (p.life >= p.max) { parts.splice(i, 1); continue; }
     const d = Math.exp(-p.drag * dt); p.vx *= d; p.vz *= d; if (p.g === 0 || p.drag > 2) p.vy *= d;
     p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+    if (p.nr && p.y < 0.1) { p.life = p.max; continue; }
     if (p.y < 0.03 && p.g < -1) { p.y = 0.03; p.vy *= -0.3; p.vx *= 0.6; p.vz *= 0.6; }
   }
   for (const p of parts) {
     const t = p.life / p.max, fade = t < 0.15 ? t / 0.15 : 1 - Math.pow(Math.max(0, (t - 0.5) / 0.5), 2);
     const s = (p.s + p.grow * t) * fade;
-    pe.set(p.spin + p.life * 3, p.spin * 2 + p.life * 2, 0); pq.setFromEuler(pe);
+    if (p.nr) pe.set(0, 0, -0.13); else pe.set(p.spin + p.life * 3, p.spin * 2 + p.life * 2, 0); pq.setFromEuler(pe);
     pm.compose(pp.set(p.x, p.y, p.z), pq, ps.set(s, s * p.flat, s));
     pMesh.setMatrixAt(n, pm); pMesh.setColorAt(n, pc.setHex(p.c)); n++;
   }

@@ -169,3 +169,19 @@ export const CORREO = [
   'Para que no te falte. Y para que no falte pan, que nos conocemos.',
 ];
 export const HALLAZGO = ['Una moneda entre los adoquines.', 'Alguien perdió esto. Ahora es tuyo.', 'Mira qué había aquí.', 'El pueblo da cosas a quien pasea.'];
+
+export const SUP = {
+  tejo: { n: 'El molino de Tejo', face: 'tejo', ings: ['harina', 'integral', 'centeno'], d: 'Harinas' },
+  pipa: { n: 'El colmado de Pipa', face: 'pipa', ings: ['levadura', 'mantequilla', 'azucar', 'chocolate'], d: 'Despensa' },
+  charca: { n: 'La huerta de Charca', face: 'charca', ings: ['semillas', 'aceitunas', 'nueces'], d: 'Del campo' },
+};
+export const SUP_ORDER = ['tejo', 'pipa', 'charca'];
+export const MUEBLES = {
+  alfombra: { n: 'Alfombra de trapillo', p: 60, d: 'Redonda y de colores. Los pies lo agradecen.' },
+  planta: { n: 'Costilla de Adán', p: 45, d: 'Una planta grande que no pide nada y lo da todo.' },
+  lampara: { n: 'Lámpara de pie', p: 90, d: 'Luz cálida para leer recetas viejas.' },
+  cuadro: { n: 'Retrato de la abuela', p: 120, d: 'Hogaza con las manos en jarras. Te vigila con cariño.' },
+  sillon: { n: 'Sillón orejero', p: 150, d: 'Para la cabezada de después de cerrar.' },
+  gramola: { n: 'Gramola', p: 260, d: 'Suena bajito toda la noche. Te levantas tarareando.' },
+};
+export const MUE_ORDER = ['planta', 'alfombra', 'lampara', 'cuadro', 'sillon', 'gramola'];

@@ -149,7 +149,7 @@ const UP_MODEL = {
   },
 };
 
-export function renderExtras(size = 200) {
+export function renderExtras(size = 200, objs = {}) {
   const r = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
   r.setSize(size, size); r.setPixelRatio(1);
   const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(24, 1, 0.1, 20);
@@ -177,6 +177,7 @@ export function renderExtras(size = 200) {
   const looks = { pan: PAN_LOOK, miga: MIGA_LOOK, pipa: PIPA_LOOK }; for (const id in NEIGH) looks[id] = NEIGH[id].look;
   for (const id in looks) out.face[id] = { idle: bust(looks[id], 'idle'), happy: bust(looks[id], 'happy'), talk: bust(looks[id], 'talk') };
   out.up.miga = out.face.miga.happy;
+  out.mue = {}; for (const id in objs) out.mue[id] = shot(objs[id], { fit: 1.05, up: id === 'alfombra' ? 2.2 : 0.8 });
   bend.k.value = k; r.dispose(); r.forceContextLoss?.();
   return out;
 }
