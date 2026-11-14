@@ -351,6 +351,7 @@ export function burst(kind, x, y, z, n = 10, o = {}) {
     else if (kind === 'leaf') { p.x += (Math.random() - 0.5) * 1.6; p.z += (Math.random() - 0.5) * 1.6; p.vx = 0.6 + Math.random() * 0.8; p.vy = -0.4 - Math.random() * 0.4; p.vz = 0.3; p.max = 3 + Math.random() * 2; p.s = 0.07; p.c = o.color ?? 0xffb7c9; p.flat = 0.3; p.drag = 0.2; }
     else if (kind === 'crumb') { p.vx = Math.cos(a) * r * 1.2; p.vz = Math.sin(a) * r * 1.2; p.vy = 1 + Math.random() * 1.5; p.max = 0.5 + Math.random() * 0.3; p.s = 0.035 + Math.random() * 0.03; p.g = -7; p.c = [0xe7b872, 0xd49a52, 0xf6dcae][i % 3]; }
     else if (kind === 'rain') { p.vy = -16; p.vx = -2; p.max = 0.6; p.s = 0.0065; p.flat = 34; p.c = 0xa9c8e6; p.nr = 1; }
+    else if (kind === 'snow') { p.x += (Math.random() - 0.5) * 2; p.vy = -1.1 - Math.random() * 0.5; p.vx = 0.3 + Math.random() * 0.3; p.max = 7; p.s = 0.035 + Math.random() * 0.03; p.c = 0xffffff; p.drag = 0; p.soft = true; }
     else if (kind === 'dust') { p.vx = Math.cos(a) * 0.5; p.vz = Math.sin(a) * 0.4; p.vy = 0.25 + Math.random() * 0.3; p.max = 0.45 + Math.random() * 0.2; p.s = 0.06 + Math.random() * 0.04; p.c = o.color ?? 0xf3e7d2; p.grow = 0.2; p.drag = 3; }
     parts.push(p);
   }
@@ -363,6 +364,7 @@ export function updateParticles(dt) {
     const d = Math.exp(-p.drag * dt); p.vx *= d; p.vz *= d; if (p.g === 0 || p.drag > 2) p.vy *= d;
     p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
     if (p.nr && p.y < 0.1) { p.life = p.max; continue; }
+    if (p.drag === 0 && p.y < 0.05) { p.life = p.max; continue; }
     if (p.y < 0.03 && p.g < -1) { p.y = 0.03; p.vy *= -0.3; p.vx *= 0.6; p.vz *= 0.6; }
   }
   for (const p of parts) {

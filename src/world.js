@@ -15,7 +15,7 @@ export const W = {
   },
   slots: [-4.35, -3.3, -2.25, -1.2].map(z => ({ x: -3.0, z })),
   baskets: [-5.0, -4.2, -3.4, -2.6, -1.8].map(z => ({ x: -1.9, z })),
-  fermSlots: [], ovenSlots: [], cartSlots: [], basketGroups: [], wips: {},
+  fermSlots: [], ovenSlots: [], cartSlots: [], basketGroups: [], wips: {}, leafReg: new Map(),
 };
 const SPAN = 64, X0 = -32, Z0 = -40, PX = 4096;
 const u = (x) => (x - X0) / SPAN * PX, v = (z) => (z - Z0) / SPAN * PX, S = PX / SPAN;
@@ -160,7 +160,7 @@ function tree(x, z, s = 1, kind = 'naranjo', seed = 1) {
   } else {
     mesh(G.lathe([[0.3, 0], [0.19, 0.2], [0.15, 0.9], [0.17, 1.5], [0.001, 1.6]], 10), trunkM, { parent: g });
     const cols = kind === 'naranjo' ? ['#58b368', '#69c274', '#4fa862'] : ['#8ccf6d', '#9ad97a', '#7dc463'];
-    const lm = (c) => mat(c, { map: T.leaf, rough: 1, sway: 0.03, rim: 0.45 });
+    const lm = (c) => { const m = mat(c, { map: T.leaf, rough: 1, sway: 0.03, rim: 0.45 }); W.leafReg.set(m, kind === 'naranjo' ? 'ever' : c); return m; };
     const puffs = [[0, 2.15, 0, 1.05], [-0.62, 1.8, 0.2, 0.72], [0.66, 1.85, 0.1, 0.74], [0.1, 1.75, 0.6, 0.66], [0, 2.75, -0.05, 0.7], [-0.2, 1.9, -0.55, 0.7]];
     puffs.forEach((p, i) => mesh(blob((bx, by, bz) => 1 + smoothNoise(bx * 2.2 + seed, by * 2.2, bz * 2.2 + i) * 0.1, { ws: 18, hs: 12 }), lm(cols[i % 3]), { parent: g, p: [p[0], p[1], p[2]], s: [p[3], p[3] * 0.86, p[3]] }));
     if (kind === 'naranjo') for (let i = 0; i < 9; i++) {
@@ -522,7 +522,7 @@ function outside() {
     m4.compose(new THREE.Vector3(x, h * 0.45, z), q, new THREE.Vector3(1.3, h, 1.3)); stalk.setMatrixAt(i, m4);
     stalk.setColorAt(i, c.set(['#f3cf63', '#e9bd4b', '#f7dc85', '#e2b140'][i % 4]));
   }
-  stalk.frustumCulled = false; stalk.castShadow = false; stalk.receiveShadow = true; scene.add(stalk);
+  stalk.frustumCulled = false; stalk.castShadow = false; stalk.receiveShadow = true; scene.add(stalk); W.wheat = stalk;
   fence(-17.7, -0.75, -8.3, -0.75); fence(-8.3, -0.75, -8.3, -9); fence(-17.7, -9, -8.3, -9); fence(-17.7, -0.75, -17.7, -9);
   W.obstacles.push([-17.9, -9.2, -8.1, -0.55]);
   // espantapájaros
@@ -737,6 +737,9 @@ function home() {
   mesh(G.box(0.42, 0.03, 0.56, 0.01), mat('#f2b84b'), { parent: C, p: [0.05, 0.75, 0], r: [0, 0.3, 0] }); mesh(G.box(0.3, 0.012, 0.2, 0.005), cream, { parent: C, p: [0.05, 0.77, -0.08], r: [0, 0.3, 0] });
   mesh(G.lathe([[0.001, 0], [0.09, 0], [0.13, 0.1], [0.09, 0.2], [0.001, 0.22]], 12), mat('#e2664f', { rough: 0.4 }), { parent: C, p: [-0.25, 0.73, 0.2] });
   W.home.obst.push([HX + 2.65, HZ + 0.95, HX + 3.75, HZ + 2.05]);
+  // armario con espejo
+  const Ar = group({ parent: H, p: [-3.62, 0.1, -0.55] }); mesh(G.box(0.7, 2.3, 1.5, 0.06), woodD, { parent: Ar, p: [0, 1.15, 0] }); for (const sz of [-1, 1]) { mesh(G.box(0.05, 2.0, 0.66, 0.03), wood, { parent: Ar, p: [0.36, 1.18, sz * 0.36] }); mesh(G.sph(0.035, 8, 6), mat('#e9b949', { metal: 0.6, rough: 0.3 }), { parent: Ar, p: [0.4, 1.15, sz * 0.08] }); } mesh(G.box(0.02, 1.2, 0.42, 0.01), mat('#cfe8f5', { rough: 0.1, metal: 0.4 }), { parent: Ar, p: [0.39, 1.35, -0.36] }); mesh(G.box(0.76, 0.1, 1.56, 0.04), wood, { parent: Ar, p: [0, 2.32, 0] });
+  ob(-4.0, -1.35, -3.2, 0.25);
   // felpudo de salida
   mesh(G.box(1.4, 0.04, 0.7, 0.02), mat('#e2664f', { rough: 1 }), { parent: H, p: [0, 0.12, 2.75], cast: false });
   // muebles que se compran
@@ -751,13 +754,13 @@ function home() {
   const gr = f('gramola', 1.15, -2.72); mesh(G.box(0.7, 0.75, 0.55, 0.05), woodD, { parent: gr, p: [0, 0.38, 0] }); mesh(G.cyl(0.24, 0.24, 0.03, 20), mat('#2a1d1a', { rough: 0.3 }), { parent: gr, p: [0, 0.78, 0.02] }); mesh(G.cyl(0.07, 0.07, 0.035, 12), mat('#e2664f'), { parent: gr, p: [0, 0.785, 0.02] }); const horn = new THREE.ConeGeometry(0.34, 0.6, 16, 1, true); mesh(horn, mat('#e9b949', { rough: 0.3, metal: 0.7, side: THREE.DoubleSide }), { parent: gr, p: [0.25, 1.25, -0.1], r: [0.5, 0, -2.4] }); mesh(G.cyl(0.02, 0.02, 0.4, 6), mat('#e9b949', { metal: 0.7, rough: 0.3 }), { parent: gr, p: [0.26, 0.95, -0.2] });
   for (const id in F) F[id].visible = false;
   W.home.light = new THREE.PointLight(0xffe2bd, 0, 14, 1.2); W.home.light.position.set(HX, 2.6, HZ + 0.5); scene.add(W.home.light);
-  W.home.st = { cama: [HX + 1.35, HZ - 1.7, Math.PI / 2], lata: [HX - 3.1, HZ - 1.55, Math.PI], vitrina: [HX - 0.6, HZ - 2.1, Math.PI], catalogo: [HX + 2.35, HZ + 1.5, Math.PI / 2], salir: [HX, HZ + 2.6, 0] };
+  W.home.st = { cama: [HX + 1.35, HZ - 1.7, Math.PI / 2], lata: [HX - 3.1, HZ - 1.55, Math.PI], vitrina: [HX - 0.6, HZ - 2.1, Math.PI], catalogo: [HX + 2.35, HZ + 1.5, Math.PI / 2], armario: [HX - 2.75, HZ - 0.55, -Math.PI / 2], salir: [HX, HZ + 2.6, 0] };
 }
 
 // ---------- API ----------
 export function buildWorld() {
   tex();
-  const gm = mat('#ffffff', { map: groundTex(), rough: 1, rim: 0 });
+  const gm = W.groundMat = mat('#ffffff', { map: groundTex(), rough: 1, rim: 0 });
   const pg = new THREE.PlaneGeometry(SPAN, SPAN, 8, 128); pg.rotateX(-Math.PI / 2);
   mesh(pg, gm, { parent: scene, p: [0, 0, -8], cast: false });
   bakery(); outside(); home();
@@ -769,6 +772,12 @@ export function setUpgrade(id, on) {
   if (id === 'miga') W.stool.visible = on;
   if (id === 'reforma') { W.floorMat.map = on ? T.tile : T.wood; W.wallMat.map = on ? T.wall2 : T.wall; W.wainM.color.set(on ? '#9fc4e8' : '#a8d0b0'); W.floorMat.needsUpdate = W.wallMat.needsUpdate = true; }
   if (id === 'molino') W.millFast = on;
+}
+/** Tiñe suelo, hojas caducas y trigal según la estación. */
+export function setSeason(se) {
+  W.groundMat.color.setRGB(...se.ground); W.groundMat.emissive.setRGB(...(se.n === 'invierno' ? [0.27, 0.29, 0.34] : [0, 0, 0]));
+  for (const [m, base] of W.leafReg) { m.color.set(base === 'ever' ? m.userData.base || (m.userData.base = '#' + m.color.getHexString()) : base); if (se.leaf && base !== 'ever') m.color.multiply(tmpC.setRGB(...se.leaf)); else if (se.leaf && se.n === 'invierno') m.color.lerp(tmpC.set('#e9f1f6'), 0.35); }
+  W.wheat.material.color.set(se.wheat || '#ffffff'); W.wheat.scale.y = se.n === 'invierno' ? 0.35 : se.n === 'otoño' ? 0.6 : 1;
 }
 /** Pone o quita la valla de obras de una mejora encargada. */
 export function setWip(id, at, on) {

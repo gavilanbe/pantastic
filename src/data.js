@@ -203,3 +203,29 @@ export const STAFF = {
   chispa: { n: 'Chispa, el repartidor', p: 520, wage: 14, lvl: 3, d: 'A mediodía y a media tarde lleva a la fonda hasta seis panes de lo que más haya en el mostrador, al 80 %.', look: { sp: 'liebre', fur: '#c9bfb4', skin: '#fff3df', shirt: '#f2b84b', pat: 'raya', acc: 'cinta' } },
 };
 export const STAFF_ORDER = ['lenador', 'amasadora', 'brasa', 'chispa'];
+
+export const SEASONS = [
+  { n: 'primavera', ground: [1, 1, 1], leaf: null, wheat: '#b9d36a', up: ['semillas', 'brioche'], cheap: 'semillas', fx: 'petal' },
+  { n: 'verano', ground: [1.06, 1.0, 0.86], leaf: [1.0, 1.02, 0.86], wheat: null, up: ['mollete', 'chapata'], cheap: 'aceitunas', fx: null },
+  { n: 'otoño', ground: [1.26, 0.93, 0.56], leaf: [1.6, 0.84, 0.38], wheat: '#c9a05a', up: ['nueces', 'centeno'], cheap: 'nueces', fx: 'leaf' },
+  { n: 'invierno', ground: [0.74, 0.8, 0.9], leaf: [1.2, 1.38, 1.5], wheat: '#e9eef2', up: ['caracola', 'brioche', 'hogaza'], cheap: 'chocolate', fx: 'snow' },
+];
+// Lazos: lo que cambia al llegar a tres y a cinco corazones con cada vecino.
+export const BONDS = {
+  lana: { 3: 'Te ha cosido un peto color frambuesa. Está en tu armario.', 5: 'Corre la voz de que aquí se espera a gusto: la clientela aguanta un 15 % más.' },
+  tejo: { 3: 'Te deja las tres harinas un 10 % más baratas. «No lo vayas contando.»', 5: 'Te ha afilado el hacha: cada tronco partido da uno más.' },
+  brinco: { 3: 'Te regala su camiseta de rayas de la suerte. Está en tu armario.', 5: 'Te ha enseñado a respirar al correr: andas un 6 % más rápido.' },
+  charca: { 3: 'La fonda te hace un encargo propio cada día.', 5: 'La fonda paga un 20 % más por lo que le lleve el reparto y los encargos.' },
+  pua: { 3: 'Te ha pintado una camiseta rosa. Está en tu armario.', 5: 'Va dejando tesoros por el pueblo: un hallazgo más cada día.' },
+  zarza: { 3: 'Ahora hay carta en el buzón todos los días.', 5: 'Habla de tu pan en cuatro pueblos: dos clientes más al día.' },
+  ulular: { 3: 'Sus trucos de maestro: la maestría de cada pan llega con un 25 % menos de hornadas.', 5: 'Su lección de paciencia: tus masas salen siempre un punto mejor amasadas.' },
+};
+export const LOGROS = [
+  ['venta1', 'La primera venta', 'Vende tu primer pan', 10], ['v50', 'Medio centenar', 'Vende 50 panes', 25], ['v200', 'El pan nuestro', 'Vende 200 panes', 60], ['v1000', 'Mil hogazas después', 'Vende 1000 panes', 200],
+  ['e500', 'La hucha suena', 'Gana 500 monedas', 25], ['e3000', 'Negocio redondo', 'Gana 3000 monedas', 80], ['e15000', 'Imperio de miga', 'Gana 15 000 monedas', 250],
+  ['s10', 'Mano de oro', 'Vende 10 panes de tres estrellas', 30], ['s100', 'Tres estrellas Migas', 'Vende 100 panes de tres estrellas', 120],
+  ['rec5', 'Media libreta', 'Reúne 5 recetas', 30], ['rec10', 'La libreta entera', 'Reúne las 10 recetas', 120], ['h2', 'Querida por todos', 'Dos corazones con los siete vecinos', 80], ['h5', 'Uña y carne', 'Cinco corazones con un vecino', 100],
+  ['ob6', 'Manos a la obra', 'Termina 6 obras', 60], ['ob12', 'Migas reluce', 'Termina las 12 obras', 250], ['casa', 'Hogar, dulce horno', 'Ten los seis muebles', 100], ['lata', 'Hormiguita', 'Guarda 200 monedas en la lata', 40],
+  ['racha', 'Dedos de cajera', 'Racha de caja de 10', 50], ['hacha', 'Leñadora fina', 'Cinco troncos limpios seguidos', 40], ['gato', 'Amiga del gato', 'Acaricia al gato 5 días', 30], ['brillo', 'Ojo de urraca', 'Recoge 20 hallazgos', 40],
+  ['anio', 'Las cuatro estaciones', 'Hornea un año entero en Migas', 150], ['hornada', 'La Hornada', 'Celebra la Hornada', 150], ['hornada3', 'Tradición', 'Celebra tres Hornadas', 300], ['m3', 'Maestra de un pan', 'Tres estrellas de maestría en un pan', 80], ['equipo', 'Buena jefa', 'Ten a todo el equipo', 150],
+];

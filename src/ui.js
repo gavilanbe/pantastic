@@ -25,8 +25,8 @@ export const ui = {
   show(sel, on) { $(sel).classList.toggle('hide', !on); },
 
   // ---- HUD ----
-  setDay(day, wd, wx, antojo) {
-    $('#dc-day').textContent = day; $('#dc-wd').textContent = wd; $('#dc-wx').innerHTML = WX[wx] || WX.sol;
+  setDay(day, wd, wx, antojo, se = '') {
+    $('#dc-day').textContent = day; $('#dc-wd').textContent = wd; $('#dc-se').textContent = se; $('#dc-wx').innerHTML = WX[wx] || WX.sol;
     const l = $('#leaf'); l.classList.remove('flip'); void l.offsetWidth; l.classList.add('flip');
     $('#dc-antojo').innerHTML = antojo ? `Hoy se lleva ${img(antojo)}<b>${BREADS[antojo].n}</b>` : '';
   },

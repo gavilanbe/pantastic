@@ -129,13 +129,15 @@ function shirtTex0(L) {
     g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(0, H - 12, W, 12);
   });
 }
-function petoTex() {
+const petoCache = new Map();
+function petoTex(peto = '#5f8fc4', tee = '#fbf3e3', stripes = false) { const k = peto + tee + stripes; if (!petoCache.has(k)) petoCache.set(k, petoTex0(peto, tee, stripes)); return petoCache.get(k); }
+function petoTex0(peto, tee, stripes) {
   return canvasTex(512, 256, (g, W, H) => {
     const r = rnd(4);
-    g.fillStyle = '#fbf3e3'; g.fillRect(0, 0, W, H);                       // camiseta
+    g.fillStyle = tee; g.fillRect(0, 0, W, H); if (stripes) { g.fillStyle = '#e2664f'; for (let y = 4; y < 130; y += 22) g.fillRect(0, y, W, 9); }
     const denim = (x, y, w, h) => {
       g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
-      g.fillStyle = '#5f8fc4'; g.fillRect(x, y, w, h);
+      g.fillStyle = peto; g.fillRect(x, y, w, h);
       g.globalAlpha = 0.16; g.strokeStyle = '#fff'; g.lineWidth = 1;
       for (let i = -H; i < W + H; i += 4) { g.beginPath(); g.moveTo(i, y + h); g.lineTo(i + h, y); g.stroke(); }
       g.globalAlpha = 0.12; g.fillStyle = '#1e3e6e'; for (let i = 0; i < 400; i++) g.fillRect(x + r() * w, y + r() * h, 2, 2);
@@ -200,7 +202,7 @@ export function makeChar(look) {
   const root = group(), body = group({ parent: root });
 
   // torso
-  const torsoMat = mat(0xffffff, { map: isPan ? petoTex() : shirtTex(L), rough: 0.88, rim: 0.3 });
+  const torsoMat = mat(0xffffff, { map: isPan ? petoTex(L.peto, L.tee, L.stripes) : shirtTex(L), rough: 0.88, rim: 0.3 });
   const torso = mesh(G.lathe([[0.001, 0.2], [0.19, 0.2], [0.265, 0.3], [0.26, 0.46], [0.2, 0.64], [0.135, 0.76], [0.001, 0.8]], 26), torsoMat, { parent: body });
   if (sp === 'buho') torso.scale.set(1.12, 1, 1.05);
 
@@ -208,7 +210,7 @@ export function makeChar(look) {
   const legs = [];
   for (const s of [-1, 1]) {
     const piv = group({ parent: body, p: [s * 0.115, 0.26, 0] });
-    mesh(G.cap(0.082, 0.09), isPan ? mat('#5f8fc4', { rough: 0.9 }) : furM, { parent: piv, p: [0, -0.1, 0] });
+    mesh(G.cap(0.082, 0.09), isPan ? mat(L.peto || '#5f8fc4', { rough: 0.9 }) : furM, { parent: piv, p: [0, -0.1, 0] });
     const shoe = isPan ? mat('#fdf8ee', { rough: 0.6 }) : (sp === 'buho' || sp === 'rana' ? mat(sp === 'buho' ? '#e9a53a' : L.fur) : mat(L.acc2 || '#6b4a3a', { rough: 0.7 }));
     mesh(G.sph(0.1, 14, 10), shoe, { parent: piv, p: [0, -0.2, 0.035], s: [1, 0.62, 1.35] });
     if (isPan) mesh(G.sph(0.1, 14, 10), mat('#e8b23c', { rough: 0.6 }), { parent: piv, p: [0, -0.225, 0.035], s: [1.04, 0.3, 1.4] });
@@ -225,7 +227,7 @@ export function makeChar(look) {
       const armM = isPan ? skinM : furM;
       mesh(G.cap(0.062, 0.2), armM, { parent: piv, p: [0, -0.15, 0] });
       mesh(G.sph(0.082, 14, 10), isPan ? skinM : (sp === 'tejon' ? mat('#3b3a42') : armM), { parent: piv, p: [0, -0.3, 0] });
-      if (isPan) mesh(G.sph(0.09, 14, 10), mat('#fbf3e3', { rough: 0.9 }), { parent: piv, p: [0, -0.03, 0], s: [1, 0.8, 1] });
+      if (isPan) mesh(G.sph(0.09, 14, 10), mat(L.stripes ? '#e2664f' : L.tee || '#fbf3e3', { rough: 0.9 }), { parent: piv, p: [0, -0.03, 0], s: [1, 0.8, 1] });
       else mesh(G.cap(0.07, 0.1), mat(L.shirt, { rough: 0.9 }), { parent: piv, p: [0, -0.08, 0] });
     }
     arms.push(piv);
@@ -324,6 +326,17 @@ export function makeChar(look) {
     mesh(G.cyl(0.2, 0.19, 0.16, 18), w, { parent: head, p: [0, 0.36, -0.05] });
     for (let i = 0; i < 5; i++) mesh(G.sph(0.14, 12, 10), w, { parent: head, p: [Math.cos(i * 1.257) * 0.12, 0.5, Math.sin(i * 1.257) * 0.12 - 0.05] });
     mesh(G.sph(0.15, 12, 10), w, { parent: head, p: [0, 0.54, -0.05] });
+  }
+  if (A === 'panuelo') {
+    const pm = mat('#e2664f', { rough: 0.95 });
+    mesh(new THREE.SphereGeometry(R * 1.15, 22, 12, 0, Math.PI * 2, 0, 0.8), pm, { parent: head, p: [0, 0.07, -0.07], s: [1.1, 0.98, 1.08], r: [-0.5, 0, 0] });
+    for (const sd of [-1, 1]) mesh(G.cone(0.07, 0.2, 6), pm, { parent: head, p: [sd * 0.08, 0.02, -0.5], r: [-1.9, 0, sd * 0.5], s: [1, 1, 0.5] });
+    mesh(G.sph(0.05, 8, 6), pm, { parent: head, p: [0, 0.1, -0.47] });
+  }
+  if (A === 'flor') {
+    const fg = group({ parent: head, p: [0.32, 0.26, 0.22], r: [0.4, 0.5, -0.5] });
+    for (let i = 0; i < 6; i++) mesh(G.sph(0.045, 8, 6), mat('#ff9ac1', { rough: 0.8 }), { parent: fg, p: [Math.cos(i * 1.047) * 0.06, 0, Math.sin(i * 1.047) * 0.06], s: [1, 0.5, 1] });
+    mesh(G.sph(0.04, 8, 6), mat('#ffcf4d'), { parent: fg, p: [0, 0.015, 0] });
   }
   if (A === 'lazo') {
     const b = group({ parent: head, p: [0.2, 0.33, 0.14], r: [0.3, 0, -0.3] }), bm = mat('#ff7b9c', { rough: 0.8 });
