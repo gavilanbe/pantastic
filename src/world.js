@@ -14,7 +14,7 @@ export const W = {
     carro: { x: 4.95, z: -0.45, ox: 5.9, oz: -0.45, yaw: Math.PI / 2, label: 'Carro' },
   },
   slots: [-4.35, -3.3, -2.25, -1.2].map(z => ({ x: -3.0, z })),
-  baskets: [-4.6, -3.75, -2.9, -2.05, -1.2].map(z => ({ x: -1.9, z })),
+  baskets: [-5.0, -4.2, -3.4, -2.6, -1.8].map(z => ({ x: -1.9, z })),
   fermSlots: [], ovenSlots: [], cartSlots: [], basketGroups: [], wips: {},
 };
 const SPAN = 64, X0 = -32, Z0 = -40, PX = 4096;
@@ -289,19 +289,39 @@ function bakery() {
   // cestas
   W.baskets.forEach((b, i) => {
     const bg = group({ parent: B, p: [b.x, 1.09, b.z] }), wk = mat('#ffffff', { map: T.wicker, rough: 0.9 });
-    mesh(G.box(0.8, 0.05, 0.76, 0.02), wk, { parent: bg, p: [0, 0.025, 0] });
-    for (const s of [-1, 1]) { mesh(G.box(0.8, 0.17, 0.05, 0.02), wk, { parent: bg, p: [0, 0.1, s * 0.355] }); mesh(G.box(0.05, 0.17, 0.76, 0.02), wk, { parent: bg, p: [s * 0.375, 0.1, 0] }); }
-    mesh(G.box(0.7, 0.012, 0.66, 0.004), mat(['#fff6e4', '#ffe1e1', '#e4f3e0', '#fff6e4', '#e3ecfb'][i], { rough: 1 }), { parent: bg, p: [0, 0.056, 0] });
-    const items = group({ parent: bg, p: [0, 0.062, 0] }); W.basketGroups.push({ g: bg, items, id: null, n: -1 });
+    mesh(G.box(0.8, 0.05, 0.72, 0.02), wk, { parent: bg, p: [0, 0.025, 0] });
+    for (const sd of [-1, 1]) { mesh(G.box(0.8, 0.17, 0.05, 0.02), wk, { parent: bg, p: [0, 0.1, sd * 0.335] }); mesh(G.box(0.05, 0.17, 0.72, 0.02), wk, { parent: bg, p: [sd * 0.375, 0.1, 0] }); }
+    mesh(G.box(0.7, 0.012, 0.62, 0.004), mat(['#fff6e4', '#ffe1e1', '#e4f3e0', '#fff6e4', '#e3ecfb'][i], { rough: 1 }), { parent: bg, p: [0, 0.056, 0] });
+    const items = group({ parent: bg, p: [0, 0.062, 0] });
+    // cartelito de precio en su pinza, mirando a quien compra y a la cámara
+    const tagTex = canvasTex(128, 96, (g) => { g.clearRect(0, 0, 128, 96); }), tag = group({ parent: bg, p: [-0.47, 0.19, 0.2], r: [0, -0.95, 0] });
+    mesh(G.cyl(0.012, 0.012, 0.16, 5), mat('#4a4654'), { parent: tag, p: [0, -0.1, 0] }); mesh(G.cyl(0.05, 0.06, 0.03, 10), mat('#4a4654'), { parent: tag, p: [0, -0.175, 0] });
+    for (const sd of [-1, 1]) mesh(G.plane(0.3, 0.225), basic('#ffffff', { map: tagTex }), { parent: tag, p: [0, 0.06, sd * 0.004], r: [0, sd > 0 ? 0 : Math.PI, 0], cast: false });
+    tag.visible = false; W.basketGroups.push({ g: bg, items, id: null, n: -1, tag, tagTex });
   });
-  // caja registradora
-  const reg = group({ parent: B, p: [-1.9, 1.09, -0.72], r: [0, -Math.PI / 2, 0] });
-  mesh(G.box(0.5, 0.26, 0.42, 0.06), mat('#e9785e', { rough: 0.5 }), { parent: reg, p: [0, 0.13, 0] });
-  mesh(G.box(0.5, 0.2, 0.2, 0.05), mat('#e9785e', { rough: 0.5 }), { parent: reg, p: [0, 0.34, -0.1], r: [-0.3, 0, 0] });
-  mesh(G.box(0.36, 0.11, 0.02, 0.01), mat('#fff9e0', { emissive: '#ffe9a0', ei: 0.3 }), { parent: reg, p: [0, 0.37, 0.0], r: [-0.3, 0, 0] });
-  for (let i = 0; i < 6; i++) mesh(G.cyl(0.03, 0.03, 0.03, 8), mat('#fff6e4'), { parent: reg, p: [-0.15 + (i % 3) * 0.15, 0.27, 0.07 + Math.floor(i / 3) * 0.1] });
-  mesh(G.sph(0.07, 12, 8), mat('#e9b949', { metal: 0.7, rough: 0.3 }), { parent: B, p: [-1.9, 1.16, -0.32], s: [1, 0.7, 1] });
-  W.register = [-1.9, 1.5, -0.72];
+  // bolsas de papel, pinzas y bote de propinas
+  const kraft = mat('#d9b98a', { rough: 1 });
+  for (let i = 0; i < 4; i++) mesh(G.box(0.24, 0.012, 0.3, 0.004), kraft, { parent: B, p: [-1.62, 1.1 + i * 0.013, -1.3], r: [0, 0.1 * i - 0.1, 0] });
+  mesh(G.box(0.2, 0.26, 0.12, 0.02), kraft, { parent: B, p: [-1.62, 1.28, -1.3], r: [0, 0.2, 0] });
+  const tong = group({ parent: B, p: [-1.62, 1.11, -2.2], r: [0, 0.5, 0] }); for (const sd of [-1, 1]) mesh(G.box(0.03, 0.012, 0.34, 0.004), mat('#c3ccd4', { metal: 0.6, rough: 0.3 }), { parent: tong, p: [sd * 0.018, 0, 0], r: [0, sd * 0.07, 0] });
+  W.tipJar = group({ parent: B, p: [-1.9, 1.09, -0.5] });
+  W.tipFill = mesh(G.cyl(0.12, 0.11, 0.26, 16), mat('#f5c33b', { rough: 0.35, metal: 0.6 }), { parent: W.tipJar, p: [0, 0.14, 0] }); W.tipFill.scale.y = 0.05;
+  mesh(G.cyl(0.145, 0.13, 0.3, 16), mat('#e8f6ff', { transparent: true, opacity: 0.28, rough: 0.05 }), { parent: W.tipJar, p: [0, 0.15, 0], cast: false });
+  mesh(G.box(0.17, 0.09, 0.01, 0.004), cream, { parent: W.tipJar, p: [0.07, 0.15, 0.125], r: [0, 0.5, 0] }); mesh(G.box(0.1, 0.02, 0.012, 0.004), mat('#e2664f'), { parent: W.tipJar, p: [0.07, 0.15, 0.131], r: [0, 0.5, 0] });
+  // caja registradora de las de palanca: cajón que salta, visor y campanilla
+  const reg = W.reg = group({ parent: B, p: [-1.9, 1.09, -0.98], r: [0, Math.PI / 2 - 0.45, 0] }), red = mat('#e2664f', { rough: 0.45 }), brass = mat('#e9b949', { metal: 0.75, rough: 0.28 });
+  mesh(G.box(0.58, 0.19, 0.46, 0.04), red, { parent: reg, p: [0, 0.095, 0] });
+  W.regDrawer = group({ parent: reg, p: [0, 0.08, 0.02] }); mesh(G.box(0.5, 0.1, 0.44, 0.02), brass, { parent: W.regDrawer }); mesh(G.sph(0.03, 8, 6), red, { parent: W.regDrawer, p: [0, 0, 0.23] });
+  for (let i = 0; i < 4; i++) mesh(G.cyl(0.035, 0.035, 0.02, 10), mat('#f5c33b', { metal: 0.6, rough: 0.3 }), { parent: W.regDrawer, p: [-0.16 + i * 0.105, 0.055, 0.12] });
+  mesh(G.box(0.52, 0.3, 0.26, 0.07), red, { parent: reg, p: [0, 0.33, -0.08] });
+  const kp = group({ parent: reg, p: [0, 0.25, 0.13], r: [0.55, 0, 0] }); mesh(G.box(0.48, 0.04, 0.2, 0.015), mat('#b9483a', { rough: 0.5 }), { parent: kp });
+  W.regKeys = []; for (let i = 0; i < 9; i++) W.regKeys.push(mesh(G.cyl(0.026, 0.026, 0.035, 10), i % 4 ? cream : brass, { parent: kp, p: [-0.16 + (i % 5) * 0.08, 0.035, -0.045 + Math.floor(i / 5) * 0.085] }));
+  W.regTex = canvasTex(128, 64, (g) => { g.fillStyle = '#fffbe6'; g.fillRect(0, 0, 128, 64); });
+  mesh(G.box(0.4, 0.17, 0.06, 0.03), brass, { parent: reg, p: [0, 0.57, -0.08], r: [-0.25, 0, 0] });
+  for (const sd of [-1, 1]) mesh(G.plane(0.34, 0.12), basic('#ffffff', { map: W.regTex }), { parent: reg, p: [0, 0.57, -0.08 + sd * 0.033], r: [-0.25 * sd, sd > 0 ? 0 : Math.PI, 0], cast: false });
+  W.regCrank = group({ parent: reg, p: [0.3, 0.3, -0.05] }); mesh(G.cyl(0.018, 0.018, 0.2, 6), brass, { parent: W.regCrank, p: [0.03, 0.09, 0] }); mesh(G.sph(0.045, 10, 8), mat('#2a1d1a', { rough: 0.4 }), { parent: W.regCrank, p: [0.03, 0.2, 0] });
+  W.regBell = mesh(G.sph(0.075, 12, 8), brass, { parent: reg, p: [-0.16, 0.71, -0.1], s: [1, 0.7, 1] }); mesh(G.sph(0.018, 6, 5), brass, { parent: reg, p: [-0.16, 0.77, -0.1] });
+  W.register = [-1.9, 1.75, -0.98]; W.regOpen = 0;
 
   // ---- zona de tienda (izquierda) ----
   const sh = group({ parent: B, p: [-4.4, 0, -5.85] });               // estantería de exposición
@@ -549,7 +569,9 @@ function outside() {
   const St = group({ parent: scene, p: [9.6, 0, -2.3] });
   mesh(G.cyl(0.36, 0.42, 0.45, 12), mat('#a9744b', { rough: 1 }), { parent: St, p: [0, 0.22, 0] }); mesh(G.cyl(0.33, 0.33, 0.02, 12), mat('#f0d2a0'), { parent: St, p: [0, 0.455, 0] });
   W.axe = group({ parent: St, p: [0.05, 0.46, 0], r: [0, 0.5, 0.5] }); mesh(G.cyl(0.025, 0.03, 0.75, 6), mat('#c98a5a'), { parent: W.axe, p: [0, 0.36, 0] }); mesh(G.box(0.26, 0.2, 0.04, 0.02), mat('#b9c3cc', { metal: 0.6, rough: 0.3 }), { parent: W.axe, p: [0.1, 0.66, 0] });
-  W.stumpLog = mesh(G.cyl(0.13, 0.13, 0.5, 9), mat('#b07a4c'), { parent: St, p: [-0.05, 0.71, 0.02] }); W.stumpLog.visible = false;
+  W.stumpLog = group({ parent: St, p: [0, 0.71, 0.02] }); mesh(G.cyl(0.15, 0.15, 0.5, 10), mat('#b07a4c', { rough: 0.95 }), { parent: W.stumpLog }); mesh(G.cyl(0.125, 0.125, 0.51, 10), mat('#f0d2a0'), { parent: W.stumpLog }); W.stumpLog.visible = false;
+  W.halfProto = group(); const hg = new THREE.CylinderGeometry(0.15, 0.15, 0.5, 10, 1, false, 0, Math.PI); mesh(hg, mat('#b07a4c', { rough: 0.95, side: THREE.DoubleSide }), { parent: W.halfProto }); mesh(G.box(0.3, 0.5, 0.012, 0.004), mat('#f6dfb4'), { parent: W.halfProto });
+  W.stumpPos = [9.6, 0.46, -2.3];
   W.circles.push([9.6, -2.3, 0.5]); W.obstacles.push([7.1, -3.95, 8.9, -2.7]);
   W.st.lena = { x: 8.0, z: -2.25, ox: 8.0, oz: -3.3, yaw: Math.PI };
   W.st.tocon = { x: 9.6, z: -1.45, ox: 9.6, oz: -2.3, yaw: Math.PI };
@@ -765,6 +787,7 @@ export function updateWorld(dt, hour, o = {}) {
   const fl = 0.25 + (o.fire ?? 0.6) * 1.1;
   W.fire[0].emissiveIntensity = f * (o.baking?.[0] ? 1.5 : 0.9) * fl; W.fire[1].emissiveIntensity = f * (o.baking?.[1] ? 1.5 : 0.8) * fl;
   W.ovenLight.intensity = (2.5 + n * 6) * f * 0.5 * fl;
+  W.regOpen = Math.max(0, W.regOpen - dt * 1.3); const ro = Math.sin(Math.min(1, W.regOpen * 1.6) * Math.PI / 2); W.regDrawer.position.z = 0.02 + ro * 0.24; W.regCrank.rotation.x = ro * 1.1; W.regBell.scale.y = 0.7 + Math.sin(W.regOpen * 40) * 0.12 * W.regOpen; W.regKeys.forEach((kk, i) => kk.position.y = 0.035 - (W.regOpen > 0.75 && i % 3 === Math.floor(t * 20) % 3 ? 0.015 : 0));
   for (const m of W.findMesh) if (m.visible) { m.rotation.y = t * 2; m.position.y = 0.35 + Math.sin(t * 3 + m.position.x) * 0.08; }
   W.hh.rotation.z = -(hour % 12) / 12 * Math.PI * 2; W.mh.rotation.z = -(hour % 1) * Math.PI * 2;
   for (const c of W.clouds) { c.g.position.x += dt * c.v; if (c.g.position.x > 52) c.g.position.x = -52; c.m.color.copy(light.skyBot).lerp(new THREE.Color(0xffffff), 0.75 - n * 0.35); }

@@ -387,6 +387,7 @@ export function updateChar(ch, dt) {
   else if (a === 'give') { const k = Math.sin(clamp(at / 0.5, 0, 1) * Math.PI); aR = -1.4 * k; azR = 0.1; lean = 0.12 * k; if (at > 0.5) ch.action = null; }
   else if (a === 'nod') { headX = Math.sin(at * 12) * 0.2 * (1 - at / 0.7); if (at > 0.7) ch.action = null; }
   else if (a === 'dance') { by += Math.abs(Math.sin(at * 6)) * 0.12; azL = -1.6 - Math.sin(at * 6) * 0.8; azR = 1.6 - Math.sin(at * 6) * 0.8; aL = aR = 0; roll = Math.sin(at * 6) * 0.12; headZ = Math.sin(at * 6) * 0.14; lL = Math.sin(at * 6) * 0.3; lR = -lL; }
+  else if (a === 'chop') { const k = ch.chopK || 0; aL = aR = -2.75 + k * 2.35; azL = 0.3; azR = -0.3; lean = -0.12 + k * 0.5; by -= k * 0.07; headX = k * 0.25; }
   else if (a === 'sad') { headX = 0.3; azL = -0.12; azR = 0.12; by -= 0.03; if (at < 0.05) ch.say('sad', 1.6); if (at > 1.5) ch.action = null; }
   if (ch.talking && !a && !ch.carry) { aR = -0.7 + Math.sin(ch.t * 6.5) * 0.3; azR = 0.5 + Math.sin(ch.t * 4.3) * 0.2; aL = Math.sin(ch.t * 5.1) * 0.15; headX += Math.sin(ch.t * 9) * 0.05; }
   if (ch.sit) { lL = lR = -1.45; by -= 0.14; }
