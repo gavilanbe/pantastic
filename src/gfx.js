@@ -328,21 +328,24 @@ export function toScreen(x, y, z) {
 
 // ---------- partículas ----------
 const PMAX = 1100;
-let pMesh; const parts = []; const pm = new THREE.Matrix4(), pq = new THREE.Quaternion(), ps = new THREE.Vector3(), pp = new THREE.Vector3(), pc = new THREE.Color(), pe = new THREE.Euler();
+let pMesh, pSoft; const parts = []; const pm = new THREE.Matrix4(), pq = new THREE.Quaternion(), ps = new THREE.Vector3(), pp = new THREE.Vector3(), pc = new THREE.Color(), pe = new THREE.Euler();
 export function initParticles() {
   const m = basic(0xffffff, { transparent: true, opacity: 0.95, depthWrite: false });
   pMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), m, PMAX);
   pMesh.frustumCulled = false; pMesh.count = 0; pMesh.renderOrder = 5;
   pMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(PMAX * 3), 3);
   scene.add(pMesh);
+  const st = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); });
+  pSoft = new THREE.InstancedMesh(new THREE.PlaneGeometry(2.7, 2.7), basic(0xffffff, { map: st, transparent: true, opacity: 0.62, depthWrite: false }), 400);
+  pSoft.frustumCulled = false; pSoft.count = 0; pSoft.renderOrder = 4; pSoft.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(400 * 3), 3); scene.add(pSoft);
 }
 /** kinds: 'flour','spark','steam','leaf','confetti','crumb','heartdust' */
 export function burst(kind, x, y, z, n = 10, o = {}) {
   for (let i = 0; i < n && parts.length < PMAX; i++) {
     const a = Math.random() * Math.PI * 2, r = Math.random();
-    const p = { x, y, z, vx: 0, vy: 0, vz: 0, life: 0, max: 1, s: 0.1, g: 0, drag: 1, c: 0xffffff, grow: 0, spin: Math.random() * 6, flat: 1 };
-    if (kind === 'flour') { p.vx = Math.cos(a) * (0.5 + r) * 1.2; p.vz = Math.sin(a) * (0.5 + r) * 0.9; p.vy = 0.5 + Math.random() * 1.1; p.max = 0.7 + Math.random() * 0.5; p.s = 0.05 + Math.random() * 0.06; p.g = -0.5; p.drag = 2.5; p.c = 0xd9cfbd; p.grow = 0.12; }
-    else if (kind === 'steam') { p.x += (Math.random() - 0.5) * (o.spread ?? 0.4); p.z += (Math.random() - 0.5) * 0.2; p.vy = 0.5 + Math.random() * 0.4; p.vx = (Math.random() - 0.5) * 0.2; p.max = 1.3 + Math.random() * 0.8; p.s = 0.06 + Math.random() * 0.05; p.c = 0xd4d4d4; p.grow = 0.14; p.drag = 0.4; }
+    const p = { x, y, z, vx: 0, vy: 0, vz: 0, life: 0, max: 1, s: 0.1, g: 0, drag: 1, c: 0xffffff, grow: 0, spin: Math.random() * 6, flat: 1, soft: kind === 'flour' || kind === 'steam' || kind === 'dust' };
+    if (kind === 'flour') { p.vx = Math.cos(a) * (0.5 + r) * 1.2; p.vz = Math.sin(a) * (0.5 + r) * 0.9; p.vy = 0.5 + Math.random() * 1.1; p.max = 0.7 + Math.random() * 0.5; p.s = 0.05 + Math.random() * 0.06; p.g = -0.5; p.drag = 2.5; p.c = 0xfff4de; p.grow = 0.14; }
+    else if (kind === 'steam') { p.x += (Math.random() - 0.5) * (o.spread ?? 0.4); p.z += (Math.random() - 0.5) * 0.2; p.vy = 0.5 + Math.random() * 0.4; p.vx = (Math.random() - 0.5) * 0.2; p.max = 1.3 + Math.random() * 0.8; p.s = 0.06 + Math.random() * 0.05; p.c = 0xffffff; p.grow = 0.16; p.drag = 0.4; }
     else if (kind === 'spark') { p.vx = Math.cos(a) * (1 + r * 2); p.vz = Math.sin(a) * (1 + r * 2) * 0.6; p.vy = 1.5 + Math.random() * 2.5; p.max = 0.5 + Math.random() * 0.5; p.s = 0.05 + Math.random() * 0.05; p.g = -6; p.c = o.color ?? [0xffe27a, 0xfff3c4, 0xffc94d][i % 3]; p.flat = 0.5; }
     else if (kind === 'confetti') { p.x += (Math.random() - 0.5) * (o.spread ?? 1); p.vx = Math.cos(a) * (1 + r * 2.5); p.vz = Math.sin(a) * (1 + r * 2); p.vy = 3 + Math.random() * 4; p.max = 1.6 + Math.random() * 1.2; p.s = 0.06 + Math.random() * 0.05; p.g = -5; p.drag = 1.4; p.c = [0xff7b8a, 0xffd166, 0x7bd3c4, 0x8fa8ff, 0xffa3d1, 0xfff1b8][i % 6]; p.flat = 0.25; }
     else if (kind === 'leaf') { p.x += (Math.random() - 0.5) * 1.6; p.z += (Math.random() - 0.5) * 1.6; p.vx = 0.6 + Math.random() * 0.8; p.vy = -0.4 - Math.random() * 0.4; p.vz = 0.3; p.max = 3 + Math.random() * 2; p.s = 0.07; p.c = o.color ?? 0xffb7c9; p.flat = 0.3; p.drag = 0.2; }
@@ -353,7 +356,7 @@ export function burst(kind, x, y, z, n = 10, o = {}) {
   }
 }
 export function updateParticles(dt) {
-  let n = 0;
+  let n = 0, m = 0;
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i]; p.life += dt;
     if (p.life >= p.max) { parts.splice(i, 1); continue; }
@@ -367,8 +370,9 @@ export function updateParticles(dt) {
     const s = (p.s + p.grow * t) * fade;
     if (p.nr) pe.set(0, 0, -0.13); else pe.set(p.spin + p.life * 3, p.spin * 2 + p.life * 2, 0); pq.setFromEuler(pe);
     pm.compose(pp.set(p.x, p.y, p.z), pq, ps.set(s, s * p.flat, s));
-    pMesh.setMatrixAt(n, pm); pMesh.setColorAt(n, pc.setHex(p.c)); n++;
+    if (p.soft && m < 400) { pm.compose(pp, camera.quaternion, ps.set(s, s, s)); pSoft.setMatrixAt(m, pm); pSoft.setColorAt(m, pc.setHex(p.c)); m++; } else { pMesh.setMatrixAt(n, pm); pMesh.setColorAt(n, pc.setHex(p.c)); n++; }
   }
+  pSoft.count = m; pSoft.instanceMatrix.needsUpdate = true; pSoft.instanceColor.needsUpdate = true;
   pMesh.count = n; pMesh.instanceMatrix.needsUpdate = true; if (pMesh.instanceColor) pMesh.instanceColor.needsUpdate = true;
 }
 

@@ -6,6 +6,7 @@ import { makeChar, updateChar, PAN_LOOK, MIGA_LOOK, randomLook } from './chars.j
 import { makeTray, makeBread, renderIcons } from './breads.js';
 import { ING, BREADS, BREAD_ORDER, PRICE_LV, REP, NEIGH, NEIGH_ORDER, HEART_AT, UPG, UPG_ORDER, CAPS, PIPA, DIAS, TIEMPO, CARTA, CARTA_ROSCA, VISIT_LINES, NO_STOCK, CARO, CORREO, HALLAZGO, PIPA_LOOK, SUP, SUP_ORDER, MUEBLES, MUE_ORDER } from './data.js';
 import { renderExtras } from './icons.js';
+import { initLife, updateLife, cat } from './life.js';
 import { logoURL } from './logo.js';
 import { ui, img, coin, stars, ingChip, $, ICON, XI } from './ui.js';
 import { initAudio, resumeAudio, sfx, blip, note, music, toggleMute } from './audio.js';
@@ -673,6 +674,7 @@ function findAction() {
   if (R.mail && Math.hypot(px - 7.9, pz - 1.5) < 1.6) return { text: 'Abrir el buzón', pos: [7.9, 1.9, 1.5], fn: openMail };
   if (Math.hypot(px - W.homeSpot[0], pz - W.homeSpot[1]) < 1.7) return { text: c ? 'Tu casa. Deja antes la bandeja' : 'Entrar en casa', ok: !c, pos: [12.6, 2.2, -5.3], fn: () => c ? sfx('no') : goHome(true) };
   if (Math.hypot(px + 8.2, pz - 1.5) < 1.5) return { text: R.brb ? 'Quitar el «Vuelvo enseguida»' : 'Colgar el «Vuelvo enseguida»', pos: [-7.6, 2.6, 1.5], fn: toggleBrb };
+  if (cat.g.visible && Math.hypot(px - cat.x, pz - cat.z) < 1.5 && !c) return { text: 'Acariciar al gato', pos: [cat.x, 1.4, cat.z], fn: () => { cat.purr = 4; pan.act('give'); sfx('heart'); ui.float('♥', cat.x, 1.3, cat.z, 'heart'); if (!R.petted) { R.petted = true; addRep(1); } } };
   if (Math.hypot(px - W.pondPos[0], pz - W.pondPos[1]) < 3.6 && !c) return { text: 'Saludar a los patos', pos: [W.pondPos[0], 1.2, W.pondPos[1]], fn: () => { pan.act('wave'); pan.yawTo = Math.atan2(W.pondPos[0] - px, W.pondPos[1] - pz); sfx('quack'); for (const d of W.ducks) d.a += 0.5; } };
   if (S.up.fuente && Math.hypot(px - W.fountainPos[0], pz - W.fountainPos[1]) < 2.6) return { text: 'Echar una miga a la fuente', pos: [W.fountainPos[0], 2.3, W.fountainPos[1]], fn: () => { pan.act('give'); sfx('pop'); burst('crumb', W.fountainPos[0], 1.2, W.fountainPos[1], 5); burst('spark', W.fountainPos[0], 1.5, W.fountainPos[1], 8); if (!R.wished) { R.wished = true; addRep(1); ui.toast('Dicen que da suerte.'); } } };
   return null;
@@ -843,6 +845,7 @@ function frame(dt) {
   updateCamera(dt, focus, frame.snap); frame.snap = false;
   setTimeOfDay(hour, wd);
   updateWorld(dt, hour, { wind: R?.weather === 'viento', baking: R ? [!!R.oven[0], !!R.oven[1]] : null, fire: R?.fire, home: !!R?.inHome, fermOpen: R?.fermOpen > 0, fermBusy: R?.ferm.some(x => x) });
+  updateLife(dt, tSec, pan, { rain: R?.weather === 'lluvia', night: light.night > 0.6, onFlush: () => sfx('whoosh') });
   updateParticles(dt); ui.update();
 }
 let last = performance.now();
@@ -851,7 +854,7 @@ function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now;
 // ---------- arranque ----------
 function boot() {
   initGfx(document.getElementById('c')); initParticles(); buildWorld(); ui.init(renderIcons(), renderExtras(200, Object.fromEntries(Object.entries(W.home.fur).map(([id, g]) => { const c = g.clone(true); c.visible = true; c.position.set(0, 0, 0); c.rotation.set(0, id === 'sillon' ? 0.5 : 0, 0); return [id, c]; }))));
-  scene.add(pan.root, marker);
+  scene.add(pan.root, marker); initLife();
   addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase(); if (k === 'tab') e.preventDefault(); if (e.repeat) return; initAudio(); resumeAudio();
     if (k === 'm') return ui.toast(toggleMute() ? 'Sin sonido' : 'Con sonido');

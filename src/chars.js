@@ -1,5 +1,5 @@
 // Personajes: Pan (humana) y los vecinos animales. Caras pintadas en lienzo, cuerpo de piezas rígidas.
-import { THREE, mat, mesh, group, G, canvasTex, rnd, Spring, angLerp, clamp, lerp, blob } from './gfx.js';
+import { THREE, mat, basic, mesh, group, G, canvasTex, rnd, Spring, angLerp, clamp, lerp, blob } from './gfx.js';
 
 const HEAD_Y = 1.1, R = 0.4;
 const faceCache = new Map();
@@ -165,7 +165,7 @@ function hairGeo() {
     const w = THREE.MathUtils.smoothstep(ap, open - 0.2, open + 0.12);
     const fringe = lerp(0.74, 1.38, Math.pow(clamp(ap / open, 0, 1), 1.5)) - Math.exp(-ap * ap / 0.004) * 0.1;
     const thEnd = lerp(fringe, Math.PI * 0.5, w);
-    const drop = w * lerp(0.6, 0.72, THREE.MathUtils.smoothstep(ap, 1.2, 2.6));
+    const drop = w * lerp(0.52, 0.36, THREE.MathUtils.smoothstep(ap, 1.1, 2.4));
     const arcLen = thEnd * 0.42, total = arcLen + drop;
     for (let j = 0; j <= M; j++) {
       const s = (j / M) * total; let x, y, z;
@@ -190,6 +190,7 @@ function hairGeo() {
   return g;
 }
 
+let _blob; function blobMat() { if (!_blob) { const t = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 4, 32, 32, 32); gr.addColorStop(0, 'rgba(60,35,25,.5)'); gr.addColorStop(1, 'rgba(60,35,25,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }); _blob = basic('#ffffff', { map: t, transparent: true, depthWrite: false }); _blob.polygonOffset = true; _blob.polygonOffsetFactor = -2; } return _blob; }
 // ---------- construcción ----------
 let hairG;
 export function makeChar(look) {
@@ -351,6 +352,15 @@ export function makeChar(look) {
   if (sp === 'raton') { tail = group({ parent: body, p: [0, 0.28, -0.22], r: [-1.1, 0, 0] }); mesh(G.cap(0.018, 0.34, 6), mat('#e8a0a8'), { parent: tail, p: [0, 0.18, 0] }); }
   if (sp === 'tejon') tail = mesh(G.sph(0.1, 10, 8), furM, { parent: body, p: [0, 0.3, -0.26], s: [0.9, 0.8, 1.3] });
 
+  if (isPan) {   // delantal atado atrás con un buen lazo: que se la lea también de espaldas
+    const ap = mat('#fff6e4', { rough: 0.95 });
+    mesh(G.tor(0.262, 0.03, 8, 26), ap, { parent: body, p: [0, 0.5, 0], r: [Math.PI / 2, 0, 0], s: [1, 1, 1.1] });
+    const bow = group({ parent: body, p: [0, 0.5, -0.275] });
+    for (const sd of [-1, 1]) { mesh(G.sph(1, 10, 8), ap, { parent: bow, p: [sd * 0.13, 0.04, -0.01], s: [0.13, 0.09, 0.05], r: [0, 0, sd * 0.4] }); mesh(G.box(0.07, 0.24, 0.025, 0.012), ap, { parent: bow, p: [sd * 0.06, -0.14, -0.02], r: [0, 0, sd * 0.25] }); }
+    mesh(G.sph(0.04, 8, 6), ap, { parent: bow });
+  }
+  // sombra de contacto
+  mesh(G.plane(0.95, 0.95), blobMat(), { parent: root, p: [0, 0.118, 0], r: [-Math.PI / 2, 0, 0], cast: false, recv: false });
   const carryAnchor = group({ parent: body, p: [0, 0.5, 0.56] });
   root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
   skull.receiveShadow = false;

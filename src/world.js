@@ -92,8 +92,8 @@ function tex() {
       const y = i * 64; g.fillStyle = ['#dcab70', '#d39f63', '#e2b47a', '#cf9a5d'][i % 4]; g.fillRect(0, y, w, 64);
       g.strokeStyle = 'rgba(120,70,30,.28)'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
       const off = (i % 2) * 256 + 90; g.beginPath(); g.moveTo(off, y); g.lineTo(off, y + 64); g.moveTo((off + 256) % 512, y); g.lineTo((off + 256) % 512, y + 64); g.stroke();
-      g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 2;
-      for (let k = 0; k < 5; k++) { const yy = y + 8 + r() * 48; g.beginPath(); g.moveTo(0, yy); g.bezierCurveTo(150, yy + r() * 10 - 5, 350, yy + r() * 10 - 5, 512, yy); g.stroke(); }
+      g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 5;
+      for (let k = 0; k < 3; k++) { const yy = y + 8 + r() * 48; g.beginPath(); g.moveTo(0, yy); g.bezierCurveTo(150, yy + r() * 10 - 5, 350, yy + r() * 10 - 5, 512, yy); g.stroke(); }
     }
   }, { repeat: [3.2, 1.7] });
   T.wall = canvasTex(1024, 512, (g, w, h) => {
@@ -181,7 +181,8 @@ function house(x, z, o = {}) {
   mesh(G.box(0.45, 0.9, 0.45, 0.06), mat('#f1dcc0'), { parent: g, p: [w * 0.25, h + 1.0, -0.3] });
   mesh(G.box(0.8, 1.35, 0.1, 0.08), mat(o.door || '#8f6a4a', { rough: 0.8 }), { parent: g, p: [-w * 0.18, 0.72, d / 2 + 0.02] });
   mesh(G.sph(0.05, 8, 6), mat('#e9b949', { metal: 0.6, rough: 0.3 }), { parent: g, p: [-w * 0.18 + 0.26, 0.72, d / 2 + 0.09] });
-  for (const wx of [w * 0.22]) {
+  for (const wx of (w > 3.7 ? [w * 0.22, -w * 0.42 + 0.1] : [w * 0.22]).slice(0, o.one ? 1 : 2)) { if (wx < 0 && Math.abs(wx + w * 0.18) < 0.9) continue;
+    for (const sd of [-1, 1]) mesh(G.box(0.2, 0.95, 0.06, 0.02), mat(o.door || '#8f6a4a', { rough: 0.8 }), { parent: g, p: [wx + sd * 0.58, 1.45, d / 2 + 0.03] });
     mesh(G.box(0.95, 0.95, 0.1, 0.08), mat('#fffaf0'), { parent: g, p: [wx, 1.45, d / 2 + 0.02] });
     const wm = mat('#bfe3ff', { rough: 0.3, emissive: '#ffcf70', ei: 0, nocache: true }); W.windows.push(wm);
     mesh(G.box(0.75, 0.75, 0.1, 0.05), wm, { parent: g, p: [wx, 1.45, d / 2 + 0.045] });
@@ -331,6 +332,7 @@ function bakery() {
   const deco = [['hogaza', -1.3, 0], ['barra', -0.45, 0, 1], ['centeno', 0.5, 0], ['brioche', 1.3, 0], ['chapata', -1.1, 1], ['rosca', -0.1, 1], ['caracola', 0.75, 1], ['mollete', 1.4, 1]];
   for (const [id, x, row, up] of deco) { const b = makeBread(id); b.position.set(x, 1.1 + row * 0.72, 0.12); b.scale.setScalar(0.9); if (up) { b.scale.setScalar(0.78); b.rotation.y = 0.12; } else b.rotation.y = x; sh.add(b); }
   for (let i = 0; i < 4; i++) { const j = group({ parent: sh, p: [-1.35 + i * 0.9, 2.53, 0.1] }); mesh(G.cyl(0.15, 0.13, 0.3, 12), mat(['#e9785e', '#ffd166', '#9ad1c0', '#c9a0dc'][i], { rough: 0.35, transparent: true, opacity: 0.92 }), { parent: j, p: [0, 0.15, 0] }); mesh(G.cyl(0.16, 0.16, 0.06, 12), woodD, { parent: j, p: [0, 0.32, 0] }); }
+  mesh(G.plane(2.9, 1.305), mat('#ffffff', { map: W.logoTex, alphaTest: 0.5, rough: 0.6, rim: 0 }), { parent: B, p: [-4.4, 3.42, -6.03], cast: false });
   // pizarra del día: caballete de cara a la entrada, con sus cuatro patas en el suelo
   W.boardTex = canvasTex(512, 384, (g) => { g.fillStyle = '#3d5a4c'; g.fillRect(0, 0, 512, 384); });
   W.boardPos = [-5.15, -0.55];
@@ -421,7 +423,8 @@ function bakery() {
   const archShape = (w, h) => { const sp = new THREE.Shape(); sp.moveTo(-w, 0); sp.lineTo(-w, h - w); sp.absarc(0, h - w, w, Math.PI, 0, true); sp.lineTo(w, 0); sp.lineTo(-w, 0); return sp; };
   const archG = (w, h, d) => new THREE.ExtrudeGeometry(archShape(w, h), { depth: d, bevelEnabled: false, curveSegments: 14 });
   const ring = archShape(0.8, 1.12); ring.holes.push(new THREE.Path(archShape(0.52, 0.8).getPoints(14)));
-  mesh(new THREE.ExtrudeGeometry(ring, { depth: 0.78, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 2, curveSegments: 14 }), brickM, { parent: H, p: [0, 1.11, 0.5] });
+  const ringG = new THREE.ExtrudeGeometry(ring, { depth: 0.78, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 2, curveSegments: 14 }); { const pa = ringG.attributes.position, na = ringG.attributes.normal, ua = ringG.attributes.uv; for (let q = 0; q < pa.count; q++) { const fz = Math.abs(na.getZ(q)) > 0.6; ua.setXY(q, fz ? pa.getX(q) * 0.42 : pa.getZ(q) * 0.42 + Math.atan2(pa.getY(q) - 0.3, pa.getX(q)) * 0.3, fz ? pa.getY(q) * 0.84 : pa.getZ(q) * 0.84); } }
+  mesh(ringG, brickM, { parent: H, p: [0, 1.11, 0.5] });
   mesh(G.box(0.3, 0.26, 0.1, 0.04), mat('#cfc6b6', { rough: 0.9 }), { parent: H, p: [0, 2.12, 1.26] });
   mesh(archG(0.53, 0.81, 0.02), soot, { parent: H, p: [0, 1.11, 0.5] });
   W.fire = [mat('#ffb04d', { emissive: '#ff8a2a', ei: 1.2, nocache: true }), mat('#ffb04d', { emissive: '#ff8a2a', ei: 0, nocache: true })];
@@ -674,6 +677,8 @@ function outside() {
   for (const sx of [-1, 1]) { mesh(G.box(0.08, 0.9, 0.08, 0.02), mat('#f2b84b'), { parent: W.wipProto, p: [sx * 0.6, 0.45, 0.14], r: [0.3, 0, 0] }); mesh(G.box(0.08, 0.9, 0.08, 0.02), mat('#f2b84b'), { parent: W.wipProto, p: [sx * 0.6, 0.45, -0.14], r: [-0.3, 0, 0] }); }
   for (let i = 0; i < 7; i++) mesh(G.box(0.21, 0.26, 0.06, 0.01), mat(i % 2 ? '#fff6e2' : '#e2664f'), { parent: W.wipProto, p: [-0.63 + i * 0.21, 0.72, 0] });
   mesh(G.cone(0.18, 0.5, 10), mat('#f08a3c'), { parent: W.wipProto, p: [1.05, 0.25, 0.2] }); mesh(G.cyl(0.24, 0.24, 0.04, 10), mat('#f08a3c'), { parent: W.wipProto, p: [1.05, 0.02, 0.2] }); mesh(G.cyl(0.13, 0.15, 0.1, 10), mat('#fff6e2'), { parent: W.wipProto, p: [1.05, 0.26, 0.2] });
+  W.mounts = [];
+  for (let i = 0; i < 11; i++) { const mm = new THREE.MeshBasicMaterial({ color: 0xa9c4e6 }), far = i % 2; const m = new THREE.Mesh(new THREE.ConeGeometry(9 + r() * 7, 9 + r() * 8, 5 + Math.floor(r() * 3)), mm); m.position.set(-70 + i * 14 + r() * 6, -14 + r() * 2 - far * 2, -86 - far * 14); m.rotation.y = r() * 3; m.frustumCulled = false; scene.add(m); W.mounts.push({ m: mm, far }); if (i % 3 === 0) { const cap = new THREE.Mesh(new THREE.ConeGeometry(3.2, 3.4, 6), new THREE.MeshBasicMaterial({ color: 0xffffff })); cap.position.copy(m.position); cap.position.y += m.geometry.parameters.height / 2 - 1.6; cap.frustumCulled = false; scene.add(cap); W.mounts.push({ m: cap.material, snow: 1 }); } }
   // nubes (sin curvatura para que floten en el cielo)
   W.clouds = [];
   for (let i = 0; i < 7; i++) {
@@ -769,7 +774,7 @@ export function setWip(id, at, on) {
   if (on && !W.wips[id]) { const g = W.wipProto.clone(true); const inside = Math.abs(at[0]) < 6.4 && at[2] < 0.5; g.position.set(at[0], inside ? 0.1 : 0, at[2] + (inside ? 1.0 : 0.6)); g.rotation.y = (at[0] * 7) % 0.6 - 0.3; scene.add(g); W.wips[id] = g; }
   if (!on && W.wips[id]) { scene.remove(W.wips[id]); delete W.wips[id]; }
 }
-let smokeT = 0;
+let smokeT = 0; const tmpC = new THREE.Color();
 export function updateWorld(dt, hour, o = {}) {
   W.t += dt; const t = W.t, n = light.night;
   W.sails.rotation.z -= dt * (o.wind ? 1.1 : 0.45) * (W.millFast ? 1.8 : 1);
@@ -791,6 +796,7 @@ export function updateWorld(dt, hour, o = {}) {
   for (const m of W.findMesh) if (m.visible) { m.rotation.y = t * 2; m.position.y = 0.35 + Math.sin(t * 3 + m.position.x) * 0.08; }
   W.hh.rotation.z = -(hour % 12) / 12 * Math.PI * 2; W.mh.rotation.z = -(hour % 1) * Math.PI * 2;
   for (const c of W.clouds) { c.g.position.x += dt * c.v; if (c.g.position.x > 52) c.g.position.x = -52; c.m.color.copy(light.skyBot).lerp(new THREE.Color(0xffffff), 0.75 - n * 0.35); }
+  for (const mt of W.mounts) mt.m.color.copy(light.skyBot).lerp(tmpC.set(mt.snow ? 0xffffff : mt.far ? 0x9fb6de : 0x86a6d2), mt.snow ? 0.8 : mt.far ? 0.45 : 0.7);
   smokeT -= dt; if (smokeT < 0) { smokeT = 0.35; burst('steam', W.chimney[0], W.chimney[1], W.chimney[2], 1, { spread: 0.3 }); }
 }
 /** Dibuja la pizarra del día. */
