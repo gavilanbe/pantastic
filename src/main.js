@@ -1,9 +1,10 @@
 // Pantastic! — el obrador de Pan. Bucle principal, jornada, hornadas, clientes y economía.
+import { mat as gmat, mesh as gmesh, G as GG } from './gfx.js';
 import { THREE, initGfx, scene, render, setTimeOfDay, updateCamera, initParticles, updateParticles, windU, cam, camTarget, burst, fx, Spring, clamp, rnd, light } from './gfx.js';
 import { buildWorld, updateWorld, W, setUpgrade, setWip, drawBoard, collide } from './world.js';
 import { makeChar, updateChar, PAN_LOOK, MIGA_LOOK, randomLook } from './chars.js';
 import { makeTray, makeBread, renderIcons } from './breads.js';
-import { ING, BREADS, BREAD_ORDER, PRICE_LV, REP, NEIGH, NEIGH_ORDER, HEART_AT, UPG, UPG_ORDER, CAPS, PIPA, DIAS, TIEMPO, CARTA, CARTA_ROSCA, VISIT_LINES, NO_STOCK, CARO } from './data.js';
+import { ING, BREADS, BREAD_ORDER, PRICE_LV, REP, NEIGH, NEIGH_ORDER, HEART_AT, UPG, UPG_ORDER, CAPS, PIPA, DIAS, TIEMPO, CARTA, CARTA_ROSCA, VISIT_LINES, NO_STOCK, CARO, CORREO, HALLAZGO, PIPA_LOOK } from './data.js';
 import { renderExtras } from './icons.js';
 import { logoURL } from './logo.js';
 import { ui, img, coin, stars, ingChip, $, ICON, XI } from './ui.js';
@@ -16,18 +17,19 @@ const BAKE = { raw: 8, gold0: 14, gold1: 22, burnt: 28 };
 
 let S, R, mode = 'boot', K = null, tSec = 0, cur = null, fiesta = null;
 const keys = new Set(); let pressE = false;
-const pan = makeChar(PAN_LOOK); let miga = null; const nbChar = {};
+const pan = makeChar(PAN_LOOK); let miga = null, pipa = null; const nbChar = {};
 const doughSq = new Spring(1, 260, 12);
 
 // ---------- partida ----------
-function fresh() { return { v: 1, day: 1, money: 30, rep: 0, ing: { harina: 8, levadura: 4 }, recipes: ['barra', 'hogaza'], prices: {}, pts: {}, met: {}, gave: {}, up: {}, build: [], baked: {}, tut: 0, intro: false, roscaLetter: false, fiesta: false, total: { sold: 0, earned: 0 }, seenLvl: 0 }; }
+function fresh() { return { v: 1, day: 1, money: 30, rep: 0, ing: { harina: 8, levadura: 4 }, recipes: ['barra', 'hogaza'], prices: {}, pts: {}, met: {}, gave: {}, up: {}, build: [], baked: {}, wood: 6, tut: 0, intro: false, roscaLetter: false, fiesta: false, total: { sold: 0, earned: 0 }, seenLvl: 0 }; }
 function save() { if (!TEST) localStorage.setItem(SAVE, JSON.stringify(S)); }
 function load() { try { const s = JSON.parse(localStorage.getItem(SAVE)); return s && s.v === 1 ? s : null; } catch { return null; } }
 const lvl = () => { let l = 0; REP.forEach((r, i) => { if (S.rep >= r.at) l = i; }); return l; };
 const hearts = (id) => { const p = S.pts[id] || 0; let h = 0; HEART_AT.forEach((a, i) => { if (p >= a) h = i; }); return h; };
 const batchN = () => (S.up.bandeja ? 6 : 4);
-const priceOf = (id) => Math.max(1, Math.round(BREADS[id].price * PRICE_LV[S.prices[id] ?? 1].k));
-const ingPrice = (id) => Math.max(1, Math.round(ING[id].p * (R.market[id] || 1) * (S.up.molino && ['harina', 'integral', 'centeno'].includes(id) ? 0.67 : 1)));
+const mastery = (id) => { const n = S.baked[id] || 0; return n >= 120 ? 3 : n >= 48 ? 2 : n >= 16 ? 1 : 0; };
+const priceOf = (id) => Math.max(1, Math.round(BREADS[id].price * PRICE_LV[S.prices[id] ?? 1].k)) + mastery(id);
+const ingPrice = (id) => Math.max(1, Math.round(ING[id].p * (R.market[id] || 1) * (S.up.molino && ['harina', 'integral', 'centeno'].includes(id) ? 0.67 : 1) * (R.disc || 1)));
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const face = (id, ex = 'idle') => `<img src="${XI.face[id][ex]}" alt="">`;
 const iimg = (id) => `<img src="${XI.ing[id]}" alt="">`;
@@ -46,9 +48,9 @@ function startDay(first = false) {
   const antojo = S.day === 1 ? null : sellable[Math.floor(r() * sellable.length)];
   ui.clearWorld();
   for (const s of [...W.fermSlots, ...W.ovenSlots]) s.holder.clear();
-  if (R) for (const c of R.cust) scene.remove(c.ch.root);
+  if (R) { for (const c of R.cust) scene.remove(c.ch.root); for (const c of R.stroll) scene.remove(c.ch.root); }
   for (const s of W.cartSlots) s.holder.clear();
-  R = { time: 7 * 60, shelf: {}, carry: null, ferm: [null, null, null], oven: [null, null], cart: [null, null, null], reveal: [], cust: [], spawns: [], slots: [null, null, null, null], waits: [], weather: wk, antojo, market, wd, open: false, ended: false, today: { sold: 0, income: 0, tips: 0, spent: 0, lost: 0, rep: 0, by: {} }, migaT: 0, leafT: 0 };
+  R = { time: 7 * 60, shelf: {}, carry: null, ferm: [null, null, null], oven: [null, null], cart: [null, null, null], reveal: [], fire: 0.55, brb: false, stroll: [], chatted: {}, finds: [], mail: null, chop: 0, disc: 1, cust: [], spawns: [], slots: [null, null, null, null], waits: [], weather: wk, antojo, market, wd, open: false, ended: false, today: { sold: 0, income: 0, tips: 0, spent: 0, lost: 0, rep: 0, by: {} }, migaT: 0, leafT: 0 };
   setCarry(null); refreshBaskets();
   // llegadas
   const L = lvl();
@@ -75,6 +77,15 @@ function startDay(first = false) {
   else lines.push(`Recetas: ${S.recipes.length} de ${BREAD_ORDER.length}`);
   drawBoard('Día ' + S.day + ' · ' + DIAS[wd], lines);
   ui.rain(wk === 'lluvia');
+  // mundo vivo: hallazgos, buzón, vecinos de paseo, Pipa en la plaza
+  W.brb.visible = false; $('#brb').classList.add('hide'); refreshWood();
+  const spots = [...W.findSpots].sort(() => r() - 0.5).slice(0, 4); W.findMesh.forEach((m, i) => { m.visible = i < spots.length; if (spots[i]) m.position.set(spots[i][0], 0.35, spots[i][1]); }); R.finds = spots.map((p, i) => ({ x: p[0], z: p[1], i }));
+  const friends = NEIGH_ORDER.filter(id => S.met[id] && hearts(id) >= 1);
+  if (S.day > 1 && friends.length && r() < 0.65) { const from = friends[Math.floor(r() * friends.length)], coins = r() < 0.4; R.mail = { from, text: CORREO[Math.floor(r() * CORREO.length)], gift: coins ? { coins: 4 + Math.floor(r() * 4) + hearts(from) * 2 } : { ing: ['levadura', 'harina', 'mantequilla', 'azucar', 'nueces'][Math.floor(r() * 5)], n: 2 + (hearts(from) > 2 ? 1 : 0) } }; setTimeout(() => ui.toast(`${face(from)} Hay carta en el buzón`, 'good'), 5200); }
+  const HANG = [[-12.6, 7.4], [-8, 9.4], [-7, 5], [2, 5.2], [5.6, 8.2], [10.5, 4.2], [13.8, 5.2], [-3, 4.2]];
+  NEIGH_ORDER.filter(id => S.met[id] && NEIGH[id].lvl <= L).sort(() => r() - 0.5).slice(0, 3).forEach((id, i) => { const ch = nbChar[id] ||= makeChar(NEIGH[id].look); const p = HANG[Math.floor(r() * HANG.length)]; ch.x = p[0] + i * 0.4; ch.z = p[1]; ch.sit = false; ch.action = null; ch.speed = 0; ch.arms[1].remove(...ch.arms[1].children.filter(o => o.userData.bag)); scene.add(ch.root); R.stroll.push({ nb: id, ch, t: 3 + r() * 8, to: null, hang: HANG, pos: [0, 0, 0] }); });
+  if (!pipa) { pipa = makeChar(PIPA_LOOK); } pipa.x = W.pipaSpot[0]; pipa.z = W.pipaSpot[1]; pipa.yaw = pipa.yawTo = 0.3; scene.add(pipa.root); R.pipa = true;
+  ui.unanchor(R.fireG); R.fireG = ui.anchor('gauge fire', '<span>Fuego</span><div class="track"><i></i></div>', [6.2, 2.45, -4.7]);
   pan.x = 1.6; pan.z = -2.6; pan.yawTo = pan.yaw = 0; pan.goto = null;
   mode = R.reveal.length ? 'reveal' : 'play'; R.revT = 0; music('day'); ui.show('#hud', true);
   if (!first) { ui.dayTitle('Día ' + S.day, `${DIAS[wd]} · ${TIEMPO[wk].n.toLowerCase()}`); sfx('day'); }
@@ -95,7 +106,8 @@ function addRep(n, x, y, z) {
 // ---------- bandejas y cestas ----------
 function setCarry(b) {
   R.carry = b; pan.carryAnchor.clear(); pan.carry = !!b;
-  if (b) { const t = makeTray(b.id, b.n, b.stage, b.burnt ? 1 : b.tone || 0); t.scale.setScalar(0.82); pan.carryAnchor.add(t); }
+  if (b && b.stage === 'wood') { for (let i = 0; i < 3; i++) { const l = new THREE.Group(); gmesh(GG.cyl(0.1, 0.1, 0.7, 9), gmat('#b07a4c', { rough: 0.95 }), { parent: l, r: [0, 0, Math.PI / 2] }); gmesh(GG.cyl(0.075, 0.075, 0.71, 9), gmat('#f0d2a0'), { parent: l, r: [0, 0, Math.PI / 2] }); l.position.set(0, i === 2 ? 0.19 : 0.04, i === 2 ? -0.08 : (i ? -0.18 : 0.03)); pan.carryAnchor.add(l); } }
+  else if (b) { const t = makeTray(b.id, b.n, b.stage, b.burnt ? 1 : b.tone || 0); t.scale.setScalar(0.82); pan.carryAnchor.add(t); }
 }
 function holderTray(slot, b) { slot.holder.clear(); if (b) slot.holder.add(makeTray(b.id, b.n, b.stage === 'baking' ? 'proofed' : b.stage)); }
 function refreshBaskets() {
@@ -162,7 +174,7 @@ function useFerm() {
     R.ferm[i].g = ui.anchor('gauge ferm', `<span>Subiendo…</span><div class="track"><i style="width:0"></i></div>`, [W.fermSlots[i].p[0] + (i - 1) * 0.0, W.fermSlots[i].p[1] + 0.55, W.fermSlots[i].p[2]]);
     if (S.tut === 1) S.tut = 2; return;
   }
-  if (c) return ui.toast(c.stage === 'proofed' ? 'Esta ya ha subido: al horno, o déjala en el carro' : 'Eso va al mostrador'), sfx('no');
+  if (c) return ui.toast(c.stage === 'wood' ? 'La leña va a la boca del horno' : c.stage === 'proofed' ? 'Esta ya ha subido: al horno, o déjala en el carro' : 'Eso va al mostrador'), sfx('no');
   const i = R.ferm.findIndex(x => x && x.t >= x.need);
   if (i < 0) return ui.toast(R.ferm.some(x => x) ? 'Aún está subiendo. Paciencia de panadera.' : 'No hay masa dentro'), sfx('no');
   const b = R.ferm[i]; ui.unanchor(b.g); R.ferm[i] = null; holderTray(W.fermSlots[i], null);
@@ -170,6 +182,8 @@ function useFerm() {
 }
 function useOven() {
   const c = R.carry, max = S.up.horno2 ? 2 : 1;
+  if (c && c.stage === 'wood') { if (R.fire > 0.92) return ui.toast('El fuego ya está bien alto'), sfx('no'); R.fire = Math.min(1, R.fire + 0.4); setCarry(null); sfx('fire'); sfx('place'); pan.act('give'); burst('spark', 5.1, 1.5, -4.2, 16, { color: 0xffa040 }); cam.shake = 0.25; R.fireWarn = false; return; }
+  if (c && c.stage === 'proofed' && R.fire < 0.12) return ui.toast('El horno está casi apagado: trae leña de la leñera de fuera'), sfx('no');
   if (c && c.stage === 'proofed') {
     const i = R.oven.findIndex((x, k) => !x && k < max); if (i < 0) return ui.toast((max === 1 ? 'El horno está ocupado' : 'Las dos bocas están ocupadas') + ': deja la bandeja en el carro'), sfx('no');
     R.oven[i] = { ...c, stage: 'baking', t: 0, dinged: false }; holderTray(W.ovenSlots[i], R.oven[i]); setCarry(null); sfx('place'); sfx('fire'); pan.act('give');
@@ -189,15 +203,22 @@ function useOven() {
   sfx('pick'); sfx(q === 3 ? 'perfect' : 'good'); pan.pop(4); if (q === 3) { pan.say('happy', 1.5); burst('spark', pan.x, 1.4, pan.z + 0.4, 12); }
   burst('steam', pan.x, 1.2, pan.z + 0.4, 8); ui.toast(`${img(b.id)}${word} <span class="st">${stars(q)}</span>`, cls); if (S.tut === 3) S.tut = 4;
 }
+function refreshWood() { W.woodLogs.forEach((l, i) => l.visible = i < Math.min(12, S.wood)); }
+function takeWood() { if (R.carry) return ui.toast('Tienes las manos ocupadas'), sfx('no'); if (S.wood <= 0) return ui.toast('No queda leña. Parte troncos en el tocón de al lado.'), sfx('no'); S.wood--; refreshWood(); setCarry({ stage: 'wood' }); sfx('pick'); pan.pop(3); }
+function chop() {
+  if (R.carry) return ui.toast('Suelta primero lo que llevas'), sfx('no');
+  W.stumpLog.visible = true; R.chop++; pan.act('give'); cam.shake = 0.3; sfx('place'); burst('crumb', 9.6, 0.9, -2.3, 6); W.axe.rotation.z = 0.5; W.axe.userData.t = 0.25;
+  if (R.chop >= 3) { R.chop = 0; W.stumpLog.visible = false; S.wood += 2; refreshWood(); sfx('good'); ui.float('+2 leña', 9.6, 1.6, -2.3, 'star'); burst('dust', 9.6, 0.6, -2.3, 8); save(); }
+}
 function useCart() {
-  const c = R.carry;
+  const c = R.carry; if (c && c.stage === 'wood') return ui.toast('La leña va a la boca del horno'), sfx('no');
   if (c) { const i = R.cart.findIndex(x => !x); if (i < 0) return ui.toast('El carro está lleno'), sfx('no'); R.cart[i] = c; W.cartSlots[i].holder.clear(); W.cartSlots[i].holder.add(makeTray(c.id, c.n, c.stage, c.burnt ? 1 : c.tone || 0)); setCarry(null); sfx('place'); pan.act('give'); return; }
   let i = -1; R.cart.forEach((x, k) => { if (x) i = k; }); if (i < 0) return ui.toast('El carro está vacío. Aquí puedes dejar cualquier bandeja.'), sfx('no');
   const b = R.cart[i]; R.cart[i] = null; W.cartSlots[i].holder.clear(); setCarry(b); sfx('pick'); pan.pop(3);
 }
 function placeBread() {
   const c = R.carry; (R.shelf[c.id] ||= []).push(...Array.from({ length: c.n }, () => ({ q: c.q, burnt: c.burnt })));
-  S.baked[c.id] = (S.baked[c.id] || 0) + c.n; R.shelf[c.id].sort((a, b) => a.q - b.q); setCarry(null); refreshBaskets(); sfx('place'); sfx('pop'); pan.act('give');
+  const m0 = mastery(c.id); S.baked[c.id] = (S.baked[c.id] || 0) + c.n; if (mastery(c.id) > m0) setTimeout(() => { sfx('fanfare'); ui.toast(`${img(c.id)}Maestría ${'★'.repeat(mastery(c.id))} en ${BREADS[c.id].n.toLowerCase()}: +1 ${coin} por pieza`, 'gold'); }, 900); R.shelf[c.id].sort((a, b) => a.q - b.q); setCarry(null); refreshBaskets(); sfx('place'); sfx('pop'); pan.act('give');
   const b = W.basketGroups.find(x => x.id === c.id) || W.basketGroups[2]; const p = new THREE.Vector3(); b.g.getWorldPosition(p);
   burst('spark', p.x, p.y + 0.3, p.z, 10); burst('steam', p.x, p.y + 0.2, p.z, 5); ui.float(`+${c.n} ${BREADS[c.id].pl}`, p.x, p.y + 0.6, p.z, 'star');
   if (S.tut === 4) S.tut = 5;
@@ -212,8 +233,8 @@ function pickWant(nb) {
   let x = Math.random() * tot; for (let i = 0; i < opts.length; i++) { x -= w[i]; if (x <= 0) return opts[i]; } return opts[0];
 }
 function spawn(sp) {
-  let ch; if (sp.nb) { ch = nbChar[sp.nb] ||= makeChar(NEIGH[sp.nb].look); if (R.cust.some(c => c.ch === ch)) return; } else ch = makeChar(randomLook(sp.seed));
-  const side = Math.random() < 0.5 ? -1 : 1; ch.x = side * 19.5; ch.z = 4.2 + Math.random() * 0.6; ch.sit = false; ch.action = null; scene.add(ch.root);
+  let ch, walking = false; if (sp.nb) { ch = nbChar[sp.nb] ||= makeChar(NEIGH[sp.nb].look); if (R.cust.some(c => c.ch === ch)) return; const si = R.stroll.findIndex(x => x.nb === sp.nb); if (si >= 0) { R.stroll.splice(si, 1); walking = true; } } else ch = makeChar(randomLook(sp.seed));
+  const side = Math.random() < 0.5 ? -1 : 1; if (!walking) { ch.x = side * 19.5; ch.z = 4.2 + Math.random() * 0.6; } ch.sit = false; ch.action = null; scene.add(ch.root);
   const c = { ch, nb: sp.nb || null, want: pickWant(sp.nb), st: 'enter', path: [[-4.6 + Math.random() * 0.5, 4.0], [-4.6, 1.3]], side, wait: 0, max: 80 + (S.up.jardin ? 20 : 0) + Math.random() * 25, pos: [0, 0, 0], bpos: [0, 0, 0], slot: -1, t: 0, born: tSec };
   R.cust.push(c);
 }
@@ -236,7 +257,11 @@ function leave(c) {
 const WAIT_SPOTS = [[-5.9, 1.7], [-3.3, 1.9], [-2.0, 2.5], [-6.8, 2.6], [-0.7, 1.8], [0.6, 2.6]];
 function updateCustomers(dt) {
   // llegadas
+  if (R.brb && !miga) { for (const sp of R.spawns) if (sp.t <= R.time + 2) sp.t = R.time + 3; }
   while (R.spawns.length && R.spawns[0].t <= R.time) spawn(R.spawns.shift());
+  // vecinos de paseo y Pipa
+  for (const st of R.stroll) { st.t -= dt; st.pos[0] = st.ch.x; st.pos[1] = 2.1; st.pos[2] = st.ch.z; if (st.to) { if (walk(st, st.to[0], st.to[1], dt, 1.3)) { st.to = null; st.t = 7 + Math.random() * 9; st.ch.yawTo = Math.random() * 1.2 - 0.6; } } else if (st.t < 0 && !ui.dialogOpen) { const p = pick(st.hang); st.to = [p[0] + Math.random() - 0.5, p[1] + Math.random() - 0.5]; } else if (Math.hypot(pan.x - st.ch.x, pan.z - st.ch.z) < 2.6) st.ch.yawTo = Math.atan2(pan.x - st.ch.x, pan.z - st.ch.z); updateChar(st.ch, dt); }
+  if (R.pipa) { if (R.time > 14 * 60 && !ui.modalOpen) { R.pipa = false; scene.remove(pipa.root); burst('dust', pipa.x, 0.5, pipa.z, 8); } else { if (Math.hypot(pan.x - pipa.x, pan.z - pipa.z) < 3) pipa.yawTo = Math.atan2(pan.x - pipa.x, pan.z - pipa.z); updateChar(pipa, dt); } }
   for (let i = R.cust.length - 1; i >= 0; i--) {
     const c = R.cust[i], ch = c.ch; c.t += dt; c.pos[0] = ch.x; c.pos[1] = 2.02 * ch.scale + (ch.L.sp === 'liebre' ? 0.35 : 0.1); c.pos[2] = ch.z; c.bpos[0] = ch.x - 0.62; c.bpos[1] = 1.35 * ch.scale; c.bpos[2] = ch.z;
     if (c.st === 'enter' || c.st === 'leave' || c.st === 'toSeat') {
@@ -257,7 +282,7 @@ function updateCustomers(dt) {
     } else if (c.st === 'toSlot') {
       const p = W.slots[c.slot]; if (walk(c, p.x, p.z, dt)) { c.st = 'wait'; ch.yawTo = Math.PI / 2 - 0.55; showWant(c); ch.pop(3); sfx('pop'); if (!R.firstCust) { R.firstCust = true; } }
     } else if (c.st === 'wait') {
-      c.wait += dt; ch.speed = 0;
+      if (!R.brb) c.wait += dt; ch.speed = 0;
       if (c.bub) { const f = 1 - c.wait / c.max, b = c.bub.querySelector('.wait i'); b.style.width = (f * 100) + '%'; b.style.background = f > 0.5 ? '#7cc47a' : f > 0.22 ? '#f2b84b' : '#e9785e'; }
       if (c.wait > c.max && !ui.dialogOpen) { say(c, 'Uy, se me hace tarde. ¡Vuelvo otro día!'); R.today.lost++; ch.act('sad'); leave(c); }
     } else if (c.st === 'served') { if (c.t > 1.1 && !ui.dialogOpen) leave(c); }
@@ -300,7 +325,7 @@ function serve(c, byMiga = false) {
   const bag = new THREE.Group(), long = ['barra', 'semillas', 'nueces', 'chapata'].includes(id);
   const bm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.26, 0.13), bagMat()); bm.castShadow = true; bm.frustumCulled = false; bag.add(bm);
   if (long) { const b = makeBread(id, loaf.burnt ? 1 : 0); b.scale.setScalar(0.42); b.rotation.z = Math.PI / 2 - 0.15; b.position.set(0.01, 0.14, 0); bag.add(b); }
-  bag.position.set(0, -0.44, 0.06); ch.arms[1].add(bag); c.loaf = bag;
+  bag.userData.bag = true; bag.position.set(0, -0.44, 0.06); ch.arms[1].add(bag); c.loaf = bag;
   if (N) {
     const h0 = hearts(c.nb); S.pts[c.nb] = (S.pts[c.nb] || 0) + 1 + (fav ? 1 : 0) + (loaf.q === 3 ? 1 : 0);
     if (hearts(c.nb) > h0) { sfx('heart'); ui.float('♥', ch.x, 2.3, ch.z, 'heart'); }
@@ -330,11 +355,12 @@ function letter(lines, title, done) {
 }
 
 // ---------- el colmado de Pipa ----------
-function openShop() {
+function openShop(disc = 1) {
+  R.disc = disc; ui.onClose = () => { R.disc = 1; };
   const ids = Object.keys(ING), cart = {}; let sel = 0, paid = false;
   const used = (id) => S.recipes.filter(r => BREADS[r].ing[id]).map(r => BREADS[r].n.toLowerCase());
   const prod = (id) => { const k = R.market[id]; return `<button class="prod ${used(id).length ? '' : 'off'}" data-id="${id}"><i class="cur"></i>${k <= 0.7 ? '<span class="ribbon">OFERTA</span>' : k >= 1.35 ? '<span class="ribbon up">CARO</span>' : ''}<span class="minus">−</span><span class="qty"></span><img class="pi" src="${XI.ing[id]}" alt=""><span class="havej">tienes <b>${S.ing[id] || 0}</b></span><span class="ptag ${k <= 0.7 ? 'down' : k >= 1.35 ? 'up' : ''}">${ingPrice(id)} ${coin}</span><span class="pn">${ING[id].n}</span></button>`; };
-  const sh = ui.modal(`<button class="x">✕</button><div class="awning"><span>El colmado de Pipa</span></div><div class="shop-in">
+  const sh = ui.modal(`<button class="x">✕</button><div class="awning"><span>${disc < 1 ? 'El carro de Pipa · precio de amiga' : 'El colmado de Pipa · pedido'}</span></div><div class="shop-in">
     <div class="keeper"><div class="kwin"><div class="pic">${face('pipa')}</div><div class="ksay"><b>Pipa</b><span></span></div></div>
       <div class="ticket"><div class="tk-h">· PEDIDO ·<small>día ${S.day} · se sube al obrador</small></div><div class="tk-lines"></div><div class="tk-tot"><span>TOTAL</span><span class="t"></span></div><div class="tk-purse"><span>en el monedero</span><span class="p"></span></div><button class="btn main" id="pay">Pagar</button></div></div>
     <div class="shelves">${[0, 4, 8].map(a => `<div class="plank">${ids.slice(a, a + 4).map(prod).join('')}</div>`).join('')}</div></div>
@@ -369,7 +395,7 @@ function openShop() {
   ui.onKey = (k) => { const c = sel % 4, r = Math.floor(sel / 4); if (k === 'arrowright' || k === 'd') look(Math.min(ids.length - 1, sel + 1)); else if (k === 'arrowleft' || k === 'a') look(Math.max(0, sel - 1)); else if (k === 'arrowdown' || k === 's') look(Math.min(ids.length - 1, sel + 4)); else if (k === 'arrowup' || k === 'w') look(Math.max(0, sel - 4)); else if (k === 'e' || k === ' ') add(sel, 1); else if (k === 'q' || k === 'backspace') add(sel, -1); else if (k === 'enter') pay(); };
   look(0, true); sfx('bell');
   const off = ids.find(id => R.market[id] <= 0.7);
-  says(!S.metPipa ? PIPA.hola[0] : off ? `Hoy tengo ${ING[off].n.toLowerCase()} de oferta. ${pick(PIPA.abre)}` : pick(PIPA.abre), 'happy'); S.metPipa = true;
+  says(disc < 1 ? 'En persona te quito un pellizco, que para eso vienes a verme.' : !S.metPipa ? PIPA.hola[0] + ' Por las mañanas estoy con el carro en la plaza y allí sale más barato.' : off ? `Hoy tengo ${ING[off].n.toLowerCase()} de oferta. ${pick(PIPA.abre)}` : pick(PIPA.abre), 'happy'); S.metPipa = true;
 }
 function sfxPitch(n) { sfx(n % 5 === 0 ? 'good' : 'buy'); }
 
@@ -402,7 +428,7 @@ function openBook(tab, keep) {
       else { const lv = S.prices[id] ?? 1; h = `<div class="det"><div class="big"><div class="doily"><img src="${ICON[id]}" alt=""></div><div><h3>${b.n}</h3><div class="ds">${b.d}</div></div></div>
         <div class="lbl">Para una hornada de ${batchN()}</div><div class="ings">${Object.entries(b.ing).map(([k, n]) => ingChip(k, n, S.ing[k] || 0)).join('')}</div>
         <div class="lbl">La etiqueta del precio</div><div class="tags3">${PRICE_LV.map((p, i) => `<button class="ptg ${i === lv ? 'on' : ''}" data-lv="${i}"><b>${p.n}</b><span>${Math.max(1, Math.round(b.price * p.k))} ${coin}</span><small>${['el pueblo te quiere antes', 'lo de siempre', 'solo cuela con ★★★'][i]}</small></button>`).join('')}</div>
-        <div class="from">${giver ? `<span class="pic">${face(giver, 'happy')}</span><span>Ficha que guardaba <b>${NEIGH[giver].n}</b></span>` : `<span class="pic">${face('pan', 'happy')}</span><span>De las que la abuela te enseñó de niña</span>`}<span style="margin-left:auto">Horneados: <b>${S.baked[id] || 0}</b></span></div></div>`; }
+        <div class="from">${giver ? `<span class="pic">${face(giver, 'happy')}</span><span>Ficha que guardaba <b>${NEIGH[giver].n}</b></span>` : `<span class="pic">${face('pan', 'happy')}</span><span>De las que la abuela te enseñó de niña</span>`}<span style="margin-left:auto">Horneados: <b>${S.baked[id] || 0}</b> · maestría <b style="color:#d9861c">${'★'.repeat(mastery(id))}${'☆'.repeat(3 - mastery(id))}</b></span></div></div>`; }
     } else if (bookTab === 'vecinos') {
       const N = NEIGH[id], hh = hearts(id), p = S.pts[id] || 0, nx = HEART_AT[hh + 1];
       if (!S.met[id]) h = `<div class="det"><div class="big"><div class="polaroid"><img src="${XI.face[id].idle}" style="filter:brightness(0) opacity(.18)" alt=""><div class="cap">???</div></div><div><h3>Alguien por conocer</h3><div class="ds">${N.lvl > L ? `Vendrá cuando el obrador tenga más fama: «${REP[N.lvl].n}».` : 'Aún no ha pasado por el mostrador. Atiéndele tú en persona.'}</div></div></div></div>`;
@@ -456,7 +482,7 @@ function endDay() {
   if (mode !== 'play' || R.ended) return; R.ended = true; mode = 'summary'; ui.prompt(null);
   // lo ya horneado que quedara en las manos o en el carro cuenta como pan del día
   for (const b of [R.carry, ...R.cart]) if (b && b.stage === 'baked') (R.shelf[b.id] ||= []).push(...Array.from({ length: b.n }, () => ({ q: b.q, burnt: b.burnt })));
-  const lostDough = [R.carry, ...R.cart, ...R.ferm, ...R.oven].filter(b => b && b.stage !== 'baked').length;
+  const lostDough = [R.carry, ...R.cart, ...R.ferm, ...R.oven].filter(b => b && b.stage !== 'baked' && b.stage !== 'wood').length; if (R.carry?.stage === 'wood') S.wood++;
   const left = shelfCount(), t = R.today, top = Object.entries(t.by).sort((a, b) => b[1] - a[1])[0];
   let stall = 0, gift = 0;
   if (S.up.puesto) { for (const [id, a] of Object.entries(R.shelf)) stall += a.length * Math.round(priceOf(id) * 0.5); S.money += stall; } else gift = Math.floor(left / 2);
@@ -516,15 +542,38 @@ function findAction() {
   let bs = null, bd = 1.35; for (const [k, s] of Object.entries(W.st)) { if (k === 'mostrador') continue; const d = Math.hypot(px - s.x, pz - s.z); if (d < bd) { bd = d; bs = k; } }
   if (bs) {
     const s = W.st[bs], pos = [s.ox, bs === 'horno' ? 2.55 : bs === 'ferm' ? 2.75 : 1.9, s.oz + 0.4];
+    if (bs === 'lena') return { text: c ? 'Leñera' : `Coger leña (${S.wood})`, ok: !c && S.wood > 0, pos: [8.0, 2.0, -2.9], fn: takeWood };
+    if (bs === 'tocon') return { text: c ? 'Tocón' : `Partir leña ${'·'.repeat(R.chop)}`, ok: !c, pos: [9.6, 1.5, -2.3], fn: chop, st: s };
     if (bs === 'mesa') return { text: c ? 'Manos ocupadas: usa el carro' : 'Amasar', ok: !c, pos, fn: openRecipes, st: s };
     if (bs === 'despensa') return { text: 'Pedir al colmado', pos: [6.0, 2.2, -2.2], fn: openShop, st: s };
     if (bs === 'carro') { const any = R.cart.some(x => x); return { text: c ? 'Dejar la bandeja' : any ? 'Coger la bandeja' : 'Carro de bandejas', ok: !!c || any, pos: [5.9, 2.3, -0.45], fn: useCart, st: s }; }
     if (bs === 'ferm') { const rdy = R.ferm.some(x => x && x.t >= x.need); return { text: c?.stage === 'dough' ? 'Poner a fermentar' : rdy && !c ? 'Sacar la masa' : 'Fermentadora', ok: (c?.stage === 'dough') || (rdy && !c), pos, fn: useFerm, st: s }; }
-    if (bs === 'horno') { const any = R.oven.some(x => x); return { text: c?.stage === 'proofed' ? 'Meter al horno' : any && !c ? 'Sacar del horno' : 'Horno', ok: (c?.stage === 'proofed') || (any && !c), pos, fn: useOven, st: s }; }
+    if (bs === 'horno') { const any = R.oven.some(x => x); if (c?.stage === 'wood') return { text: 'Echar leña', pos, fn: useOven, st: s }; return { text: c?.stage === 'proofed' ? 'Meter al horno' : any && !c ? 'Sacar del horno' : 'Horno', ok: (c?.stage === 'proofed') || (any && !c), pos, fn: useOven, st: s }; }
   }
+  for (const st of R.stroll) if (!R.chatted[st.nb] && Math.hypot(px - st.ch.x, pz - st.ch.z) < 1.7) return { text: `Charlar con ${NEIGH[st.nb].n}`, pos: [st.ch.x, 2.3, st.ch.z], fn: () => chat(st), cust: st };
+  if (R.pipa && Math.hypot(px - pipa.x, pz - pipa.z) < 1.9) return { text: 'Comprar a Pipa, precio de amiga', pos: [pipa.x, 2.2, pipa.z], fn: () => openShop(0.85) };
+  for (const f of R.finds) if (Math.hypot(px - f.x, pz - f.z) < 1.2) return { text: 'Mirar qué brilla', pos: [f.x, 1.1, f.z], fn: () => find(f) };
+  if (R.mail && Math.hypot(px - 7.9, pz - 1.5) < 1.6) return { text: 'Abrir el buzón', pos: [7.9, 1.9, 1.5], fn: openMail };
+  if (Math.hypot(px - W.homeSpot[0], pz - W.homeSpot[1]) < 1.7) return R.time < 12 * 60 ? { text: 'Tu casa. Aún es pronto para acostarse', ok: false, pos: [12.6, 2.2, -5.3], fn: () => sfx('no') } : { text: 'Irse a casa a dormir', pos: [12.6, 2.2, -5.3], fn: endDay };
+  if (Math.hypot(px + 8.2, pz - 1.5) < 1.5) return { text: R.brb ? 'Quitar el «Vuelvo enseguida»' : 'Colgar el «Vuelvo enseguida»', pos: [-7.6, 2.6, 1.5], fn: toggleBrb };
   if (Math.hypot(px - W.pondPos[0], pz - W.pondPos[1]) < 3.6 && !c) return { text: 'Saludar a los patos', pos: [W.pondPos[0], 1.2, W.pondPos[1]], fn: () => { pan.act('wave'); pan.yawTo = Math.atan2(W.pondPos[0] - px, W.pondPos[1] - pz); sfx('quack'); for (const d of W.ducks) d.a += 0.5; } };
   if (S.up.fuente && Math.hypot(px - W.fountainPos[0], pz - W.fountainPos[1]) < 2.6) return { text: 'Echar una miga a la fuente', pos: [W.fountainPos[0], 2.3, W.fountainPos[1]], fn: () => { pan.act('give'); sfx('pop'); burst('crumb', W.fountainPos[0], 1.2, W.fountainPos[1], 5); burst('spark', W.fountainPos[0], 1.5, W.fountainPos[1], 8); if (!R.wished) { R.wished = true; addRep(1); ui.toast('Dicen que da suerte.'); } } };
   return null;
+}
+function toggleBrb() { R.brb = !R.brb; W.brb.visible = R.brb; $('#brb').classList.toggle('hide', !R.brb); sfx(R.brb ? 'place' : 'bell'); ui.toast(R.brb ? (miga ? 'Cartel puesto. Miga se queda al mando.' : 'Cartel puesto: nadie entra ni se impacienta. A pasear.') : 'Cartel fuera: ¡abierto otra vez!'); }
+function chat(st) {
+  const N = NEIGH[st.nb]; R.chatted[st.nb] = true; st.to = null; st.t = 6; pan.yawTo = Math.atan2(st.ch.x - pan.x, st.ch.z - pan.z);
+  talk(st, [pick(N.charla)], () => { const h0 = hearts(st.nb); S.pts[st.nb] = (S.pts[st.nb] || 0) + 1; sfx('heart'); ui.float('♥', st.ch.x, 2.4, st.ch.z, 'heart'); st.ch.act('joy'); if (hearts(st.nb) >= 2 && !S.gave[st.nb]) { S.gave[st.nb] = true; setTimeout(() => talk(st, N.receta, () => unlock(N.gives, N.n)), 900); } save(); });
+}
+function find(f) {
+  R.finds.splice(R.finds.indexOf(f), 1); W.findMesh[f.i].visible = false; sfx('perfect'); burst('spark', f.x, 0.6, f.z, 14); pan.act('joy');
+  if (Math.random() < 0.5) { const n = 2 + Math.floor(Math.random() * 5); S.money += n; ui.setMoney(S.money, true); ui.float(`+${n}`, f.x, 1.4, f.z); ui.toast(`<span class="coin sm"></span> ${pick(HALLAZGO)}`); }
+  else { const g = pick(['nueces', 'aceitunas', 'semillas', 'levadura']); S.ing[g] = (S.ing[g] || 0) + 1; ui.float(`+1 ${ING[g].n.toLowerCase()}`, f.x, 1.4, f.z, 'star'); ui.toast(`${iimg(g)}${pick(HALLAZGO)}`); }
+  save();
+}
+function openMail() {
+  const m = R.mail, N = NEIGH[m.from]; R.mail = null; sfx('page');
+  letter([`Pan:`, m.text, m.gift.coins ? `(Dentro hay ${m.gift.coins} monedas envueltas en papel de periódico.)` : `(Dentro hay ${m.gift.n} de ${ING[m.gift.ing].n.toLowerCase()}.)`, `— ${N.n}`], 'Una carta en el buzón', () => { if (m.gift.coins) { S.money += m.gift.coins; ui.setMoney(S.money, true); sfx('coin'); } else { S.ing[m.gift.ing] = (S.ing[m.gift.ing] || 0) + m.gift.n; sfx('good'); ui.toast(`${iimg(m.gift.ing)}+${m.gift.n} ${ING[m.gift.ing].n.toLowerCase()}`, 'good'); } save(); });
 }
 function goalText() {
   if (S.tut < 7) return [['Ve a la mesa y prepara tu primera masa', ICON._masa], ['Lleva la masa a la fermentadora (el armario verde)', XI.up.fermenta], ['Cuando suba, llévala al horno', XI.up.horno2], ['Sácala cuando el pan de la barra esté en el dorado', ICON.barra], ['Deja el pan en el mostrador, por detrás', XI.up.bandeja], ['Atiende desde detrás del mostrador a quien venga', XI.face.lana.happy], ['Pide harina y levadura en la despensa: el colmado de Pipa', XI.ing.levadura]][S.tut];
@@ -568,8 +617,12 @@ function updatePlay(dt) {
   if (R.time > 17.5 * 60) music('eve');
   // fermentadora y horno
   R.ferm.forEach((b, i) => { if (!b) return; const was = b.t >= b.need; b.t += dt; const f = Math.min(1, b.t / b.need); b.g.querySelector('.track i').style.width = f * 100 + '%'; const it = W.fermSlots[i].holder.children[0]?.userData.items; if (it) for (const d of it) { const k = 1 + f * 0.3; d.scale.set(k * 0.9, (1 + f * 0.55) * 0.9, k * 0.9); } if (!was && b.t >= b.need) { b.g.classList.add('ready'); b.g.querySelector('span').textContent = '¡Ha subido!'; sfx('pop'); } });
+  const bakingNow = R.oven.some(x => x); R.fire = Math.max(0, R.fire - dt * (bakingNow ? 0.0075 : 0.0011)); const heat = R.fire < 0.12 ? 0.25 : 0.6 + R.fire * 0.6;
+  if (R.fireG) { const fi = R.fireG.querySelector('.track i'); fi.style.width = (R.fire * 100) + '%'; R.fireG.classList.toggle('low', R.fire < 0.25); }
+  if (R.fire < 0.2 && !R.fireWarn) { R.fireWarn = true; ui.toast('El fuego del horno flojea. Hay leña en la leñera, fuera a la derecha.'); sfx('no'); }
+  if (W.axe.userData.t > 0) { W.axe.userData.t -= dt; W.axe.rotation.z = 0.5 - Math.sin(Math.max(0, W.axe.userData.t) / 0.25 * Math.PI) * 1.3; }
   R.oven.forEach((b, i) => {
-    if (!b) return; const t0 = b.t; b.t += dt; const mark = b.g.querySelector('.mark'); mark.style.left = Math.min(100, b.t / BAKE.burnt * 100) + '%';
+    if (!b) return; const t0 = b.t; b.t += dt * heat; const mark = b.g.querySelector('.mark'); mark.style.left = Math.min(100, b.t / BAKE.burnt * 100) + '%';
     const sp = b.g.querySelector('span'); const st = b.t < BAKE.gold0 ? 'Horneando…' : b.t <= BAKE.gold1 ? '¡Dorado! Sácalo' : b.t < BAKE.burnt ? '¡Que se tuesta!' : 'Muy tostado'; if (sp.textContent !== st) sp.textContent = st;
     b.g.classList.toggle('ready', b.t >= BAKE.gold0);
     if (t0 < BAKE.gold0 && b.t >= BAKE.gold0) { sfx('ding'); burst('steam', W.ovenSlots[i].p[0], W.ovenSlots[i].p[1] + 0.4, W.ovenSlots[i].p[2] + 0.5, 6); }
@@ -600,7 +653,7 @@ function frame(dt) {
   const focus = mode === 'reveal' && R.reveal[0] ? { x: clamp(UPG[R.reveal[0]].at[0], -11, 11), z: clamp(UPG[R.reveal[0]].at[2], -3.4, 8) } : mode === 'title' ? { x: 0, z: 0.5 } : mode === 'knead' ? { x: 0.0, z: -4.5 } : mode === 'fiesta' && fiesta ? { x: fiesta.cx, z: fiesta.cz + 0.3 } : ui.dialogOpen && cur?.cust ? { x: -2, z: cur.cust.ch.z + 0.3 } : { x: clamp(pan.x, -11, 11), z: clamp(pan.z + (inside ? -0.6 : 0.2), -3.4, 8) };
   updateCamera(dt, focus, frame.snap); frame.snap = false;
   setTimeOfDay(hour, wd);
-  updateWorld(dt, hour, { wind: R?.weather === 'viento', baking: R ? [!!R.oven[0], !!R.oven[1]] : null });
+  updateWorld(dt, hour, { wind: R?.weather === 'viento', baking: R ? [!!R.oven[0], !!R.oven[1]] : null, fire: R?.fire });
   updateParticles(dt); ui.update();
 }
 let last = performance.now();
@@ -618,6 +671,7 @@ function boot() {
     keys.add(k);
     if (k === 'e' || k === ' ' || k === 'enter') pressE = true;
     if ((k === 'l' || k === 'tab') && mode === 'play') openBook();
+    if (k === 'b' && mode === 'play') toggleBrb();
     
   });
   addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
@@ -628,7 +682,7 @@ function boot() {
 
   const saved = load();
   const begin = (s) => {
-    S = s; S.build ||= []; S.baked ||= {}; applyUpgrades(); cam.yawTo = 0; cam.pitchTo = 0; cam.zoomTo = 0.72;
+    S = s; S.build ||= []; S.baked ||= {}; S.wood ??= 6; applyUpgrades(); cam.yawTo = 0; cam.pitchTo = 0; cam.zoomTo = 0.72;
     if (!S.intro) { S.intro = true; mode = 'letter'; R = null; music('title'); pan.x = 1.6; pan.z = -2.6; letter(CARTA, 'Una carta dentro del horno', () => { startDay(true); ui.dayTitle('Día 1', 'lunes · el horno vuelve a encenderse'); sfx('day'); }); }
     else startDay();
   };

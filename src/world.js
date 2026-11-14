@@ -477,12 +477,12 @@ function outside() {
   mesh(G.sph(0.24, 12, 10), mat('#f1e2c4', { rough: 1 }), { parent: sc, p: [0, 2.15, 0] }); mesh(G.cone(0.4, 0.3, 12), mat('#e2b140'), { parent: sc, p: [0, 2.42, 0] });
   mesh(G.box(0.7, 0.75, 0.2, 0.08), mat('#e9785e', { rough: 1 }), { parent: sc, p: [0, 1.3, 0] });
   // árboles
-  const trees = [[-11.5, 1.2, 1.05, 'naranjo'], [9.2, -1.0, 1.1, 'naranjo'], [-14.5, 9.4, 1.15, 'naranjo'], [15.3, 3.2, 1, 'naranjo'], [3.2, 8.6, 1.1, 'naranjo'], [-4.5, 9.6, 0.95, 'alamo'], [16.5, 9.5, 1.2, 'alamo'], [-17.5, 3.4, 1.1, 'alamo'],
+  const trees = [[-11.5, 1.2, 1.05, 'naranjo'], [11.6, 0.6, 1.1, 'naranjo'], [-14.5, 9.4, 1.15, 'naranjo'], [15.3, 3.2, 1, 'naranjo'], [3.2, 8.6, 1.1, 'naranjo'], [-4.5, 9.6, 0.95, 'alamo'], [16.5, 9.5, 1.2, 'alamo'], [-17.5, 3.4, 1.1, 'alamo'],
   [8.8, -8.8, 1.2, 'alamo'], [-8.8, -15, 1.1, 'naranjo'], [0, -17.5, 1.2, 'alamo'], [8, -17.5, 1.1, 'naranjo'], [18, -10.5, 1.2, 'alamo'], [-20, -13, 1.2, 'alamo'], [-25, 5, 1.2, 'alamo'], [25, 8, 1.2, 'naranjo'], [-9, 13, 1.2, 'alamo'], [9, 13.5, 1.2, 'alamo'], [-1, 13, 1.1, 'naranjo'], [24, -6, 1.1, 'alamo'],
   [10.6, -4.6, 1, 'cipres'], [-9.6, -11.6, 1.1, 'cipres'], [7.3, -12.6, 1.05, 'cipres'], [17.6, -3, 0.9, 'cipres'], [-17.3, -11.3, 1, 'cipres']];
   trees.forEach((t, i) => tree(t[0], t[1], t[2], t[3], i + 1));
   // arbustos y matas
-  for (const [x, z, s] of [[-7.9, -4.5, 0.8], [-8.1, -2.4, 0.65], [8, -3.5, 0.75], [7.9, -5.2, 0.9], [-15.8, 6.3, 0.8], [6.2, 9.4, 0.7], [14.2, 10.6, 0.9], [-7, 10.5, 0.8], [-12.6, -1.4, 0.6], [17.5, 6, 0.8]]) {
+  for (const [x, z, s] of [[-7.9, -4.5, 0.8], [-8.1, -2.4, 0.65], [7.9, -5.2, 0.9], [-15.8, 6.3, 0.8], [6.2, 9.4, 0.7], [14.2, 10.6, 0.9], [-7, 10.5, 0.8], [-12.6, -1.4, 0.6], [17.5, 6, 0.8]]) {
     const b = group({ parent: scene, p: [x, 0, z], s });
     for (const [bx, by, bz, bs] of [[0, 0.42, 0, 0.62], [0.45, 0.32, 0.1, 0.44], [-0.42, 0.34, -0.06, 0.46], [0.05, 0.3, 0.4, 0.4]]) mesh(G.sph(1, 14, 10), mat('#6cc070', { map: T.leaf, rough: 1, sway: 0.02, rim: 0.4 }), { parent: b, p: [bx, by, bz], s: [bs, bs * 0.85, bs] });
     for (let i = 0; i < 5; i++) mesh(G.sph(0.06, 6, 5), mat(i % 2 ? '#ff8fa3' : '#fff3a8'), { parent: b, p: [Math.cos(i * 1.4) * 0.45, 0.5 + (i % 3) * 0.15, Math.sin(i * 1.4) * 0.4 + 0.15] });
@@ -510,6 +510,38 @@ function outside() {
   for (const s of [-1, 1]) mesh(G.cyl(0.012, 0.012, 0.14, 4), mat('#4a4654'), { parent: W.sign, p: [s * 0.55, -0.07, 0] });
   W.circles.push([-8.2, 1.5, 0.3]);
 
+  // leñera y tocón (para alimentar el horno)
+  const Le = group({ parent: scene, p: [8.0, 0, -3.3] });
+  for (const sx of [-1, 1]) mesh(G.box(0.1, 1.3, 0.9, 0.03), mat('#8f6a4a'), { parent: Le, p: [sx * 0.75, 0.65, 0] });
+  mesh(G.box(1.9, 0.08, 1.2, 0.03), mat('#d9714e', { rough: 0.9 }), { parent: Le, p: [0, 1.38, 0.05], r: [0.18, 0, 0] });
+  W.woodLogs = [];
+  for (let i = 0; i < 12; i++) { const row = Math.floor(i / 4), col = i % 4; const l = group({ parent: Le, p: [-0.5 + col * 0.33 + (row % 2) * 0.12, 0.14 + row * 0.26, 0] }); mesh(G.cyl(0.13, 0.13, 0.8, 9), mat('#b07a4c', { rough: 0.95 }), { parent: l, r: [Math.PI / 2, 0, 0] }); mesh(G.cyl(0.1, 0.1, 0.81, 9), mat('#f0d2a0'), { parent: l, r: [Math.PI / 2, 0, 0] }); W.woodLogs.push(l); }
+  const St = group({ parent: scene, p: [9.6, 0, -2.3] });
+  mesh(G.cyl(0.36, 0.42, 0.45, 12), mat('#a9744b', { rough: 1 }), { parent: St, p: [0, 0.22, 0] }); mesh(G.cyl(0.33, 0.33, 0.02, 12), mat('#f0d2a0'), { parent: St, p: [0, 0.455, 0] });
+  W.axe = group({ parent: St, p: [0.05, 0.46, 0], r: [0, 0.5, 0.5] }); mesh(G.cyl(0.025, 0.03, 0.75, 6), mat('#c98a5a'), { parent: W.axe, p: [0, 0.36, 0] }); mesh(G.box(0.26, 0.2, 0.04, 0.02), mat('#b9c3cc', { metal: 0.6, rough: 0.3 }), { parent: W.axe, p: [0.1, 0.66, 0] });
+  W.stumpLog = mesh(G.cyl(0.13, 0.13, 0.5, 9), mat('#b07a4c'), { parent: St, p: [-0.05, 0.71, 0.02] }); W.stumpLog.visible = false;
+  W.circles.push([9.6, -2.3, 0.5]); W.obstacles.push([7.1, -3.95, 8.9, -2.7]);
+  W.st.lena = { x: 8.0, z: -2.25, ox: 8.0, oz: -3.3, yaw: Math.PI };
+  W.st.tocon = { x: 9.6, z: -1.45, ox: 9.6, oz: -2.3, yaw: Math.PI };
+  // el carro de Pipa en la plaza
+  const Ca = group({ parent: scene, p: [8.4, 0, 7.0], r: [0, -0.25, 0] });
+  mesh(G.box(1.9, 0.5, 1.0, 0.05), mat('#6fbfae', { rough: 0.7 }), { parent: Ca, p: [0, 0.75, 0] }); mesh(G.box(2.0, 0.07, 1.1, 0.03), mat('#c98a5a'), { parent: Ca, p: [0, 1.03, 0] });
+  for (const sx of [-1, 1]) { mesh(G.cyl(0.36, 0.36, 0.09, 16), mat('#8f6a4a'), { parent: Ca, p: [sx * 0.7, 0.36, 0.56], r: [Math.PI / 2, 0, 0] }); mesh(G.cyl(0.1, 0.1, 0.1, 8), mat('#e9b949'), { parent: Ca, p: [sx * 0.7, 0.36, 0.57], r: [Math.PI / 2, 0, 0] }); }
+  for (const sx of [-1, 1]) mesh(G.cyl(0.035, 0.035, 1.5, 6), mat('#8f6a4a'), { parent: Ca, p: [sx * 0.92, 1.75, -0.4] });
+  for (let i = 0; i < 6; i++) mesh(G.box(0.34, 0.05, 1.3, 0.02), mat(i % 2 ? '#fff6e2' : '#6fbfae', { rough: 0.9 }), { parent: Ca, p: [-0.85 + i * 0.34, 2.5, 0.05], r: [0.3, 0, 0] });
+  sack(Ca, -0.6, 1.06, 0.05, 0.55); sack(Ca, -0.1, 1.06, -0.1, 0.5, '#e2c79c');
+  for (let i = 0; i < 3; i++) { mesh(G.cyl(0.13, 0.12, 0.3, 12), mat(['#93a35a', '#6f5f40', '#ffe27a'][i], { rough: 0.5 }), { parent: Ca, p: [0.35 + i * 0.3, 1.22, 0.1] }); mesh(G.cyl(0.14, 0.14, 0.05, 12), mat('#e2664f'), { parent: Ca, p: [0.35 + i * 0.3, 1.39, 0.1] }); }
+  W.obstacles.push([7.3, 6.3, 9.5, 7.75]); W.pipaSpot = [8.9, 8.15];
+  // cartel de «Vuelvo enseguida» y casa de Pan
+  const brbT = canvasTex(256, 128, (g) => { g.fillStyle = '#fff3d8'; g.beginPath(); g.roundRect(4, 4, 248, 120, 22); g.fill(); g.strokeStyle = '#c98a5a'; g.lineWidth = 9; g.stroke(); g.fillStyle = '#e2664f'; g.font = '900 42px ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.textAlign = 'center'; g.fillText('VUELVO', 128, 56); g.fillText('ENSEGUIDA', 128, 100, 220); });
+  W.brb = group({ parent: scene, p: [-7.35, 2.05, 1.5] }); for (const sd of [-1, 1]) mesh(G.plane(0.9, 0.45), basic('#ffffff', { map: brbT }), { parent: W.brb, p: [0, -0.3, sd * 0.02], r: [0, sd > 0 ? 0 : Math.PI, 0], cast: false }); mesh(G.box(0.92, 0.47, 0.03, 0.01), mat('#c98a5a'), { parent: W.brb, p: [0, -0.3, 0] }); W.brb.visible = false;
+  const hs = canvasTex(256, 96, (g) => { g.fillStyle = '#fff3d8'; g.beginPath(); g.roundRect(4, 4, 248, 88, 20); g.fill(); g.strokeStyle = '#c98a5a'; g.lineWidth = 8; g.stroke(); g.fillStyle = '#7a4a2a'; g.font = '900 44px ui-rounded, "Arial Rounded MT Bold", sans-serif'; g.textAlign = 'center'; g.fillText('Casa de Pan', 128, 62, 226); });
+  const Hs = group({ parent: scene, p: [12.1, 0, -3.5], r: [0, -0.5, 0] }); mesh(G.cyl(0.05, 0.06, 1.1, 6), mat('#8f6a4a'), { parent: Hs, p: [0, 0.55, 0] }); mesh(G.box(1.0, 0.4, 0.06, 0.02), mat('#c98a5a'), { parent: Hs, p: [0, 1.15, 0] }); mesh(G.plane(0.94, 0.35), basic('#ffffff', { map: hs }), { parent: Hs, p: [0, 1.15, 0.035], cast: false });
+  mesh(G.box(0.9, 0.04, 0.6, 0.02), mat('#e2664f', { rough: 1 }), { parent: scene, p: [12.55, 0.03, -5.15], r: [0, 0.05, 0], cast: false });
+  W.circles.push([12.1, -3.5, 0.25]); W.homeSpot = [12.4, -5.1];
+  // lo que brilla: hallazgos del día
+  W.findSpots = [[-13, 4.2], [-6.5, 8.8], [1.5, 9.5], [6.5, 3.6], [14.5, 1.2], [15.5, 7.5], [-16, 8], [10.8, -1.2], [-9.5, -3.5], [-2, 6.5], [9.5, 10.5], [-12.5, 10.5]];
+  W.findMesh = []; for (let i = 0; i < 5; i++) { const m = mesh(G.ico(0.11, 0), mat('#fff3a8', { emissive: '#ffd866', ei: 1.2, rough: 0.3 }), { parent: scene, cast: false }); m.visible = false; W.findMesh.push(m); }
   // fuente
   const F = group({ parent: scene, p: [-10.2, 0, 7.0] }), stoneM = mat('#ffffff', { map: T.stone, rough: 1 });
   mesh(G.lathe([[0.001, 0], [1.6, 0], [1.66, 0.12], [1.62, 0.5], [1.5, 0.56], [1.36, 0.5], [1.36, 0.18], [0.001, 0.18]], 30, false), stoneM, { parent: F });
@@ -646,8 +678,10 @@ export function updateWorld(dt, hour, o = {}) {
   for (let i = 0; i < W.lanterns.length; i += 2) { W.lanterns[i].emissiveIntensity = 0.3 + n * 2.2 * (0.85 + Math.sin(t * 2 + i) * 0.15); W.lanterns[i + 1].rotation.z = Math.sin(t * 1.6 + i) * (o.wind ? 0.25 : 0.1); }
   W.fermGlow.emissiveIntensity = 0.55 + Math.sin(t * 2) * 0.08;
   const f = 1.1 + Math.sin(t * 9) * 0.18 + Math.sin(t * 23) * 0.1;
-  W.fire[0].emissiveIntensity = f * (o.baking?.[0] ? 1.5 : 0.9); W.fire[1].emissiveIntensity = f * (o.baking?.[1] ? 1.5 : 0.8);
-  W.ovenLight.intensity = (2.5 + n * 6) * f * 0.5;
+  const fl = 0.25 + (o.fire ?? 0.6) * 1.1;
+  W.fire[0].emissiveIntensity = f * (o.baking?.[0] ? 1.5 : 0.9) * fl; W.fire[1].emissiveIntensity = f * (o.baking?.[1] ? 1.5 : 0.8) * fl;
+  W.ovenLight.intensity = (2.5 + n * 6) * f * 0.5 * fl;
+  for (const m of W.findMesh) if (m.visible) { m.rotation.y = t * 2; m.position.y = 0.35 + Math.sin(t * 3 + m.position.x) * 0.08; }
   W.hh.rotation.z = -(hour % 12) / 12 * Math.PI * 2; W.mh.rotation.z = -(hour % 1) * Math.PI * 2;
   for (const c of W.clouds) { c.g.position.x += dt * c.v; if (c.g.position.x > 52) c.g.position.x = -52; c.m.color.copy(light.skyBot).lerp(new THREE.Color(0xffffff), 0.75 - n * 0.35); }
   smokeT -= dt; if (smokeT < 0) { smokeT = 0.35; burst('steam', W.chimney[0], W.chimney[1], W.chimney[2], 1, { spread: 0.3 }); }
