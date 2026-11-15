@@ -112,7 +112,7 @@ export const UPG = {
   bandeja: { n: 'Bandeja grande', p: 120, cap: 0, d: 'Cada hornada da 6 piezas en vez de 4.', at: [1.6, 1.4, -2.6] },
   jardin: { n: 'Jardineras en la puerta', p: 90, cap: 0, d: 'Flores en la entrada. Entra más gente, espera más a gusto y deja más propina.', at: [0, 0.6, 3.2] },
   fermenta: { n: 'Fermentadora templada', p: 180, cap: 0, d: 'La masa sube el doble de rápido.', at: [3, 1.6, -4.9] },
-  huerto: { n: 'El huerto de la abuela', p: 160, cap: 0, lvl: 1, d: 'Lo desbrozan y lo plantan. Cada mañana te deja algo: aceitunas, nueces o semillas.', at: [-15, 0.8, 1.2] },
+  huerto: { n: 'El huerto de la abuela', p: 120, cap: 0, lvl: 1, d: 'Lo desbrozan y te dejan ocho bancales. Siembra lo de cada estación, riega y cosecha: va al zurrón, a la masa o de regalo.', at: [-15, 0.8, 1.2] },
   horno2: { n: 'Segunda boca de horno', p: 320, cap: 1, lvl: 1, d: 'Abren la leñera y hornean dos hornadas a la vez.', at: [5.1, 1, -4.2] },
   reforma: { n: 'Reforma del obrador', p: 420, cap: 1, lvl: 2, d: 'Baldosa nueva, azulejo azul y banderines. Viene más gente y las propinas suben.', at: [0, 1.5, -3] },
   molino: { n: 'Arreglar el molino de Tejo', p: 380, cap: 1, lvl: 2, d: 'Aspas nuevas y muela afilada. Las tres harinas te salen un tercio más baratas.', at: [-9.8, 1.5, -3] },
@@ -193,7 +193,7 @@ export const MUE_ORDER = ['planta', 'alfombra', 'tetera', 'lampara', 'baul', 'cu
 
 // Mejoras por niveles (coste = base · g^nivel) y equipo que automatiza (precio de alta + jornal diario).
 export const TRACKS = {
-  horno: { n: 'El horno', base: 50, g: 1.6, max: 10, d: 'Cada nivel: el pan llega al dorado un 8 % antes.' },
+  horno: { n: 'Horno', base: 50, g: 1.6, max: 10, d: 'Cada nivel: el pan llega al dorado un 8 % antes.' },
   bandejas: { n: 'Las bandejas', base: 80, g: 1.8, max: 8, d: 'Cada dos niveles: una pieza más por hornada.' },
   ferment: { n: 'La fermentadora', base: 40, g: 1.6, max: 10, d: 'Cada nivel: la masa sube un 7 % más rápido.' },
   mostrador: { n: 'El mostrador', base: 60, g: 1.65, max: 10, d: 'Cada nivel: la clientela espera un 8 % más y suelta algo más de propina. En los niveles 4 y 8, un hueco más para atender.' },
@@ -207,7 +207,8 @@ export const STAFF = {
   brasa: { n: 'Brasa, la hornera', p: 380, wage: 28, lvl: 2, d: 'Saca el pan en dorado, lo deja en el carro y echa leña cuando el fuego baja. El punto exacto sigue siendo cosa tuya.', look: { sp: 'zorro', fur: '#c96a3a', skin: '#fff6ea', shirt: '#4a4654', pat: 'liso', acc: 'gorro', lash: true, scale: 0.88 } },
   chispa: { n: 'Chispa, el repartidor', p: 520, wage: 36, lvl: 3, d: 'A mediodía y a media tarde lleva a la fonda hasta seis panes de lo que más haya en el mostrador, al 80 %.', look: { sp: 'liebre', fur: '#c9bfb4', skin: '#fff3df', shirt: '#f2b84b', pat: 'raya', acc: 'cinta' } },
 };
-export const STAFF_ORDER = ['lenador', 'amasadora', 'brasa', 'chispa'];
+STAFF.leva = { n: 'Leva, la oficiala', p: 900, wage: 55, lvl: 4, d: 'Cuando el mostrador se queda corto, amasa y hornea por su cuenta lo que más se pide, con lo que haya en la despensa. Pan de dos estrellas: el de tres sigue siendo cosa tuya. Tú llena la despensa y sal a vivir.', look: { sp: 'buho', fur: '#d9c2a0', skin: '#fff3e2', shirt: '#e2664f', pat: 'liso', acc: 'gorro', lash: true, iris: '#7a5a2a', scale: 0.9 } };
+export const STAFF_ORDER = ['lenador', 'amasadora', 'brasa', 'chispa', 'leva'];
 
 export const SEASONS = [
   { n: 'primavera', ground: [1, 1, 1], leaf: null, wheat: '#b9d36a', up: ['semillas', 'brioche'], cheap: 'semillas', fx: 'petal' },
@@ -253,3 +254,101 @@ export const ESPINO = {
   charla: ['El macho se llama Almirante. La parda es Bizcocha. La blanca no tiene nombre porque no se deja.', 'Mi nieta dice que los patos traen suerte. Yo digo que traen patitos, que viene a ser lo mismo.', 'Tu abuela venía aquí con los mendrugos de la semana. Los patos de entonces eran los abuelos de estos.', 'El pan muy tostado les gusta más que el bueno. Son como yo.'],
   gracias: ['¡Mira cómo vienen! Gracias, hija.', 'Almirante te hace una reverencia. Bueno, casi.', 'Así da gusto pasar la tarde.'],
 };
+
+// ================= La vida en Migas: huerta, monte, río, regalos, calendario y almanaque =================
+// Productos del zurrón. k: de dónde sale. sell: lo que paga la fonda. toque: lo que le hace a una hornada.
+export const ITEMS = {
+  fresa: { n: 'Fresas', k: 'huerta', sell: 8, d: 'Pequeñas y coloradas. La mitad no llega al cesto.', toque: { n: 'de fresa', k: 1.25, sweet: 1, c: '#e2475a' } },
+  romero: { n: 'Romero', k: 'huerta', sell: 5, d: 'Huele a monte y a domingo.', toque: { n: 'al romero', k: 1.2, sweet: 0, c: '#5f9a5a' } },
+  tomate: { n: 'Tomates', k: 'huerta', sell: 9, d: 'De los que saben a tomate.', toque: { n: 'con tomate', k: 1.22, sweet: 0, c: '#e2553a' } },
+  girasol: { n: 'Girasol', k: 'huerta', sell: 7, d: 'Mira siempre hacia el horno. Da pipas para la despensa.' },
+  calabaza: { n: 'Calabaza', k: 'huerta', sell: 34, d: 'Gorda y naranja. Tejo dice que pesa lo que un saco.' },
+  uva: { n: 'Uvas', k: 'huerta', sell: 11, d: 'Un racimo prieto. Secas, son pasas.', toque: { n: 'con pasas', k: 1.2, sweet: null, c: '#6a4a8a' } },
+  col: { n: 'Col de invierno', k: 'huerta', sell: 17, d: 'Aguanta la helada mejor que tú.' },
+  ajo: { n: 'Ajos', k: 'huerta', sell: 8, d: 'Una ristra. Espanta resfriados y visitas.', toque: { n: 'de ajo', k: 1.16, sweet: 0, c: '#f3ead2' } },
+  esparrago: { n: 'Espárragos trigueros', k: 'monte', sell: 10, d: 'Salen donde quieren, nunca donde miras.' },
+  menta: { n: 'Menta de río', k: 'monte', sell: 6, d: 'Crece con los pies en el agua.' },
+  mora: { n: 'Moras', k: 'monte', sell: 9, d: 'Manchan los dedos y merece la pena.', toque: { n: 'de moras', k: 1.25, sweet: 1, c: '#4a2a5a' } },
+  seta: { n: 'Níscalos', k: 'monte', sell: 14, d: 'Naranjas, bajo los pinos, después de llover.', toque: { n: 'de setas', k: 1.3, sweet: 0, c: '#d98a4a' } },
+  castana: { n: 'Castañas', k: 'monte', sell: 9, d: 'Cuidado con el erizo. El de fuera, no Púa.', toque: { n: 'de castañas', k: 1.24, sweet: null, c: '#8a5a34' } },
+  pinon: { n: 'Piñones', k: 'monte', sell: 13, d: 'Cada uno cuesta una piña y media paciencia.', toque: { n: 'con piñones', k: 1.24, sweet: null, c: '#f0e2b8' } },
+  trucha: { n: 'Trucha', k: 'rio', sell: 12, d: 'La de siempre. Plateada y con prisa.' },
+  barbo: { n: 'Barbo', k: 'rio', sell: 16, d: 'Bigotudo y de fondo. Pelea más de lo que parece.' },
+  cangrejo: { n: 'Cangrejo de río', k: 'rio', sell: 15, d: 'Anda de lado y pellizca de frente.' },
+  anguila: { n: 'Anguila', k: 'rio', sell: 26, d: 'Solo sale al caer la tarde o cuando llueve.' },
+  dorada: { n: 'Carpa dorada', k: 'rio', sell: 60, d: 'Dicen que es la misma desde hace cien años.' },
+  miel: { n: 'Miel', k: 'otro', sell: 18, d: 'De las abejas del huerto. Espesa y sin prisa.', toque: { n: 'con miel', k: 1.3, sweet: null, c: '#f2b84b' } },
+};
+export const ITEM_ORDER = ['fresa', 'romero', 'ajo', 'tomate', 'girasol', 'uva', 'calabaza', 'col', 'esparrago', 'menta', 'mora', 'seta', 'castana', 'pinon', 'trucha', 'barbo', 'cangrejo', 'anguila', 'dorada', 'miel'];
+// Cultivos. se: estaciones (0 primavera … 3 invierno). days: noches regadas hasta cosechar. re: noches para volver a dar (0 = se arranca).
+export const CROPS = {
+  fresa: { se: [0], days: 3, re: 2, y: 2, seed: 10 },
+  romero: { se: [0, 1], days: 2, re: 0, y: 2, seed: 6 },
+  ajo: { se: [3, 0], days: 3, re: 0, y: 2, seed: 8 },
+  tomate: { se: [1], days: 3, re: 2, y: 2, seed: 12 },
+  girasol: { se: [1, 2], days: 4, re: 0, y: 1, seed: 8, ing: ['semillas', 4] },
+  uva: { se: [2], days: 4, re: 2, y: 2, seed: 16 },
+  calabaza: { se: [2], days: 5, re: 0, y: 1, seed: 18 },
+  col: { se: [3], days: 3, re: 0, y: 1, seed: 10 },
+};
+export const CROP_ORDER = ['fresa', 'romero', 'ajo', 'tomate', 'girasol', 'uva', 'calabaza', 'col'];
+export const FORAGE = {
+  esparrago: { se: [0], at: ['pueblo', 'molino'] }, menta: { se: [0, 1], at: ['rio'] }, mora: { se: [1], at: ['pueblo', 'rio', 'molino'] },
+  seta: { se: [2], at: ['rio', 'molino'] }, castana: { se: [2], at: ['pueblo', 'molino'] }, pinon: { se: [3], at: ['pueblo', 'rio', 'molino'] },
+};
+// Peces. w: lo fácil que es que piquen. dif: lo que tiran. late: solo de tarde o con lluvia.
+export const FISH = {
+  trucha: { se: [0, 1, 2, 3], w: 10, dif: 1, cm: [22, 46] },
+  barbo: { se: [0, 1], w: 6, dif: 1.3, cm: [30, 62] },
+  cangrejo: { se: [1, 2], w: 5, dif: 1.15, cm: [8, 15] },
+  anguila: { se: [2, 3], w: 5, dif: 1.7, cm: [40, 95], late: true },
+  dorada: { se: [0, 1, 2, 3], w: 0.7, dif: 2.2, cm: [50, 84] },
+};
+// Gustos de cada vecino: lo que le encanta, lo que le gusta y lo que no.
+export const TASTE = {
+  lana: { love: ['fresa', 'miel', 'castana'], like: ['uva', 'mora', 'col'], no: ['cangrejo', 'ajo'] },
+  tejo: { love: ['seta', 'anguila', 'calabaza'], like: ['ajo', 'castana', 'trucha'], no: ['fresa', 'menta'] },
+  brinco: { love: ['girasol', 'mora', 'tomate'], like: ['fresa', 'esparrago', 'menta'], no: ['anguila', 'seta'] },
+  charca: { love: ['trucha', 'cangrejo', 'tomate'], like: ['barbo', 'ajo', 'romero', 'seta'], no: ['miel'] },
+  pua: { love: ['fresa', 'mora', 'miel'], like: ['uva', 'castana', 'girasol'], no: ['col', 'ajo'] },
+  zarza: { love: ['pinon', 'esparrago', 'barbo'], like: ['romero', 'menta', 'uva'], no: ['calabaza'] },
+  ulular: { love: ['uva', 'seta', 'dorada'], like: ['col', 'pinon', 'miel'], no: ['cangrejo'] },
+};
+export const GIFT_SAY = {
+  love: { lana: '¡Ay, criatura! Esto era justo lo que me pedía el cuerpo.', tejo: 'Hmf. … Hmf. Esto está muy bien. No lo repitas mucho o me acostumbro.', brinco: '¡¡Para mí!! ¡Hoy doy cuatro vueltas, te lo dedico entero!', charca: 'Croac. Croac. Perdón, es que me emociono. Esto va al guiso de hoy.', pua: '¡¡Hala!! ¡Es lo que más me gusta del mundo mundial!', zarza: 'Esto lo llevo en la saca hasta el último pueblo. Bueno, no llega al segundo.', ulular: 'Matrícula de honor. Con mención. Y con mi agradecimiento.' },
+  like: { lana: 'Qué detalle, hija. Esto me viene muy bien.', tejo: 'Hmf. Vale. Gracias.', brinco: '¡Anda, gracias! ¡Energía para la ruta!', charca: 'Esto en la fonda tiene sitio. Gracias, Pan.', pua: '¡Gracias! Me lo guardo en el bolsillo bueno.', zarza: 'Certificado y entregado. Gracias, compañera.', ulular: 'Notable. Muy amable por tu parte.' },
+  meh: { lana: 'Ah. Pues… gracias, mujer.', tejo: 'Hmf.', brinco: '¡Ah! Bueno. ¡Gracias igualmente!', charca: 'Croac. Ya le buscaré sitio.', pua: 'Ah. Vale. Gracias.', zarza: 'Lo archivo. Gracias.', ulular: 'Suficiente. Se agradece la intención.' },
+  no: { lana: 'Uy, hija… esto a mí me sienta regular.', tejo: 'Hmf. Esto no. Pero no.', brinco: '¡Puaj! Perdón. ¡Puaj con cariño!', charca: 'Croac… esto no entra en mi cocina.', pua: 'Esto es de mayores. ¿Me lo cambias por un centro de caracola?', zarza: 'Devuelto al remitente. Sin acritud.', ulular: 'Insuficiente. Repetirás en septiembre.' },
+};
+// Cumpleaños: día del año (1 a 28, siete por estación).
+export const BDAY = { lana: 4, brinco: 10, charca: 13, pua: 17, tejo: 20, zarza: 24, ulular: 27 };
+export const WEEK_EV = { 2: { n: 'Mercadillo', d: 'Don Trasto, el buhonero, pone la manta en la plaza hasta las cinco: género fuera de temporada, abono, y compra lo que lleves en el zurrón.' }, 4: { n: 'Lonja', d: 'Viernes de pescado: la fonda paga el pescado vez y media.' }, 6: { n: 'Feria', d: 'Medio pueblo en la plaza y concurso de cestas: enseña lo mejor de tu zurrón y de tu mostrador.' } };
+export const TRASTO_LOOK = { sp: 'zorro', fur: '#8f8f9a', skin: '#f6efe2', shirt: '#7b5ea7', pat: 'rombos', acc: 'gorra', brow: 'sabio', scale: 1.04 };
+// El almanaque de la abuela: lotes que se entregan y lo que devuelve cada página.
+export const ALM = {
+  primavera: { n: 'Primavera', need: ['fresa', 'esparrago', 'ajo', 'barbo'], rw: 'bancales', rn: 'Cuatro bancales más', rd: 'La cuadrilla abre la tercera fila del huerto.' },
+  verano: { n: 'Verano', need: ['tomate', 'mora', 'girasol', 'cangrejo'], rw: 'aspersor', rn: 'El aspersor', rd: 'Riega el huerto entero cada mañana. Tú solo siembras y cosechas.' },
+  otono: { n: 'Otoño', need: ['calabaza', 'seta', 'castana', 'uva'], rw: 'colmena', rn: 'La colmena', rd: 'Un tarro de miel cada día, y sigue llenándose mientras no estás.' },
+  invierno: { n: 'Invierno', need: ['col', 'pinon', 'anguila'], rw: 'invernadero', rn: 'El invernadero', rd: 'En la primera fila del huerto crece cualquier cosa en cualquier estación.' },
+  rio: { n: 'Río', need: ['trucha', 'barbo', 'cangrejo', 'anguila', 'dorada'], rw: 'cana', rn: 'La caña de la abuela', rd: 'Pican antes, la zona de recoger es más ancha y la carpa dorada se deja ver más.' },
+  horno: { n: 'Horno', need: ['pan3', 'pan3', 'pan3'], rw: 'sello', rn: 'El sello de la abuela', rd: 'Todo tu pan vale una moneda más por pieza.' },
+  despensa: { n: 'Alacena', need: ['miel', 'romero', 'menta', 'oro'], rw: 'toques', rn: 'El cuaderno de toques', rd: 'Los panes con toque valen un 15 % más y dan un punto más de cariño.' },
+};
+export const ALM_ORDER = ['primavera', 'verano', 'otono', 'invierno', 'rio', 'horno', 'despensa'];
+export const ALM_ORO = 250;
+export const CARTA_ALM = [
+  'Pan:',
+  'Este almanaque lo empecé el año que abrí el horno. Apuntaba lo que daba Migas cada estación para no olvidarme de mirar fuera del obrador.',
+  'Si has llenado todas las páginas es que tú tampoco te has olvidado. El pan sale mejor cuando la panadera sabe a qué huele el río en otoño.',
+  'El espantapájaros lleva mi bufanda desde entonces. Ahora es tuya. Que te abrigue las ferias.',
+  'Tu abuela, que también pescaba fatal.',
+];
+// Oficios: experiencia fuera del horno. Cada nivel, una ventaja.
+export const OFICIOS = {
+  huerta: { n: 'Hortelana', perks: ['', 'La regadera moja también los bancales de al lado', 'Una de cada tres cosechas da una pieza más', 'Las semillas cuestan un cuarto menos', 'El abono dura dos cosechas'] },
+  monte: { n: 'Recolectora', perks: ['', 'Una mata más en cada sitio', 'Una de cada tres matas da el doble', 'Otra mata más en cada sitio', 'Todo lo del zurrón se vende un 20 % más caro'] },
+  rio: { n: 'Pescadora', perks: ['', 'La zona de recoger es más ancha', 'Pican antes', 'Los peces raros se dejan ver más', 'Uno de cada cuatro lances trae dos peces'] },
+};
+export const OFI_AT = [0, 15, 40, 80, 140];
+export const RIBBON = [null, { n: 'Cinta de bronce', c: '#c98a5a', coins: 40, rep: 5, at: 5 }, { n: 'Cinta de plata', c: '#c9d1d9', coins: 90, rep: 10, at: 9 }, { n: 'Cinta de oro', c: '#f2c14e', coins: 180, rep: 20, at: 13 }];
+LOGROS.push(['huerta1', 'La primera cosecha', 'Cosecha algo en el huerto', 20], ['zurron', 'De todo un poco', 'Ten diez productos distintos en el zurrón', 60], ['pesca5', 'Los cinco del río', 'Pesca las cinco especies', 100], ['regalo', 'Con mucho gusto', 'Acierta el regalo favorito de alguien', 30], ['gustos', 'Les conoces bien', 'Descubre 20 gustos de los vecinos', 100], ['cinta', 'Cinta en la solapa', 'Gana una cinta en la feria', 50], ['oro', 'La mejor cesta', 'Gana la cinta de oro', 150], ['alm3', 'Media memoria', 'Completa tres páginas del almanaque', 80], ['alm', 'El almanaque de la abuela', 'Completa el almanaque', 400], ['cumple', '¡Felicidades!', 'Haz un regalo de cumpleaños', 40], ['toque', 'Con un toque', 'Vende 20 panes con toque', 50]);
