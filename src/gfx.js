@@ -12,7 +12,15 @@ export const bend = { k: { value: 0.0105 }, z: { value: 0 } };
 export const windU = { value: 0 };
 
 // ---------- materiales ----------
-const VERT_HEAD = '#include <common>\nuniform float uBendK; uniform float uBendZ; uniform float uWind;';
+const VERT_HEAD = '#include <common>\nuniform float uBendK; uniform float uBendZ; uniform float uWind; varying vec4 vSee;';
+// mirilla: lo que queda entre la cámara y Pan se deshace en trama alrededor de ella
+export const see = { p: { value: new THREE.Vector4(0, 0, 10, 0) }, a: { value: new THREE.Vector2(1.78, 0.2) } };
+const FRAG_HEAD = 'uniform vec4 uSee; uniform vec2 uSeeA; varying vec4 vSee;\nvoid main() {\n' + `
+  if (uSee.w > 0.001) {
+    vec2 sd = (vSee.xy / vSee.z - uSee.xy) * vec2(uSeeA.x, 1.0);
+    float sm = uSee.w * (1.0 - smoothstep(uSeeA.y * 0.5, uSeeA.y, length(sd))) * smoothstep(0.0, 0.7, uSee.z - vSee.z - mix(1.25, 0.15, smoothstep(1.25, 1.9, vSee.w))) * smoothstep(0.75, 1.2, vSee.w);
+    if (sm > 0.0) { float sn = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))); if (sm * 1.08 > sn + 0.08) discard; }
+  }`;
 const VERT_PROJ = (sway) => `
 vec4 mvPosition = vec4( transformed, 1.0 );
 #ifdef USE_INSTANCING
@@ -23,14 +31,17 @@ ${sway ? `float sw = max(0.0, position.y) * ${sway.toFixed(3)};
 bw.x += sin(uWind * 1.7 + bw.x * 0.8 + bw.z * 0.6) * sw;
 bw.z += cos(uWind * 1.3 + bw.x * 0.5) * sw * 0.6;` : ''}
 float bd = bw.z - uBendZ;
+float seeY = bw.y;
 bw.y -= bd * bd * uBendK;
 mvPosition = viewMatrix * bw;
-gl_Position = projectionMatrix * mvPosition;`;
+gl_Position = projectionMatrix * mvPosition;
+vSee = vec4(gl_Position.xy, gl_Position.w, seeY);`;
 
 export function patch(m, o = {}) {
   const rim = o.rim ?? 0.22, sway = o.sway || 0;
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uBendK = bend.k; sh.uniforms.uBendZ = bend.z; sh.uniforms.uWind = windU;
+    sh.uniforms.uBendK = bend.k; sh.uniforms.uBendZ = bend.z; sh.uniforms.uWind = windU; sh.uniforms.uSee = see.p; sh.uniforms.uSeeA = see.a;
+    sh.fragmentShader = sh.fragmentShader.replace('void main() {', FRAG_HEAD);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', VERT_HEAD).replace('#include <project_vertex>', VERT_PROJ(sway));
     if (m.isMeshStandardMaterial && rim > 0) {
       sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `
@@ -39,7 +50,7 @@ export function patch(m, o = {}) {
         #include <opaque_fragment>`);
     }
   };
-  m.customProgramCacheKey = () => 'pp' + rim + '_' + sway;
+  m.customProgramCacheKey = () => 'ps' + rim + '_' + sway;
   return m;
 }
 
@@ -319,6 +330,11 @@ export function groundAt(px, py) {
   const a = k * rd.z * rd.z, b = rd.y + 2 * k * rd.z * (o.z - bz), c = o.y + k * (o.z - bz) * (o.z - bz); let t;
   if (Math.abs(a) < 1e-7) t = -c / b; else { const dsc = b * b - 4 * a * c; if (dsc < 0) return null; t = (-b - Math.sqrt(dsc)) / (2 * a); if (t < 0) t = (-b + Math.sqrt(dsc)) / (2 * a); }
   return t > 0 ? { x: o.x + rd.x * t, z: o.z + rd.z * t } : null;
+}
+/** Coloca la mirilla sobre un punto del mundo (k = 0 la apaga). */
+export function setSee(x, y, z, k, rad = 1.7) {
+  camera.updateMatrixWorld(); const d = z - bend.z.value; tv.set(x, y - d * d * bend.k.value, z).applyMatrix4(camera.matrixWorldInverse); const depth = -tv.z; tv.applyMatrix4(camera.projectionMatrix);
+  see.p.value.set(tv.x, tv.y, depth, depth > 0.5 ? k : 0); see.a.value.set(camera.aspect, rad * camera.projectionMatrix.elements[5] / Math.max(1, depth));
 }
 export function toScreen(x, y, z) {
   const d = z - bend.z.value;

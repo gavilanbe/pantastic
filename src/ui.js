@@ -74,7 +74,7 @@ export const ui = {
   },
 
   // ---- modal ----
-  modal(html, cls = '') { const m = $('#modal'); clearTimeout(ui.outT); m.classList.remove('out'); m.innerHTML = `<div class="sheet ${cls}">${html}</div>`; m.classList.remove('hide'); ui.modalOpen = true; return m.firstChild; },
+  modal(html, cls = '') { const m = $('#modal'); clearTimeout(ui.outT); m.classList.remove('out'); m.innerHTML = `<div class="sheet ${cls}">${html}</div>`; m.classList.remove('hide'); ui.modalOpen = true; m.scrollTop = 0; return m.firstChild; },
   closeModal() { const m = $('#modal'); if (!ui.modalOpen) return; ui.modalOpen = false; m.classList.add('out'); const cb = ui.onClose; ui.onClose = null; ui.outT = setTimeout(() => { m.classList.add('hide'); m.classList.remove('out'); m.innerHTML = ''; }, 130); cb?.(); },
 
   // ---- amasado ----

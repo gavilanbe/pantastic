@@ -12,7 +12,7 @@ import { logoURL } from './logo.js';
 import { ui, img, coin, stars, ingChip, $, ICON, XI } from './ui.js';
 import { initAudio, resumeAudio, sfx, blip, note, music, toggleMute } from './audio.js';
 import { DOUGH_TINT } from './breads.js';
-import { toScreen, groundAt, setQuality } from './gfx.js';
+import { toScreen, groundAt, setQuality, setSee } from './gfx.js';
 import { setVolume, duck, ambient } from './audio.js';
 import { itemModels, addToque } from './items.js';
 import { initVida, vidaDefaults, applyVida, vidaStartDay, vidaUpdate, vidaAction, vidaTomorrow, vidaAway, vidaLogros, vidaTab, VIDA_TABS, startFish, endFish, updateFish, openSell, openGift, canGift, tasteHTML, toqueK, toqueName, toqueFits, toqueList, useToque, almReady, give as giveItem, bagN, ii, fishK } from './vida.js';
@@ -1094,6 +1094,7 @@ function frame(dt) {
   const zc = inHome ? W.zones[R.zone].cam : null;
   const focus = frame.df ? frame.df : inHome ? { x: clamp(pan.x, zc[0], zc[1]), z: clamp(pan.z - 0.5, zc[2], zc[3]) } : mode === 'reveal' && R.reveal[0] ? { x: clamp(UPG[R.reveal[0]].at[0], -11, 11), z: clamp(UPG[R.reveal[0]].at[2], -3.4, 8) } : mode === 'title' ? { x: 0, z: 0.5 } : mode === 'knead' ? { x: 0.0, z: -4.5 } : mode === 'fiesta' && fiesta ? { x: fiesta.cx, z: fiesta.cz + 0.3 } : ui.dialogOpen && cur?.cust ? { x: -2, z: cur.cust.ch.z + 0.3 } : { x: clamp(pan.x + (pan.vx || 0) * 0.32, -18.5, 18.5), z: clamp(pan.z + (pan.vz || 0) * 0.22 + (inside ? -0.6 : 0.2), -3.4, 10.5) };
   updateCamera(dt, focus, frame.snap); frame.snap = false;
+  { const on = R && !inHome && !inside && mode === 'play' ? 1 : 0; frame.see = frame.see == null ? on : frame.see + (on - frame.see) * Math.min(1, dt * 6); setSee(pan.x, 0.75, pan.z, frame.see); }
   setTimeOfDay(hour, wd);
   updateWorld(dt, hour, { wind: R?.weather === 'viento', baking: R ? [!!R.oven[0], !!R.oven[1]] : null, fire: R?.fire, zone: R?.zone, fermOpen: R?.fermOpen > 0, fermBusy: R?.ferm.some(x => x) });
   // flecha del tutorial sobre el sitio al que toca ir, sonido ambiente y música más baja al hablar
@@ -1130,7 +1131,10 @@ function boot() {
   setInterval(() => { if (!TEST && S && mode === 'play' && !ui.modalOpen) saveMid(); }, 5000); addEventListener('visibilitychange', () => { if (document.hidden && S && !TEST) saveMid(); }); addEventListener('pagehide', () => { if (S && !TEST) saveMid(); });
   addEventListener('pointerdown', () => { initAudio(); resumeAudio(); });
   setVolume(CFG.mus, CFG.sfx); setQuality(CFG.q);
-  const fit = () => document.documentElement.style.setProperty('--z', clamp(Math.min(innerWidth / 1280, innerHeight / 720), 0.55, 1.3).toFixed(3)); fit(); addEventListener('resize', fit);
+  const fit = () => { const st = document.documentElement.style, base = Math.min(innerWidth / 1280, innerHeight / 720), small = base < 0.8;
+    // en pantallas pequeñas la interfaz no encoge con la ventana: se queda en un tamaño que se lee y las hojas se recolocan
+    const z = small ? clamp(Math.min(0.8, innerWidth / 600), 0.5, 0.8) : Math.min(base, 1.3), zs = small ? clamp(Math.min(innerWidth / 900, innerHeight / 470), 0.5, 0.82) : Math.min(base, 1.3);
+    st.setProperty('--z', z.toFixed(3)); st.setProperty('--zs', zs.toFixed(3)); st.setProperty('--vh', (innerHeight / zs / 100).toFixed(3) + 'px'); st.setProperty('--vw', (innerWidth / zs / 100).toFixed(3) + 'px'); document.body.classList.toggle('small', small); }; fit(); addEventListener('resize', fit);
   const cv = document.getElementById('c'), touch = matchMedia('(pointer: coarse)').matches; if (touch) $('#touch').classList.remove('hide');
   $('#prompt').addEventListener('pointerdown', (e) => { e.stopPropagation(); pressE = true; });
   cv.addEventListener('pointerdown', (e) => {

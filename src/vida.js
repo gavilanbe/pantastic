@@ -173,7 +173,7 @@ function openTrasto() {
       <div class="grid" style="grid-template-columns:repeat(4,1fr)">${R.trastoStock.map((s, k) => `<div class="mue ${s.n ? '' : 'own'}"><img src="${s.id === 'abono' ? XI.up.huerto : XI.item[s.id]}" alt=""><div class="nm">${s.id === 'abono' ? 'Saco de abono' : ITEMS[s.id].n}</div><div class="ds">${s.id === 'abono' ? `Tres paladas para el huerto. Tienes ${S.compost || 0}.` : 'Fuera de temporada. ' + (ALM_ORDER.some(p => !S.rw[ALM[p].rw] && ALM[p].need.includes(s.id) && !(S.alm[p] || [])[ALM[p].need.indexOf(s.id)]) ? '<b style="color:#3f9a5a">Falta en tu almanaque.</b>' : '')}</div>${s.n ? `<button class="btn sm ${S.money >= s.p ? 'main' : ''}" data-b="${k}" ${S.money < s.p ? 'disabled' : ''}>${s.p} ${coin} · quedan ${s.n}</button>` : '<span class="sealed" style="font-size:15px">VENDIDO</span>'}</div>`).join('')}</div>
       <div class="bfoot"><button class="btn" id="t-sell">Venderle del zurrón</button><span class="grow">Paga un 20 % más que la fonda.</span></div>`, 'paper');
     if (keep) sh.style.animation = 'none'; sh.querySelector('.x').onclick = () => ui.closeModal();
-    sh.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const s = R.trastoStock[b.dataset.b]; if (S.money < s.p || !s.n) return sfx('no'); S.money -= s.p; R.today.spent += s.p; s.n--; if (s.id === 'abono') S.compost = (S.compost || 0) + 3; else give(s.id, 1); ui.setMoney(S.money, true); sfx('stamp'); sfx('coin'); trasto?.act('joy'); c.save(); draw(true); });
+    sh.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const s = R.trastoStock[b.dataset.b]; if (S.money < s.p || !s.n) return sfx('no'); S.money -= s.p; R.today.spent += s.p; s.n--; if (S.trastoB) S.trastoB.b[s.id] = (S.trastoB.b[s.id] || 0) + 1; if (s.id === 'abono') S.compost = (S.compost || 0) + 3; else give(s.id, 1); ui.setMoney(S.money, true); sfx('stamp'); sfx('coin'); trasto?.act('joy'); c.save(); draw(true); });
     sh.querySelector('#t-sell').onclick = () => openSell('Vender a Don Trasto', '«Todo tiene comprador en algún pueblo.» Paga un 20 % más que la fonda.', () => 1.2);
   }; draw();
 }
@@ -273,7 +273,8 @@ export function vidaStartDay(first, r) {
   if (R.trasto) {
     trasto ||= makeChar(TRASTO_LOOK); trasto.x = W.trastoSpot[0]; trasto.z = W.trastoSpot[1]; trasto.yaw = trasto.yawTo = 0; scene.add(trasto.root);
     const out = ITEM_ORDER.filter(id => id !== 'miel' && id !== 'dorada' && !inSeasonItem(id, se)).sort(() => r() - 0.5), miss = out.filter(id => ALM_ORDER.some(p => !S.rw[ALM[p].rw] && ALM[p].need.includes(id) && !almSlot(p, ALM[p].need.indexOf(id))));
-    R.trastoStock = [...new Set([...miss.slice(0, 2), ...out])].slice(0, 3).map(id => ({ id, p: ITEMS[id].sell * 3, n: 2 })); R.trastoStock.push({ id: 'abono', p: 24, n: 2 });
+    if (S.trastoB?.day !== S.day) S.trastoB = { day: S.day, b: {} };
+    R.trastoStock = [...new Set([...miss.slice(0, 3), ...out])].slice(0, 3).map(id => ({ id, p: ITEMS[id].sell * 3, n: 2 })); R.trastoStock.push({ id: 'abono', p: 24, n: 2 }); R.trastoStock.forEach(s => { s.n = Math.max(0, s.n - (S.trastoB.b[s.id] || 0)); });
     lines.push('Mercadillo en la plaza'); if (!first) setTimeout(() => ui.toast('Miércoles de mercadillo: Don Trasto ha puesto la manta en la plaza, camino del río', 'good'), 8200);
   }
   if (R.feria) { W.feriaShow.clear(); if (!first) setTimeout(() => ui.toast('Hay concurso de cestas en la plaza: enseña tu zurrón antes de cerrar', 'good'), 8200); }
