@@ -10,6 +10,6 @@ export const SFX_LIST = {
 export const AMB_LIST = { amb_day: 'Pueblo de mañana', amb_eve: 'Atardecer con grillos', amb_rain: 'Lluvia', amb_wind: 'Viento', amb_fire: 'Fuego del horno', amb_fountain: 'Fuente', amb_river: 'Río' };
 export const MUS_LIST = { mus_title: 'Título', mus_day: 'Radio Migas · mañana', mus_day2: 'Radio Migas · swing', mus_eve: 'Radio Migas · atardecer', mus_fiesta: 'La Hornada' };
 /** Toma elegida de cada efecto (a o b). */
-export const PICK = {};
+export const PICK = { place: 'b', coin: 'b', bell: 'b', quack: 'b', no: 'b' };
 /** Volumen relativo de cada efecto, para que los pasos no tapen la campanilla. */
 export const GAIN = { step_wood: 0.3, step_stone: 0.26, step_grass: 0.24, squish: 0.75, place: 0.7, pick: 0.5, coin: 0.6, buy: 0.6, ding: 0.55, tick: 0.35, bell: 0.6, page: 0.55, stamp: 0.75, poof: 0.5, whoosh: 0.35, fire: 0.7, quack: 0.6, no: 0.45, pop: 0.45, perfect: 0.6, good: 0.5, meh: 0.45, heart: 0.55, fanfare: 0.7, day: 0.7, sweep: 0.6, cut: 0.6, knock: 0.7, splash: 0.6 };
