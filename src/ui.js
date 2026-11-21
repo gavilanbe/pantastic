@@ -96,15 +96,24 @@ export const ui = {
   card(html, ms = 6000) { html = ui.t(html); document.querySelectorAll('.fiesta-card').forEach(e => e.remove()); const d = el('div', 'fiesta-card', html); $('#ui').append(d); if (ms) setTimeout(() => d.remove(), ms); return d; },
   /** Sello pequeño junto a la libreta: la partida acaba de guardarse. */
   saved(text = 'Guardado') { let e = $('#saved'); if (!e) { e = el('div', '', ''); e.id = 'saved'; $('#ui').append(e); } e.innerHTML = `<i></i>${text}`; e.classList.remove('on'); void e.offsetWidth; e.classList.add('on'); },
-  /** Selector de protagonista: una ficha de la abuela por cabeza; la elegida se despliega junto a su foco. */
+  /** Selector de protagonista: un rótulo grande bajo el foco con el nombre de quien está delante, y el otro asomando a un lado para cambiar. */
   pick(heroes, { onSel, onGo, onBack }) {
     const box = el('div', '', `<div class="pk-h">¿Quién enciende el horno?</div>
-      ${heroes.map((h, k) => `<div class="pk-card pk${k}" data-k="${k}"><i class="tape"></i><div class="pk-top"><span class="pk-pic"><img src="${h.face}" alt=""></span><div><small>${h.sub}</small><b>${h.n}</b></div></div><div class="pk-body">${h.lines.map(l => `<p>${l}</p>`).join('')}<button class="btn main">¡Al obrador con ${h.n}!</button></div><span class="pk-seal">${h.seal}</span></div>`).join('')}
-      <div class="pk-keys"><span><kbd>A</kbd><kbd>D</kbd> cambiar el foco</span><span><kbd>E</kbd> elegir</span><span><kbd>Esc</kbd> volver a las libretas</span></div>`);
-    box.id = 'pick'; $('#ui').append(box); let sel = 0, done = false;
-    const cards = [...box.querySelectorAll('.pk-card')], set = (k) => { sel = k; cards.forEach((c, i) => c.classList.toggle('on', i === k)); };
-    const go = () => { if (done) return; done = true; cards[sel].classList.add('chosen'); box.classList.add('done'); onGo(); };
-    cards.forEach((c, k) => { c.onclick = (e) => { if (done) return; if (k !== sel) onSel(k); else if (e.target.closest('.btn')) go(); }; c.onpointerenter = () => { if (!done && k !== sel && matchMedia('(hover: hover)').matches) onSel(k); }; });
+      <button class="pk-arrow l"><kbd>A</kbd><span class="pk-pic"><img alt=""></span><b></b></button><button class="pk-arrow r"><b></b><span class="pk-pic"><img alt=""></span><kbd>D</kbd></button>
+      <div class="pk-plate"><i class="tape"></i><small class="pk-sub"></small><div class="pk-name"></div><div class="pk-quote"></div><div class="pk-tags"></div><button class="btn main"></button><span class="pk-seal"></span></div>
+      <div class="pk-dots">${heroes.map(() => '<i></i>').join('')}</div>
+      <div class="pk-keys"><span><kbd>A</kbd><kbd>D</kbd> mover el foco</span><span><kbd>E</kbd> elegir</span><span><kbd>Esc</kbd> volver a las libretas</span></div>`);
+    box.id = 'pick'; $('#ui').append(box); let sel = -1, done = false;
+    const plate = box.querySelector('.pk-plate'), L = box.querySelector('.pk-arrow.l'), Rr = box.querySelector('.pk-arrow.r');
+    const set = (k) => {
+      const dir = k > sel ? 1 : -1; sel = k; const h = heroes[k], o = heroes[1 - k];
+      box.querySelector('.pk-sub').textContent = h.sub; box.querySelector('.pk-name').innerHTML = [...h.n].map((c, i) => `<span style="animation-delay:${i * 0.045}s">${c}</span>`).join(''); box.querySelector('.pk-quote').textContent = h.quote; box.querySelector('.pk-tags').innerHTML = h.tags.map((t, i) => `<span style="animation-delay:${0.15 + i * 0.07}s">${t}</span>`).join(''); plate.querySelector('.btn').innerHTML = `¡Al obrador con ${h.n}!`; box.querySelector('.pk-seal').textContent = h.seal;
+      plate.style.setProperty('--d', dir); plate.classList.remove('in'); void plate.offsetWidth; plate.classList.add('in'); box.dataset.sel = k;
+      for (const [b, show] of [[L, k === 1], [Rr, k === 0]]) { b.classList.toggle('off', !show); b.querySelector('img').src = o.face; b.querySelector('b').textContent = o.n; }
+      box.querySelectorAll('.pk-dots i').forEach((d, i) => d.classList.toggle('on', i === k));
+    };
+    const go = () => { if (done) return; done = true; box.classList.add('done'); onGo(); };
+    L.onclick = () => { if (!done) onSel(0); }; Rr.onclick = () => { if (!done) onSel(1); }; plate.querySelector('.btn').onclick = go;
     const key = (e) => { const k = e.key.toLowerCase(); if (k === 'm') return; e.stopPropagation(); if (e.repeat || done) return; if (k === 'a' || k === 'arrowleft') onSel(0); else if (k === 'd' || k === 'arrowright') onSel(1); else if (k === 'e' || k === 'enter' || k === ' ') { e.preventDefault(); go(); } else if (k === 'escape') onBack(); };
     addEventListener('keydown', key, true); set(0);
     return { set, close() { removeEventListener('keydown', key, true); box.remove(); } };

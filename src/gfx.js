@@ -14,11 +14,11 @@ export const windU = { value: 0 };
 // ---------- materiales ----------
 const VERT_HEAD = '#include <common>\nuniform float uBendK; uniform float uBendZ; uniform float uWind; varying vec4 vSee;';
 // mirilla: lo que queda entre la cámara y Pan se deshace en trama alrededor de ella
-export const see = { p: { value: new THREE.Vector4(0, 0, 10, 0) }, a: { value: new THREE.Vector2(1.78, 0.2) } };
-const FRAG_HEAD = 'uniform vec4 uSee; uniform vec2 uSeeA; varying vec4 vSee;\nvoid main() {\n' + `
+export const see = { p: { value: new THREE.Vector4(0, 0, 10, 0) }, a: { value: new THREE.Vector2(1.78, 0.2) }, m: { value: 0.15 } };
+const FRAG_HEAD = 'uniform vec4 uSee; uniform vec2 uSeeA; uniform float uSeeM; varying vec4 vSee;\nvoid main() {\n' + `
   if (uSee.w > 0.001) {
     vec2 sd = (vSee.xy / vSee.z - uSee.xy) * vec2(uSeeA.x, 1.0);
-    float sm = uSee.w * (1.0 - smoothstep(uSeeA.y * 0.5, uSeeA.y, length(sd))) * smoothstep(0.0, 0.7, uSee.z - vSee.z - mix(1.25, 0.15, smoothstep(1.25, 1.9, vSee.w))) * smoothstep(0.75, 1.2, vSee.w);
+    float sm = uSee.w * (1.0 - smoothstep(uSeeA.y * 0.5, uSeeA.y, length(sd))) * smoothstep(0.0, 0.7, uSee.z - vSee.z - mix(1.25, uSeeM, smoothstep(1.25, 1.9, vSee.w))) * smoothstep(0.75, 1.2, vSee.w);
     if (sm > 0.0) { float sn = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))); if (sm * 1.08 > sn + 0.08) discard; }
   }`;
 const VERT_PROJ = (sway) => `
@@ -40,7 +40,7 @@ vSee = vec4(gl_Position.xy, gl_Position.w, seeY);`;
 export function patch(m, o = {}) {
   const rim = o.rim ?? 0.22, sway = o.sway || 0;
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uBendK = bend.k; sh.uniforms.uBendZ = bend.z; sh.uniforms.uWind = windU; sh.uniforms.uSee = see.p; sh.uniforms.uSeeA = see.a;
+    sh.uniforms.uBendK = bend.k; sh.uniforms.uBendZ = bend.z; sh.uniforms.uWind = windU; sh.uniforms.uSee = see.p; sh.uniforms.uSeeA = see.a; sh.uniforms.uSeeM = see.m;
     sh.fragmentShader = sh.fragmentShader.replace('void main() {', FRAG_HEAD);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', VERT_HEAD).replace('#include <project_vertex>', VERT_PROJ(sway));
     if (m.isMeshStandardMaterial && rim > 0) {

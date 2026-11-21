@@ -416,7 +416,7 @@ export function updateChar(ch, dt) {
   const sq = ch.sq.step(Math.min(dt, 0.03));
   const breathe = 1 + Math.sin(ch.t * 2.1) * 0.012;
   ch.body.scale.set(1 / Math.sqrt(sq), sq * breathe, 1 / Math.sqrt(sq));
-  let by = Math.abs(s) * 0.05 * mv, lean = 0.1 * mv, aL = -s * 0.75 * mv, aR = s * 0.75 * mv, lL = s * 0.8 * mv, lR = -s * 0.8 * mv, azL = -0.28, azR = 0.28, headX = 0, headZ = Math.sin(ch.t * 1.1) * 0.03, roll = c * 0.05 * mv;
+  let spin = 0, by = Math.abs(s) * 0.05 * mv, lean = 0.1 * mv, aL = -s * 0.75 * mv, aR = s * 0.75 * mv, lL = s * 0.8 * mv, lR = -s * 0.8 * mv, azL = -0.28, azR = 0.28, headX = 0, headZ = Math.sin(ch.t * 1.1) * 0.03, roll = c * 0.05 * mv;
   if (ch.carry) { aL = aR = -1.28 + Math.abs(s) * 0.05 * mv; azL = -0.08; azR = 0.08; lean = 0.02; }
   const a = ch.action, at = ch.at;
   if (a === 'knead') { aL = -1.0 + Math.sin(at * 11) * 0.3; aR = -1.0 + Math.sin(at * 11 + 2.2) * 0.3; azL = 0.05; azR = -0.05; by -= 0.03 + Math.abs(Math.sin(at * 11)) * 0.03; lean = 0.22; headX = 0.18; }
@@ -426,16 +426,22 @@ export function updateChar(ch, dt) {
   else if (a === 'nod') { headX = Math.sin(at * 12) * 0.2 * (1 - at / 0.7); if (at > 0.7) ch.action = null; }
   else if (a === 'dance') { by += Math.abs(Math.sin(at * 6)) * 0.12; azL = -1.6 - Math.sin(at * 6) * 0.8; azR = 1.6 - Math.sin(at * 6) * 0.8; aL = aR = 0; roll = Math.sin(at * 6) * 0.12; headZ = Math.sin(at * 6) * 0.14; lL = Math.sin(at * 6) * 0.3; lR = -lL; }
   else if (a === 'chop') { const k = ch.chopK || 0; aL = aR = -2.75 + k * 2.35; azL = 0.3; azR = -0.3; lean = -0.12 + k * 0.5; by -= k * 0.07; headX = k * 0.25; }
+  else if (a === 'hat') { const k = Math.sin(clamp(at / 1.1, 0, 1) * Math.PI); aR = -2.75 * Math.min(1, k * 1.6); azR = 0.55; headZ = 0.12 * k; headX = -0.08 * k; if (at > 1.1) ch.action = null; }
+  else if (a === 'taste') { const k = Math.min(1, Math.sin(clamp(at / 1.3, 0, 1) * Math.PI) * 1.7); aR = -2.1 * k; azR = -0.55 * k; headX = 0.1 * k + Math.sin(at * 16) * 0.04 * k; if (at > 1.3) ch.action = null; }
+  else if (a === 'spin') { const k = clamp(at / 0.75, 0, 1), e = 1 - Math.pow(1 - k, 3); spin = e * Math.PI * 2; by += Math.sin(k * Math.PI) * 0.2; azL = -1.2; azR = 1.2; if (at > 0.75) ch.action = null; }
+  else if (a === 'toss') { const k = clamp(at / 1.15, 0, 1); aL = aR = k < 0.2 ? -1.2 - k * 8 : -2.8 + Math.max(0, k - 0.75) * 5; azL = 0.25; azR = -0.25; headX = -0.28 * Math.sin(k * Math.PI); by += k < 0.2 ? k * 0.3 : 0; if (at > 1.15) ch.action = null; }
+  else if (a === 'clap') { const sn = Math.sin(at * 17); aL = aR = -1.35; azL = 0.32 + sn * 0.24; azR = -0.32 - sn * 0.24; by += Math.abs(Math.sin(at * 8.5)) * 0.05; headZ = Math.sin(at * 4) * 0.08; }
+  else if (a === 'cross') { aL = aR = -0.95; azL = 0.8; azR = -0.8; lL = Math.max(0, Math.sin(at * 9)) * -0.16; headZ = 0.07; lean = -0.03; }
   else if (a === 'sad') { headX = 0.3; azL = -0.12; azR = 0.12; by -= 0.03; if (at < 0.05) ch.say('sad', 1.6); if (at > 1.5) ch.action = null; }
   if (ch.talking && !a && !ch.carry) { aR = -0.7 + Math.sin(ch.t * 6.5) * 0.3; azR = 0.5 + Math.sin(ch.t * 4.3) * 0.2; aL = Math.sin(ch.t * 5.1) * 0.15; headX += Math.sin(ch.t * 9) * 0.05; }
   if (ch.sit) { lL = lR = -1.45; by -= 0.14; }
-  ch.body.position.y = by; ch.body.rotation.x = lean; ch.body.rotation.z = roll;
+  ch.body.position.y = by; ch.body.rotation.x = lean; ch.body.rotation.z = roll; if (spin) ch.root.rotation.y = ch.yaw + spin;
   ch.carryAnchor.rotation.z = ch.carry ? s * 0.05 * mv : 0; ch.carryAnchor.rotation.x = ch.carry ? -lean * 0.8 : 0; ch.carryAnchor.position.y = 0.5 + (ch.carry ? Math.abs(s) * 0.025 * mv : 0);
   ch.arms[0].rotation.x = aL; ch.arms[1].rotation.x = aR; ch.arms[0].rotation.z = azL; ch.arms[1].rotation.z = azR;
   ch.legs[0].rotation.x = lL; ch.legs[1].rotation.x = lR;
   // la cabeza y los ojos siguen a quien miran; si no, curiosean de vez en cuando
   let hy = 0; ch.eyeX = 0;
-  if (ch.lookAt && !a) { let rel = Math.atan2(ch.lookAt.x - ch.x, ch.lookAt.z - ch.z) - ch.yaw; rel = Math.atan2(Math.sin(rel), Math.cos(rel)); if (Math.abs(rel) < 2.3) { hy = clamp(rel, -0.7, 0.7); ch.eyeX = Math.abs(rel) > 0.35 ? Math.sign(rel) : 0; } }
+  if (ch.lookAt && (!a || a === 'cross' || a === 'clap')) { let rel = Math.atan2(ch.lookAt.x - ch.x, ch.lookAt.z - ch.z) - ch.yaw; rel = Math.atan2(Math.sin(rel), Math.cos(rel)); if (Math.abs(rel) < 2.3) { hy = clamp(rel, -0.7, 0.7); ch.eyeX = Math.abs(rel) > 0.35 ? Math.sign(rel) : 0; } }
   else if (!a && mv < 0.05) { ch.fidT -= dt; if (ch.fidT < 0) { ch.fidT = 4 + Math.random() * 7; ch.fidYaw = ch.fidYaw ? 0 : (Math.random() - 0.5) * 1.1; } hy = ch.fidYaw; ch.eyeX = Math.abs(hy) > 0.3 ? Math.sign(hy) : 0; }
   ch.headYaw += (hy - ch.headYaw) * (1 - Math.exp(-dt * 7));
   ch.head.rotation.y = ch.headYaw;
