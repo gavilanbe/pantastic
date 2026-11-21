@@ -18,7 +18,7 @@ check([...loaded].filter(f => /_[abc]\.mp3/.test(f)).length >= 35, `efectos carg
 check(loaded.has('mus_title.mp3') && loaded.has('mus_day.mp3'), 'la música del título y de la radio se piden');
 check(loaded.has('amb_day.mp3') && loaded.has('amb_fire.mp3'), 'ambiente de pueblo y fuego del horno se piden');
 check(!miss.length, 'ningún sonido falta' + (miss.length ? ': ' + miss.join(', ') : ''));
-await page.keyboard.press('r'); await page.waitForTimeout(400); check(JSON.parse(await page.evaluate(() => localStorage.getItem('pantastic-cfg'))).radio === 'abuela', 'R cambia a los discos de la abuela');
+await page.keyboard.press('r'); await page.waitForTimeout(500); check(await page.evaluate(() => window.game.ui.modalOpen), 'R abre la radio'); await page.keyboard.press('e'); await page.waitForTimeout(400);
 await page.keyboard.press('Escape'); await page.waitForTimeout(600); await page.screenshot({ path: path.join(root, 'shots/audio-pausa.png') });
 await page.goto(`http://127.0.0.1:${port}/escucha.html`); await page.waitForTimeout(1200); await page.screenshot({ path: path.join(root, 'shots/escucha.png') });
 check(await page.locator('.snd').count() >= 40, 'la sala de escucha lista los sonidos');

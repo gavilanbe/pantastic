@@ -335,10 +335,16 @@ function pickWant(nb) {
   });
   let x = Math.random() * tot; for (let i = 0; i < opts.length; i++) { x -= w[i]; if (x <= 0) return opts[i]; } return opts[0];
 }
+/** De vez en cuando alguien entra preguntando por un pan de la abuela que aún no está en la libreta: así se sabe qué falta y quién lo guarda. */
+function pickWish(nb) {
+  if (S.tut < 7 || (R.wishes || 0) >= 2 || Math.random() > 0.2) return null;
+  const miss = BREAD_ORDER.filter(id => !S.recipes.includes(id) && id !== 'rosca' && NEIGH_ORDER.some(n => NEIGH[n].gives === id && n !== nb)); if (!miss.length) return null;
+  R.wishes = (R.wishes || 0) + 1; return pick(miss);
+}
 function spawn(sp) {
   let ch, walking = false; if (sp.nb) { ch = nbChar[sp.nb] ||= makeChar(NEIGH[sp.nb].look); if (R.cust.some(c => c.ch === ch)) return; const si = R.stroll.findIndex(x => x.nb === sp.nb); if (si >= 0) { R.stroll.splice(si, 1); walking = true; } } else ch = makeChar(randomLook(sp.seed));
   const side = Math.random() < 0.5 ? -1 : 1; if (walking) { ch.sit = false; ch.root.position.y = 0; for (const b of W.benchSeats) if (b.used && b.used.nb === sp.nb) b.used = null; } if (!walking) { const hm = sp.nb && W.homes[sp.nb], rt = sp.nb && R.routine.find(x => x.nb === sp.nb); if (hm && !hm.edge && rt && rt.state === 'home') { ch.x = hm.out[0]; ch.z = hm.out[1]; rt.state = 'out'; } else { ch.x = side * 26.5; ch.z = 4.2 + Math.random() * 0.6; } } ch.sit = false; ch.action = null; scene.add(ch.root);
-  const c = { ch, nb: sp.nb || null, want: pickWant(sp.nb), st: 'enter', path: [[-4.6 + Math.random() * 0.5, 4.0], [-4.6, 1.3]], side, wait: 0, max: (80 + (S.up.jardin ? 20 : 0)) * (1 + trk('mostrador') * 0.08) * (bond('lana', 5) ? 1.15 : 1) + Math.random() * 25, pos: [0, 0, 0], bpos: [0, 0, 0], slot: -1, t: 0, born: tSec };
+  const c = { ch, nb: sp.nb || null, want: pickWant(sp.nb), wish: pickWish(sp.nb), st: 'enter', path: [[-4.6 + Math.random() * 0.5, 4.0], [-4.6, 1.3]], side, wait: 0, max: (80 + (S.up.jardin ? 20 : 0)) * (1 + trk('mostrador') * 0.08) * (bond('lana', 5) ? 1.15 : 1) + Math.random() * 25, pos: [0, 0, 0], bpos: [0, 0, 0], slot: -1, t: 0, born: tSec };
   R.cust.push(c);
 }
 function walk(c, x, z, dt, sp = 2.8) {
@@ -360,7 +366,7 @@ function knock(id) {
 }
 function showWant(c) {
   ui.unanchor(c.bub); const nm = c.nb ? `<span class="nm">${NEIGH[c.nb].n}</span>` : '';
-  c.bub = ui.anchor('bub side', `${nm}${img(c.want)}<div class="wait"><i></i></div>`, c.bpos);
+  c.bub = ui.anchor('bub side' + (c.wish ? ' wish' : ''), c.wish ? `${nm}<img src="${ICON[c.wish]}" alt=""><b class="q">?</b><div class="wait"><i></i></div>` : `${nm}${img(c.want)}<div class="wait"><i></i></div>`, c.bpos);
 }
 function say(c, text, ms = 2200) { ui.unanchor(c.sayB); c.sayB = ui.anchor('bub say', text, c.pos); c.ch.talking = true; blip(c.nb ? NEIGH[c.nb].pitch : 1.2); setTimeout(() => { c.ch.talking = false; }, 500); setTimeout(() => { ui.unanchor(c.sayB); c.sayB = null; }, ms); }
 function emote(pos, sym, ms = 1400) { const e = ui.anchor('bub emo', sym, pos); setTimeout(() => ui.unanchor(e), ms); }
@@ -438,6 +444,12 @@ function updateCustomers(dt) {
 function serve(c, byMiga = false, pickIdx = null, gift = false) {
   const N = c.nb ? NEIGH[c.nb] : null;
   if (N && !S.met[c.nb] && !byMiga) { S.met[c.nb] = true; return talk(c, N.hola, () => serve(c)); }
+  if (c.wish && !byMiga) {
+    const w = c.wish, gv = NEIGH_ORDER.find(n => NEIGH[n].gives === w), B = BREADS[w]; c.wish = null; S.asked ||= {}; S.asked[w] = (S.asked[w] || 0) + 1; S.hint ||= {}; S.hint[w] = 1; showWant(c); sfx('pop'); c.ch.say('wow', 1.2);
+    say(c, `¿No tendrás ${B.n.toLowerCase()}? Tu abuela ${B.art === 'una' ? 'la' : 'lo'} bordaba. ${S.met[gv] ? `La ficha la guarda ${NEIGH[gv].n}.` : 'Alguien del pueblo guardará la ficha.'}`, 3400);
+    if (!S.wishTip) { S.wishTip = 1; setTimeout(() => ui.toast('Apuntado en la libreta: en Recetas verás quién guarda cada ficha y cuánto te falta', 'good'), 3000); } save(); return;
+  }
+  if (c.wish) c.wish = null;
   let id = c.want;
   if (!R.shelf[id]?.length) {
     const alts = Object.keys(R.shelf).filter(k => R.shelf[k].length && (k !== 'rosca' || S.fiesta));
@@ -631,20 +643,22 @@ function openBook(tab, keep) {
   if (tab) bookTab = tab; if (!keep) sfx('page');
   const L = lvl(), canUp = UPG_ORDER.some(id => !S.up[id] && !S.build.includes(id) && (UPG[id].lvl || 0) <= L && S.money >= UPG[id].p);
   const canTr = TRACK_ORDER.some(id => trk(id) < TRACKS[id].max && S.money >= trCost(id));
-  const tabs = [['recetas', 'Recetas'], ['vecinos', 'Vecinos'], ['obras', 'Obras' + (canUp ? '<i class="dot"></i>' : '')], ['taller', 'Taller' + (canTr ? '<i class="dot"></i>' : '')], ...VIDA_TABS.map(([k, n]) => [k, n + (k === 'almanaque' && almReady() ? '<i class="dot"></i>' : '')])];
+  const tabs = [['recetas', 'Recetas'], ['vecinos', 'Vecinos'], ['obras', 'Obras' + (canUp ? '<i class="dot"></i>' : '')], ['taller', 'Taller' + (canTr ? '<i class="dot"></i>' : '')], ...VIDA_TABS.map(([k, n]) => [k, n + (k === 'almanaque' && almReady() ? '<i class="dot"></i>' : '')]), ['logros', 'Logros']];
   let left = '', list = [], VT = null;
   if (VIDA_TABS.some(t => t[0] === bookTab)) { VT = vidaTab(bookTab, () => openBook(bookTab, true)); left = VT.left; list = VT.list; if (!list.includes(bookSel[bookTab])) bookSel[bookTab] = VT.sel; } else
   if (bookTab === 'recetas') {
-    list = BREAD_ORDER; left = `<h2>Recetas</h2><div class="sub">${S.recipes.length} de ${BREAD_ORDER.length}. Las que faltan las guarda el pueblo.</div><div class="thumbs scroll">` + list.map(id => { const k = S.recipes.includes(id); return `<button class="th ${k ? '' : 'unk'}" data-id="${id}"><span class="stk"><img src="${ICON[id]}" alt=""></span>${k && R.shelf[id]?.length ? `<span class="mini">${R.shelf[id].length}</span>` : ''}</button>`; }).join('') + '</div>';
+    list = BREAD_ORDER; left = `<h2>Recetas</h2><div class="sub">${S.recipes.length} de ${BREAD_ORDER.length}. Cada vecino guarda una ficha: con dos corazones te la devuelve. Pulsa en las que faltan para ver cómo conseguirlas.</div><div class="thumbs scroll">` + list.map(id => { const k = S.recipes.includes(id), gv = NEIGH_ORDER.find(n => NEIGH[n].gives === id); return `<button class="th ${k ? '' : 'unk'}" data-id="${id}"><span class="stk"><img src="${ICON[id]}" alt=""></span>${k && R.shelf[id]?.length ? `<span class="mini">${R.shelf[id].length}</span>` : ''}${!k && gv && S.met[gv] ? `<span class="who"><img src="${XI.face[gv].idle}" alt=""></span>` : ''}${!k && S.asked?.[id] ? `<span class="mini red">${S.asked[id]}×</span>` : ''}</button>`; }).join('') + '</div>';
   } else if (bookTab === 'vecinos') {
     list = NEIGH_ORDER; left = `<h2>Vecinos</h2><div class="sub">Su pan favorito, bien hecho. Con dos corazones te devuelven una receta.</div><div class="thumbs c3 scroll" style="grid-template-columns:repeat(4,1fr)">` + list.map(id => { const k = S.met[id]; return `<button class="th photo ${k ? '' : 'unk'}" data-id="${id}"><span class="stk"><img src="${XI.face[id].idle}" alt=""></span><span class="cap">${k ? NEIGH[id].n : '???'}</span>${k ? `<span class="mini red">♥${hearts(id)}</span>` : ''}</button>`; }).join('') + '</div>';
+  } else if (bookTab === 'logros') {
+    list = LOGROS.map(l => l[0]); const got = list.filter(id => S.ach[id]).length; left = `<h2>Logros</h2><div class="sub">${got} de ${list.length}. Cada uno deja unas monedas, y algunos traen una emisora nueva a la radio.</div><div class="thumbs scroll" style="grid-template-columns:repeat(6,1fr)">` + list.map(id => { const p = logroProg(id), on = S.ach[id]; return `<button class="th medal ${on ? 'on' : ''}" data-id="${id}"><span class="stk"><b>${on ? '★' : RADIO.some(x => x.need === id) ? '♪' : '·'}</b>${!on && p ? `<i style="--p:${Math.round(Math.min(1, p[0] / p[1]) * 100)}%"></i>` : ''}</span></button>`; }).join('') + '</div>';
   } else if (bookTab === 'taller') {
     list = [...TRACK_ORDER, ...STAFF_ORDER]; const tIcon = { horno: XI.up.horno2, bandejas: XI.up.bandeja, ferment: XI.up.fermenta, mostrador: XI.up.t_mostrador, fama: XI.up.t_fama, lena: XI.up.t_lena }, sIcon = (id) => STAFF[id].look ? XI.face[id].happy : XI.up.t_amasadora; openBook.icon = (id) => TRACKS[id] ? tIcon[id] : sIcon(id);
     left = `<h2>Taller</h2><div class="sub">Lo que mejora nivel a nivel y quien te quita trabajo de las manos. Jornales de hoy: ${wages()}.</div><div class="thumbs scroll"><div class="chap">Mejoras por niveles</div>` + TRACK_ORDER.map(id => `<button class="th" data-id="${id}"><span class="stk"><img src="${tIcon[id]}" alt=""></span><span class="mini ${trk(id) >= TRACKS[id].max ? '' : S.money >= trCost(id) ? 'red' : 'grey'}">${trk(id) >= TRACKS[id].max ? '★' : 'nv ' + trk(id)}</span></button>`).join('') + '<div class="chap">El equipo</div>' + STAFF_ORDER.map(id => { const lock = STAFF[id].lvl > L; return `<button class="th ${STAFF[id].look ? 'photo' : ''} ${lock ? 'unk' : ''}" data-id="${id}"><span class="stk"><img src="${sIcon(id)}" alt=""></span>${STAFF[id].look ? `<span class="cap">${lock ? '???' : STAFF[id].n.split(',')[0]}</span>` : ''}${S.staff[id] ? '<span class="mini">✓</span>' : lock ? '' : `<span class="mini ${S.money >= STAFF[id].p ? 'red' : 'grey'}">${STAFF[id].p}</span>`}</button>`; }).join('') + '</div>';
   } else {
     list = UPG_ORDER; left = `<h2>Obras</h2><div class="sub">Lo que ganas vuelve al obrador y a la plaza. La cuadrilla trabaja de noche.</div><div class="thumbs scroll">` + CAPS.map((c, ci) => `<div class="chap">${c}</div>` + list.filter(id => UPG[id].cap === ci).map(id => { const u = UPG[id], lock = (u.lvl || 0) > L; return `<button class="th ${lock ? 'unk' : ''}" data-id="${id}"><span class="stk"><img src="${XI.up[id]}" alt=""></span>${S.up[id] ? '<span class="mini">✓</span>' : S.build.includes(id) ? '<span class="mini gold">⚒</span>' : lock ? '' : `<span class="mini ${S.money >= u.p ? 'red' : 'grey'}">${u.p}</span>`}</button>`; }).join('')).join('') + '</div>';
   }
-  if (!list.includes(bookSel[bookTab])) bookSel[bookTab] = bookTab === 'recetas' ? S.recipes[S.recipes.length - 1] : bookTab === 'vecinos' ? (list.find(id => S.met[id]) || list[0]) : bookTab === 'taller' ? list[0] : (list.find(id => !S.up[id] && !S.build.includes(id) && (UPG[id].lvl || 0) <= L) || list[0]);
+  if (!list.includes(bookSel[bookTab])) bookSel[bookTab] = bookTab === 'recetas' ? S.recipes[S.recipes.length - 1] : bookTab === 'vecinos' ? (list.find(id => S.met[id]) || list[0]) : bookTab === 'taller' ? list[0] : bookTab === 'logros' ? (list.find(id => !S.ach[id]) || list[0]) : (list.find(id => !S.up[id] && !S.build.includes(id) && (UPG[id].lvl || 0) <= L) || list[0]);
   const sh = ui.modal(`<div class="btabs">${tabs.map(([k, n]) => `<button class="btab ${k === bookTab ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div><button class="x">✕</button>
     <div class="bpage l">${left}<div class="bfoot"><button class="doorsign">Cerrar por hoy</button><span class="grow">${shelfCount() ? `Quedan ${shelfCount()} panes en el mostrador.` : 'El mostrador está vacío.'}</span></div></div><div class="rings"></div><div class="bpage r"></div>
     <div class="hint-keys" style="position:absolute;left:0;right:0;bottom:-46px"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> elegir</span><span><kbd>Tab</kbd> pestaña</span><span><kbd>E</kbd> ${VT ? VT.hint : bookTab === 'obras' ? 'encargar' : bookTab === 'taller' ? 'comprar' : bookTab === 'recetas' ? 'cambiar precio' : 'mirar'}</span><span><kbd>L</kbd> cerrar</span></div>`, 'book');
@@ -655,7 +669,18 @@ function openBook(tab, keep) {
     if (VT) h = VT.detail(id);
     else if (bookTab === 'recetas') {
       const b = BREADS[id], giver = NEIGH_ORDER.find(n => NEIGH[n].gives === id);
-      if (!S.recipes.includes(id)) h = `<div class="det"><div class="big"><div class="doily"><img src="${ICON[id]}" style="filter:brightness(0) opacity(.16)" alt=""></div><div><h3>¿¿¿???</h3><div class="ds">${id === 'rosca' ? 'La abuela la escondió bien. Aparecerá cuando el pueblo te haya devuelto todas las demás.' : giver && S.met[giver] && hearts(giver) >= 1 ? `A ${NEIGH[giver].n} se le ilumina la cara cuando habla de este pan…` : 'Alguien del pueblo se acuerda de este pan. Habrá que ganarse su cariño.'}</div></div></div></div>`;
+      if (!S.recipes.includes(id)) {
+        const asked = S.asked?.[id] || 0, known = giver && S.met[giver], hh = giver ? hearts(giver) : 0, p = giver ? S.pts[giver] || 0 : 0, se = id === 'coca' ? 'verano' : id === 'calabaza' ? 'otoño' : null;
+        const how = id === 'rosca' ? ['La última ficha', 'La abuela la escondió detrás del horno. Aparecerá cuando el pueblo te haya devuelto todas las demás.', `Fichas devueltas: <b>${NEIGH_ORDER.filter(n => S.gave[n]).length} de ${NEIGH_ORDER.length}</b>`]
+          : se ? [`Llega con la feria de ${se}`, `Esta receta no la guarda nadie: se aprende el primer día de ${se}, cuando el pueblo monta la feria.`, `Estamos en <b>${season().n}</b>`]
+          : !giver ? ['Una ficha perdida', 'Nadie sabe quién la tiene.', '']
+          : !known ? ['La guarda alguien que aún no conoces', NEIGH[giver].lvl > L ? `Vendrá al obrador cuando tengas más fama: nivel ${NEIGH[giver].lvl + 1}, «${REP[NEIGH[giver].lvl].n}». La fama sube vendiendo pan bien hecho.` : 'Ya ronda por el pueblo. Atiéndele tú en el mostrador para conoceros.', '']
+          : [`La guarda ${NEIGH[giver].n}`, `Te la devuelve cuando lleguéis a dos corazones. El cariño sube sirviéndole su pan favorito bien hecho, charlando cuando pasea, con regalos del zurrón y llevándole sus encargos.`, `<span class="hearts">${'♥'.repeat(hh)}<i>${'♥'.repeat(Math.max(0, 2 - hh))}</i></span>${hh < 2 ? `<div class="minibar" style="flex:1"><i style="width:${Math.round(Math.min(1, p / HEART_AT[2]) * 100)}%"></i></div>` : ' ¡Ya casi! Charla con ' + NEIGH[giver].n + ' cuando pasee por la plaza.'}`];
+        h = `<div class="det"><div class="big"><div class="doily"><img src="${ICON[id]}" style="filter:brightness(0) opacity(.16)" alt=""></div><div><h3>${S.hint?.[id] ? BREADS[id].n : '¿¿¿???'}</h3><div class="ds">${S.hint?.[id] ? BREADS[id].d : 'Una ficha de la abuela que aún no ha vuelto a la libreta.'}</div></div></div>
+          <div class="lbl">Cómo conseguirla</div><div class="howto">${known ? `<span class="pic">${face(giver)}</span>` : giver ? `<span class="pic"><img src="${XI.face[giver].idle}" style="filter:brightness(0) opacity(.2)" alt=""></span>` : ''}<div><b>${how[0]}</b><p>${how[1]}</p></div></div>
+          ${how[2] ? `<div class="from">${how[2]}</div>` : ''}${known ? `<div class="lbl">A ${NEIGH[giver].n} se le van los ojos con</div><div class="likes">${NEIGH[giver].favs.map(f => `<span class="lk ${S.recipes.includes(f) ? '' : 'unk'}" title="${S.recipes.includes(f) ? BREADS[f].n : '???'}"><img src="${ICON[f]}" alt=""></span>`).join('')}</div>` : ''}
+          ${asked ? `<div class="from"><span>Te lo han pedido en el mostrador <b>${asked} ${asked === 1 ? 'vez' : 'veces'}</b>. El día que lo tengas, volará.</span></div>` : ''}</div>`;
+      }
       else { const lv = S.prices[id] ?? 1; h = `<div class="det"><div class="big"><div class="doily"><img src="${ICON[id]}" alt=""></div><div><h3>${b.n}</h3><div class="ds">${b.d}</div></div></div>
         <div class="lbl">Para una hornada de ${batchN()}</div><div class="ings">${Object.entries(b.ing).map(([k, n]) => ingChip(k, n, S.ing[k] || 0)).join('')}</div>
         <div class="lbl">La etiqueta del precio</div><div class="tags3">${PRICE_LV.map((p, i) => `<button class="ptg ${i === lv ? 'on' : ''}" data-lv="${i}"><b>${p.n}</b><span>${Math.max(1, Math.round(b.price * p.k))} ${coin}</span><small>${['el pueblo te quiere antes', 'lo de siempre', 'solo cuela con ★★★'][i]}</small></button>`).join('')}</div>
@@ -666,6 +691,12 @@ function openBook(tab, keep) {
       else h = `<div class="det"><div class="big"><div class="polaroid"><img src="${XI.face[id].happy}" alt=""><div class="cap">${N.n}</div></div><div><div class="hearts">${'♥'.repeat(hh)}<i>${'♥'.repeat(5 - hh)}</i></div>${nx ? `<div class="minibar"><i style="width:${Math.round((p - HEART_AT[hh]) / (nx - HEART_AT[hh]) * 100)}%"></i></div>` : ''}<div class="quote">«${N.hola[1]}»</div></div></div>
         <div class="lbl">Se le van los ojos con</div><div class="likes">${N.favs.map(f => `<span class="lk ${S.recipes.includes(f) ? '' : 'unk'}" title="${S.recipes.includes(f) ? BREADS[f].n : '???'}"><img src="${ICON[f]}" alt=""></span>`).join('')}</div>${tasteHTML(id)}
         <div class="from"><span class="pic"><img src="${ICON[N.gives]}" style="width:100%;height:100%;margin:0;${S.gave[id] ? '' : 'filter:brightness(0) opacity(.2)'}" alt=""></span><span>${S.gave[id] ? `Te devolvió la ficha de <b>${BREADS[N.gives].n.toLowerCase()}</b>` : 'Guarda una ficha de la abuela. Dos corazones y es tuya.'}</span></div></div>`;
+    } else if (bookTab === 'logros') {
+      const l = LOGROS.find(x => x[0] === id), on = S.ach[id], p = logroProg(id), st = RADIO.find(x => x.need === id);
+      h = `<div class="det"><div class="big"><div class="bigmedal ${on ? 'on' : ''}"><b>${on ? '★' : '?'}</b></div><div><h3>${l[1]}</h3><div class="ds">${l[2]}.</div></div></div>
+        <div class="lbl">${on ? 'Conseguido' : 'Cómo vas'}</div>${on ? '<div style="min-height:44px"><span class="sealed">HECHO</span></div>' : p ? `<div class="lprog"><div class="minibar"><i style="width:${Math.round(Math.min(1, p[0] / p[1]) * 100)}%"></i></div><b>${Math.min(p[0], p[1])} de ${p[1]}</b></div>` : '<div class="ds" style="font:700 17px var(--hand);color:var(--soft);min-height:44px">Aún por conseguir.</div>'}
+        <div class="lbl">Premio</div><div class="prizes"><span class="pz"><span class="coin sm"></span> ${l[3]} monedas</span>${st ? `<span class="pz mus">♪ Emisora «${on ? st.n : '¿…?'}» en la radio</span>` : ''}</div>
+        <div class="from"><span>Logros: <b>${LOGROS.filter(x => S.ach[x[0]]).length} de ${LOGROS.length}</b></span><span style="margin-left:auto">Emisoras en el aire: <b>${RADIO.filter(stOpen).length} de ${RADIO.length}</b></span></div></div>`;
     } else if (bookTab === 'taller') {
       if (TRACKS[id]) { const T = TRACKS[id], lv = trk(id), mx = lv >= T.max, c = trCost(id);
         h = `<div class="det"><div class="big"><div class="blue"><img src="${openBook.icon(id)}" alt=""></div><div><h3>${T.n}</h3><div class="ds">${T.d}</div></div></div>
@@ -818,7 +849,7 @@ function findAction() {
   if (behind && !c) {
     let best = null, bd = 0.8; for (const cu of R.slots) if (cu && cu.st === 'wait') { const d = Math.abs(cu.ch.z - pz); if (d < bd) { bd = d; best = cu; } }
     if (!best) { let lg = null, ld = 1.1; for (const cu of R.slots) if (cu && cu.st === 'linger') { const d = Math.abs(cu.ch.z - pz); if (d < ld) { ld = d; lg = cu; } } if (lg) return { text: `Charlar un momento con ${NEIGH[lg.nb].n}`, pos: [-1.9, 1.75, lg.ch.z], fn: () => lingerChat(lg), face: -Math.PI / 2 + 0.45, cust: lg }; }
-    if (best) { const has = R.shelf[best.want]?.length, mix = has && groupsOf(best.want).length > 1; return { pick: has ? best.want : null, text: has ? `Dar ${BREADS[best.want].n.toLowerCase()}${mix ? ' · Q elegir pieza' : ' · Q regalar'}` : (S.met[best.nb] || !best.nb ? `No queda ${BREADS[best.want].n.toLowerCase()}…` : 'Saludar'), pos: [-1.9, 1.75, best.ch.z], fn: () => serve(best), face: -Math.PI / 2 + 0.45, cust: best }; }
+    if (best) { const has = R.shelf[best.want]?.length, mix = has && groupsOf(best.want).length > 1; return best.wish ? { text: 'Atender: pregunta por un pan que no conoces', pos: [-1.9, 1.75, best.ch.z], fn: () => serve(best), face: -Math.PI / 2 + 0.45, cust: best } : { pick: has ? best.want : null, text: has ? `Dar ${BREADS[best.want].n.toLowerCase()}${mix ? ' · Q elegir pieza' : ' · Q regalar'}` : (S.met[best.nb] || !best.nb ? `No queda ${BREADS[best.want].n.toLowerCase()}…` : 'Saludar'), pos: [-1.9, 1.75, best.ch.z], fn: () => serve(best), face: -Math.PI / 2 + 0.45, cust: best }; }
   }
   if (behind && !c) { const bk = W.basketGroups.find((b, i) => b.shown && R.shelf[b.shown]?.length && Math.abs(W.baskets[i].z - pz) < 0.42); if (bk) return { text: `Revisar la cesta de ${BREADS[bk.shown].pl}`, pos: [-1.9, 1.75, pz], fn: () => openBasket(bk.shown) }; }
   if (R.espino && Math.hypot(px - espino.x, pz - espino.z) < 1.8) return { text: S.metEspino && S.duckBag > 0 ? `Dar pan a los patos (${S.duckBag} en la bolsa)` : 'Hablar con Don Espino', pos: [espino.x, 2.3, espino.z], fn: espinoTalk, cust: { ch: espino } };
@@ -1140,6 +1171,16 @@ function awayReport() {
   letter([`Has estado fuera ${txt}.`, coins ? `El ${S.up.puesto ? 'puesto de la plaza' : 'reparto'} siguió vendiendo: +${coins} monedas en la caja.` : 'El obrador ha estado tranquilo.', madre ? 'La masa madre ha tenido tiempo de sobra: hoy las masas suben un 20 % más rápido.' : 'Con una hora fuera, la masa madre coge fuerza y las masas suben antes.', miel].filter(Boolean), 'Mientras no estabas', () => sfx('coin'));
 }
 
+/** Por dónde va cada logro: [llevas, hacen falta], o nada si no se puede contar. */
+function logroProg(id) {
+  const C = S.cnt, T = S.total, H = NEIGH_ORDER.map(hearts), M = {
+    venta1: [T.sold, 1], v50: [T.sold, 50], v200: [T.sold, 200], v1000: [T.sold, 1000], e500: [T.earned, 500], e3000: [T.earned, 3000], e15000: [T.earned, 15000], s10: [C.star3 || 0, 10], s100: [C.star3 || 0, 100],
+    rec5: [S.recipes.length, 5], rec10: [S.recipes.length, 10], h2: [H.filter(h => h >= 2).length, H.length], h5: [Math.max(...H), 5], ob6: [UPG_ORDER.filter(x => S.up[x]).length, 6], ob12: [UPG_ORDER.filter(x => S.up[x]).length, UPG_ORDER.length], casa: [comfort(), MUE_ORDER.length], lata: [S.lata || 0, 200],
+    racha: [C.tillBest || 0, 10], hacha: [C.chop5 ? 5 : C.chopRun || 0, 5], gato: [C.pets || 0, 5], brillo: [C.finds || 0, 20], patos: [C.ducks || 0, 12], patitos: [S.ducklings || 0, 6], anio: [S.day - 1, 28], hornada: [S.hornadas || 0, 1], hornada3: [S.hornadas || 0, 3],
+    m3: [Math.max(0, ...BREAD_ORDER.map(b => S.baked[b] || 0)), 120], equipo: [STAFF_ORDER.filter(x => S.staff[x]).length + (S.up.miga ? 1 : 0), STAFF_ORDER.length + 1], dial: [RADIO.filter(st => stOpen(st) && S.radio?.found[st.id]).length, RADIO.length],
+  };
+  return M[id] || null;
+}
 function checkLogros() {
   const C = S.cnt, T = S.total, H = NEIGH_ORDER.map(hearts), ok = {
     venta1: T.sold >= 1, v50: T.sold >= 50, v200: T.sold >= 200, v1000: T.sold >= 1000, e500: T.earned >= 500, e3000: T.earned >= 3000, e15000: T.earned >= 15000, s10: (C.star3 || 0) >= 10, s100: (C.star3 || 0) >= 100,
@@ -1175,7 +1216,8 @@ function goalText() {
   { const ft = freeTime(); if (ft) return [ft, ICON.hogaza]; }
   if (S.fiesta) { const o = R.orders.find(x => !x.done && !x.late); return o ? [`Encargo de ${NEIGH[o.who].n}: ${o.n} ${BREADS[o.bread].pl}. Se entrega en la pizarra de la entrada`, ICON[o.bread]] : ['Migas ya tiene su Hornada. Sube tu renombre, llena la vitrina y la casa.', ICON.rosca]; }
   if (S.recipes.includes('rosca')) return [`Ten 8 roscas en el mostrador al atardecer (${R.shelf.rosca?.length || 0} de 8)`, ICON.rosca];
-  const got = NEIGH_ORDER.filter(id => S.gave[id]).length;
+  const got = NEIGH_ORDER.filter(id => S.gave[id]).length, near = NEIGH_ORDER.filter(id => S.met[id] && !S.gave[id]).sort((a, b) => (S.pts[b] || 0) - (S.pts[a] || 0))[0];
+  if (near) { const hh = hearts(near), fav = NEIGH[near].favs.find(f => S.recipes.includes(f)); return [`Fichas: ${got} de 7. La más cerca, la de ${NEIGH[near].n} (♥ ${Math.min(hh, 2)} de 2)${hh >= 2 ? ': charla con él en la plaza' : fav ? `: sírvele ${BREADS[fav].n.toLowerCase()} bien hecha` .replace('hecha', BREADS[fav].art === 'una' ? 'hecha' : 'hecho') : ''}`, XI.face[near].happy]; }
   return [`Gánate a los vecinos: ${got} de 7 fichas de la abuela`, ICON.hogaza];
 }
 
