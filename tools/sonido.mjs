@@ -55,6 +55,11 @@ export const MUS = {
   mus_day: [`Instrumental daytime music for a cozy village bakery video game, like an old kitchen radio. Cheerful and relaxed, ${band}, gentle 6/8 waltz in F major, steady and unobtrusive so it can play in the background for a long time. No vocals.`, 80000],
   mus_day2: [`Instrumental daytime music for a cozy village bakery video game, like an old kitchen radio. Light swing manouche feel, ${band} with a muted trumpet melody, playful and warm, medium tempo, steady and unobtrusive. No vocals.`, 80000],
   mus_eve: [`Instrumental evening music for a cozy village bakery video game. Slow and tender, solo nylon guitar with soft accordion pads and upright bass, lullaby-like in D minor resolving to F major, very calm. No vocals.`, 60000],
+  mus_molino: ['Instrumental rustic folk tune for a cozy village video game radio station. Solo fingerstyle steel-string guitar with a soft harmonica and a gentle foot tap, slow and earthy, D major, like an old miller humming by the mill. No vocals.', 80000],
+  mus_swing: ['Instrumental gypsy jazz for a cozy village video game radio station. Two acoustic guitars with la pompe rhythm, a playful violin melody and upright bass, bright and bouncy, medium-fast swing in G major. No vocals.', 80000],
+  mus_fonda: ['Instrumental bossa nova for a cozy village tavern radio station in a video game. Nylon guitar, soft shaker, warm flute melody and upright bass, relaxed and sunny, A major. No vocals.', 80000],
+  mus_nocturno: ['Instrumental late-night lo-fi for a cozy bakery video game radio station. Mellow felt piano, soft brushed drums, warm upright bass and faint vinyl crackle, slow and dreamy, E flat major. No vocals.', 80000],
+  mus_charanga: ['Instrumental Spanish village brass band music for a cozy video game radio station. Cheerful pasodoble with trumpets, clarinets, tuba and snare drum, festive and proud, medium march tempo. No vocals.', 80000],
   mus_fiesta: [`Instrumental village festival music for a cozy bakery video game. Joyful folk dance, lively accordion and clarinet melody, acoustic guitar, hand claps and tambourine, fast 6/8 jig in G major. No vocals.`, 60000],
 };
 

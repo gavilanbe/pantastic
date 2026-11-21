@@ -1,7 +1,7 @@
 // Sonido. Dos maneras de sonar: grabado (efectos, ambientes y música de snd/, con posición y una radio en el obrador)
 // y sintetizado (lo de siempre: osciladores y «Masa madre», el tema del obrador en 6/8), que además hace de reserva mientras carga lo grabado.
 import { SFX_LIST, PICK, GAIN } from './snd.js';
-let ac, master, musicBus, sfxBus, ambBus, radioF, radioG, delay, started = false, muted = false, volM = 0.5, volS = 0.8, real = true, station = 'migas';
+let ac, master, musicBus, sfxBus, ambBus, radioF, radioG, delay, started = false, muted = false, volM = 0.5, volS = 0.8, real = true, station = 'migas', stFiles = { day: ['mus_day'], eve: ['mus_eve'] }, staticG = null; const tune = { sig: 1, noise: 0 };
 export function setVolume(m, s) { volM = m; volS = s; if (musicBus) { musicBus.gain.value = m; sfxBus.gain.value = s; ambBus.gain.value = s; } }
 const M = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const N = { C: 0, 'C#': 1, Db: 1, D: 2, Eb: 3, E: 4, F: 5, 'F#': 6, G: 7, Ab: 8, A: 9, Bb: 10, B: 11 };
@@ -20,6 +20,9 @@ export function initAudio() {
   radioF = ac.createBiquadFilter(); radioF.type = 'lowpass'; radioF.frequency.value = 18000; radioF.Q.value = 0.4; radioG = ac.createGain();
   musicBus.connect(radioF); radioF.connect(radioG); radioG.connect(master); radioG.connect(delay); sfxBus.connect(master);
   ambBus = ac.createGain(); ambBus.gain.value = volS; ambBus.connect(master);
+  // el ruido entre emisoras: sale por la misma radio que la música
+  { const b = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate), d = b.getChannelData(0); let l = 0; for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; l = l * 0.6 + w * 0.4; d[i] = l * (0.7 + 0.3 * Math.sin(i / 900)) + (Math.random() < 0.0006 ? (Math.random() - 0.5) * 3 : 0); }
+    const src = ac.createBufferSource(); src.buffer = b; src.loop = true; const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = 0.35; staticG = ac.createGain(); staticG.gain.value = 0; src.connect(bp); bp.connect(staticG); staticG.connect(radioF); src.start(); }
   setInterval(tick, 50); if (real) preload();
 }
 export function toggleMute() { muted = !muted; if (master) master.gain.setTargetAtTime(muted ? 0 : 0.9, ac.currentTime, 0.05); return muted; }
@@ -81,7 +84,8 @@ export function sfx(name, o = {}) {
 }
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
 export function note(i, g = 0.16) { if (!ac || muted) return; const f = M(72 + PENTA[Math.min(PENTA.length - 1, i)]); tone({ f, d: 0.35, g, type: 'triangle' }); tone({ f: f * 2, d: 0.18, g: g * 0.35 }); }
-export function duck(on) { if (musicBus) musicBus.gain.setTargetAtTime(on ? volM * 0.4 : volM, ac.currentTime, 0.15); }
+let ducked = false;
+export function duck(on) { ducked = on; if (musicBus) musicBus.gain.setTargetAtTime(on ? volM * 0.4 : volM, ac.currentTime, 0.15); }
 export function ambient(kind) { if (!ac || muted || real) return; if (kind === 'chirp') { const f = 2600 + Math.random() * 1400, n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) tone({ f, to: f * (1.15 + Math.random() * 0.2), t: ac.currentTime + i * 0.11, d: 0.07, g: 0.035 }); } else if (kind === 'crackle') noise({ f: 1800 + Math.random() * 2500, q: 3, d: 0.03 + Math.random() * 0.04, g: 0.05 }); else if (kind === 'water') noise({ f: 900 + Math.random() * 600, q: 0.8, d: 0.5, g: 0.012, a: 0.2 }); }
 export function blip(pitch = 1) { if (!ac || muted) return; tone({ f: (380 + Math.random() * 90) * pitch, to: (430 + Math.random() * 60) * pitch, d: 0.055, g: 0.09, type: 'triangle', lp: 2600 }); }
 
@@ -111,6 +115,10 @@ let mood = null, pos = 0, nextT = 0, playing = false;
 export function music(name) { if (mood === name) return; mood = name; if (!ac) return; if (!name) { playing = false; return; } if (!playing) { playing = true; pos = 0; nextT = ac.currentTime + 0.15; } }
 /** El tema sintetizado suena en el modo de siempre, o cuando en la radio están puestos los discos de la abuela. */
 const synthOn = () => !real || (station === 'abuela' && (mood === 'day' || mood === 'eve'));
+/** Qué emisora suena (id, 'abuela', 'off' o 'none' si el dial está entre dos) y con qué pistas de día y de tarde. */
+export function setStation(id, files) { station = id; stFiles = files || null; }
+/** Señal de la emisora (0..1) y cuánto ruido se cuela. */
+export function setTune(sig, noise) { tune.sig = sig; tune.noise = noise; }
 function lead(kind, m, t, d) {
   const f = M(m);
   if (kind === 'epiano') { tone({ f, t, d: Math.max(0.5, d * 1.5), g: 0.2, bus: musicBus, a: 0.004 }); tone({ f: f * 2, t, d: 0.25, g: 0.05, bus: musicBus }); tone({ f: f * 1.003, t, d: d * 1.2, g: 0.07, type: 'triangle', bus: musicBus, lp: 1800 }); }
@@ -164,10 +172,15 @@ const cl = (v) => Math.max(0, Math.min(1, v));
 export function audioScene(o) {
   if (!ac) return; const t = ac.currentTime;
   // la radio: nítida dentro del obrador, apagada y lejana fuera; en otras zonas no llega
-  const diegetic = !o.free && (mood === 'day' || mood === 'eve'), off = diegetic && station === 'off';
-  let rg = 1, rf = 18000; if (diegetic) { if (o.zone) { rg = o.home ? 0 : 0; rf = 600; } else if (!o.inside) { rg = 0.5 * cl(1 - (o.doorD || 0) / 17) + 0.04; rf = 700 + 2200 * cl(1 - (o.doorD || 0) / 9); } else { rg = 0.85; rf = 9000; } }
-  if (off) rg = 0; radioG.gain.setTargetAtTime(rg, t, 0.25); radioF.frequency.setTargetAtTime(rf, t, 0.2);
-  for (const m in TRACKS) loop('m_' + m, TRACKS[m], musicBus, 2.5).set(real && mood === m && !synthOn() && !(diegetic && station === 'off') ? 0.85 : 0, 0.8);
+  const diegetic = !o.free && (mood === 'day' || mood === 'eve'), off = station === 'off';
+  let rg = 1, rf = 18000; if (diegetic) { if (o.zone) { rg = 0; rf = 600; } else if (!o.inside) { rg = 0.5 * cl(1 - (o.doorD || 0) / 17) + 0.04; rf = 700 + 2200 * cl(1 - (o.doorD || 0) / 9); } else { rg = 0.85; rf = 9000; } }
+  // sintonía: con poca señal la música llega flaca y sorda, y entra el ruido
+  const sig = diegetic ? tune.sig : 1; if (diegetic) rf = Math.min(rf, 500 + sig * sig * 9000);
+  if (diegetic && off) rg = 0; radioG.gain.setTargetAtTime(rg, t, 0.25); radioF.frequency.setTargetAtTime(rf, t, 0.12);
+  staticG.gain.setTargetAtTime(diegetic && !off && real ? tune.noise * 0.2 : 0, t, 0.08);
+  const want = !real || synthOn() ? null : diegetic ? (off || !stFiles ? null : stFiles[mood] || stFiles.day) : TRACKS[mood], key = want ? 'm_' + want.join('+') : null;
+  if (key) loop(key, want, musicBus, 2.5); for (const k in loops) if (k[0] === 'm') loops[k].set(k === key ? 0.85 * (diegetic ? Math.pow(sig, 1.5) : 1) : 0, diegetic ? 0.12 : 0.8);
+  if (playing && synthOn() && real) musicBus.gain.setTargetAtTime(volM * Math.pow(sig, 1.5), t, 0.1); else if (real && !ducked) musicBus.gain.setTargetAtTime(volM, t, 0.2);
   if (!real) { for (const k in loops) if (k[0] === 'a') loops[k].set(0); return; }
   // ambiente: el pueblo se cuela en el obrador, que está abierto a la calle, pero no en casa
   const play = !o.free, out = !play ? 0 : o.home ? 0.06 : o.inside ? 0.3 : 1, n = o.night || 0, dry = o.rain ? 0.2 : 1;
@@ -178,5 +191,3 @@ export function audioScene(o) {
   loop('a_river', ['amb_river'], ambBus).set(play && o.riverD != null ? Math.pow(cl(1 - o.riverD / 9), 1.3) * 0.55 : 0, 0.3);
 }
 export function setStyle(isReal) { real = isReal; if (ac && real) preload(); }
-export function setStation(s) { station = s; }
-export const STATIONS = [['migas', 'Radio Migas'], ['abuela', 'Los discos de la abuela'], ['off', 'Radio apagada']];

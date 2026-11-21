@@ -226,6 +226,16 @@ export const BONDS = {
   zarza: { 3: 'Ahora hay carta en el buzón todos los días.', 5: 'Habla de tu pan en cuatro pueblos: dos clientes más al día.' },
   ulular: { 3: 'Sus trucos de maestro: la maestría de cada pan llega con un 25 % menos de hornadas.', 5: 'Su lección de paciencia: tus masas salen siempre un punto mejor amasadas.' },
 };
+// Emisoras de la radio del obrador. f: punto del dial. need: logro con el que empieza a llegar a Migas.
+export const RADIO = [
+  { id: 'migas', f: 89.3, n: 'Radio Migas', tag: 'La de toda la vida. Vals de horno por la mañana, nana al caer la tarde.', tracks: { day: ['mus_day'], eve: ['mus_eve'] }, song: { day: 'Vals de la primera hornada', eve: 'Nana del rescoldo' } },
+  { id: 'abuela', f: 91.6, n: 'Los discos de la abuela', tag: 'Su gramola, sus discos y el tema que tarareaba mientras amasaba.', song: { day: 'Masa madre' } },
+  { id: 'molino', f: 94.2, n: 'Onda Molino', tag: 'Guitarra y armónica desde el molino de Tejo. Emite cuando le da la gana.', tracks: { day: ['mus_molino'] }, song: { day: 'Harina de otro costal' }, need: 'v50' },
+  { id: 'swing', f: 97.0, n: 'Swing del Colmado', tag: 'Pipa pincha swing entre sacos de harina y botes de levadura.', tracks: { day: ['mus_day2', 'mus_swing'] }, song: { day: 'Levadura swing' }, need: 'rec5' },
+  { id: 'fonda', f: 99.8, n: 'Fonda FM', tag: 'Bossa de sobremesa desde la fonda de Charca. Croac.', tracks: { day: ['mus_fonda'] }, song: { day: 'Sobremesa larga' }, need: 's10' },
+  { id: 'nocturno', f: 103.1, n: 'Nocturno', tag: 'Piano con sueño para las últimas hornadas del día.', tracks: { day: ['mus_nocturno'] }, song: { day: 'Miga de madrugada' }, need: 'e3000' },
+  { id: 'charanga', f: 106.4, n: 'La Charanga', tag: 'La banda del pueblo, grabada en la plaza la noche de la Hornada.', tracks: { day: ['mus_charanga'] }, song: { day: 'Pasodoble de la Hornada' }, need: 'hornada' },
+];
 export const LOGROS = [
   ['venta1', 'La primera venta', 'Vende tu primer pan', 10], ['v50', 'Medio centenar', 'Vende 50 panes', 25], ['v200', 'El pan nuestro', 'Vende 200 panes', 60], ['v1000', 'Mil hogazas después', 'Vende 1000 panes', 200],
   ['e500', 'La hucha suena', 'Gana 500 monedas', 25], ['e3000', 'Negocio redondo', 'Gana 3000 monedas', 80], ['e15000', 'Imperio de miga', 'Gana 15 000 monedas', 250],
@@ -234,6 +244,7 @@ export const LOGROS = [
   ['ob6', 'Manos a la obra', 'Termina 6 obras', 60], ['ob12', 'Migas reluce', 'Termina las 12 obras', 250], ['casa', 'Hogar, dulce horno', 'Ten todos los muebles', 100], ['lata', 'Hormiguita', 'Guarda 200 monedas en la lata', 40],
   ['racha', 'Da gusto venir', 'Diez clientes seguidos bien atendidos', 50], ['hacha', 'Leñadora fina', 'Cinco troncos limpios seguidos', 40], ['gato', 'Amiga del gato', 'Acaricia al gato 5 días', 30], ['brillo', 'Ojo de urraca', 'Recoge 20 hallazgos', 40],
   ['patos', 'La de los patos', 'Da 12 panes a los patos', 60], ['patitos', 'Familia numerosa', 'Que nazcan los seis patitos', 120],
+  ['dial', 'El dial entero', 'Sintoniza todas las emisoras de la radio', 80],
   ['anio', 'Las cuatro estaciones', 'Hornea un año entero en Migas', 150], ['hornada', 'La Hornada', 'Celebra la Hornada', 150], ['hornada3', 'Tradición', 'Celebra tres Hornadas', 300], ['m3', 'Maestra de un pan', 'Tres estrellas de maestría en un pan', 80], ['equipo', 'Buena jefa', 'Ten a todo el equipo', 150],
 ];
 

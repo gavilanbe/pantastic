@@ -14,7 +14,9 @@ import { ui, img, coin, stars, ingChip, $, ICON, XI } from './ui.js';
 import { initAudio, resumeAudio, sfx, blip, note, music, toggleMute } from './audio.js';
 import { DOUGH_TINT } from './breads.js';
 import { toScreen, groundAt, setQuality, setSee, see } from './gfx.js';
-import { setVolume, duck, ambient, audioScene, setStyle as setSound, setStation, setSurface, STATIONS } from './audio.js';
+import { setVolume, duck, ambient, audioScene, setStyle as setSound, setStation, setTune, setSurface } from './audio.js';
+import { openRadio, radioAt } from './radio.js';
+import { RADIO } from './data.js';
 import { itemModels, addToque } from './items.js';
 import { saves } from './saves.js';
 import { openTitle } from './title.js';
@@ -27,7 +29,7 @@ const SPARE_AT = [4.3, -3.9], FF = 5;
 
 let S, R, mode = 'boot', K = null, tSec = 0, cur = null, fiesta = null;
 const keys = new Set(); let pressE = false, eBuf = 0, holdT = 0, hitstop = 0, lastCust = null; const joy = { x: 0, y: 0, on: false }; let ffHold = false, ffOn = false;
-const CFG = Object.assign({ mus: 0.5, sfx: 0.8, q: 'alta', snd: 'real', radio: 'migas' }, (() => { try { return JSON.parse(localStorage.getItem('pantastic-cfg')) || {}; } catch { return {}; } })());
+const CFG = Object.assign({ mus: 0.5, sfx: 0.8, q: 'alta', snd: 'real' }, (() => { try { return JSON.parse(localStorage.getItem('pantastic-cfg')) || {}; } catch { return {}; } })());
 const hit = (s) => { hitstop = Math.max(hitstop, s); };
 const pan = makeChar(PAN_LOOK); let miga = null, pipa = null, brasa = null, leva = null; const nbChar = {};
 const doughSq = new Spring(1, 260, 12);
@@ -134,7 +136,7 @@ function startDay(first = false) {
   pan.x = 1.6; pan.z = -2.6; pan.yawTo = pan.yaw = 0; pan.goto = null;
   $('#keys').classList.toggle('gone', S.day > 2);
   if (!first && S.day === 2) setTimeout(() => ui.toast(`${face('pipa', 'happy')} Nuevo: por las mañanas Pipa está con su carro en la plaza, y vende más barato`, 'good'), 7600);
-  if (!S.radioTip) { S.radioTip = 1; setTimeout(() => ui.toast('<kbd>R</kbd> La música sale de la radio del obrador: con R cambias de emisora', 'good'), 16000); }
+  if (!S.radioTip) { S.radioTip = 1; setTimeout(() => ui.toast('<kbd>R</kbd> La música sale de la radio del obrador: con R giras el dial y buscas emisoras', 'good'), 16000); }
   if (!first && S.day === 2) setTimeout(() => ui.toast('<kbd>B</kbd> Nuevo: cuelga el «Vuelvo enseguida» y nadie se impacienta mientras das una vuelta', 'good'), 14500);
   if (!first && S.day === 2) setTimeout(() => ui.toast('Nuevo: antes de hornear se greña el pan. Unos buenos cortes suben la calidad', 'good'), 18000);
   if (!first && S.day === 3) setTimeout(() => ui.toast('Nuevo: desde hoy el horno pide leña. La leñera está fuera, a la derecha', 'good'), 8800);
@@ -1105,8 +1107,8 @@ function openPause() {
   const can = mode === 'play' && !R.ended, shot = saves.getShot(slot);
   const sh = ui.modal(`<button class="x">✕</button><h2>Pausa</h2><div class="sub">El obrador espera. Día ${S.day} · ${S.money} ${coin}</div>
     <div class="psave lib-c${slot}"><div class="ph">${shot ? `<img src="${shot}" alt="">` : ''}</div><div class="pi"><b>${saves.nameOf(S, slot)}</b><small id="p-when">Se guarda sola. Recién guardada</small><div class="pb"><button class="btn sm" id="p-save">Guardar ahora</button><button class="btn sm" id="p-redo" ${can ? '' : 'disabled'}>Repetir el día desde la mañana</button></div></div></div>
-    <div class="set"><span>Música</span><input type="range" min="0" max="1" step="0.05" value="${CFG.mus}" id="v-m"><span>Efectos</span><input type="range" min="0" max="1" step="0.05" value="${CFG.sfx}" id="v-s"><span>Gráficos</span><span class="seg"><button data-q="alta" class="btn sm ${CFG.q === 'alta' ? 'main' : ''}">Nítidos</button> <button data-q="media" class="btn sm ${CFG.q === 'media' ? 'main' : ''}">Ligeros</button></span><span>Sonido</span><span class="seg"><button data-snd="real" class="btn sm ${CFG.snd !== 'synth' ? 'main' : ''}">Grabado</button> <button data-snd="synth" class="btn sm ${CFG.snd === 'synth' ? 'main' : ''}">De sintetizador</button></span><span>Radio</span><span class="seg">${STATIONS.map(([id, n]) => `<button data-st="${id}" class="btn sm ${CFG.radio === id ? 'main' : ''}">${n}</button>`).join(' ')}</span></div>
-    <div class="lbl">Controles</div><div class="ctl"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>moverse (o clic en el suelo)</span><span><kbd>E</kbd></span><span>acción; mantener para confirmar</span><span><kbd>F</kbd></span><span>mantener: que corra el reloj</span><span><kbd>L</kbd></span><span>libreta</span><span><kbd>B</kbd></span><span>cartel «Vuelvo enseguida»</span><span><kbd>M</kbd></span><span>silenciar</span><span><kbd>R</kbd></span><span>cambiar la emisora de la radio</span></div>
+    <div class="set"><span>Música</span><input type="range" min="0" max="1" step="0.05" value="${CFG.mus}" id="v-m"><span>Efectos</span><input type="range" min="0" max="1" step="0.05" value="${CFG.sfx}" id="v-s"><span>Gráficos</span><span class="seg"><button data-q="alta" class="btn sm ${CFG.q === 'alta' ? 'main' : ''}">Nítidos</button> <button data-q="media" class="btn sm ${CFG.q === 'media' ? 'main' : ''}">Ligeros</button></span><span>Sonido</span><span class="seg"><button data-snd="real" class="btn sm ${CFG.snd !== 'synth' ? 'main' : ''}">Grabado</button> <button data-snd="synth" class="btn sm ${CFG.snd === 'synth' ? 'main' : ''}">De sintetizador</button></span></div>
+    <div class="lbl">Controles</div><div class="ctl"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>moverse (o clic en el suelo)</span><span><kbd>E</kbd></span><span>acción; mantener para confirmar</span><span><kbd>F</kbd></span><span>mantener: que corra el reloj</span><span><kbd>L</kbd></span><span>libreta</span><span><kbd>B</kbd></span><span>cartel «Vuelvo enseguida»</span><span><kbd>M</kbd></span><span>silenciar</span><span><kbd>R</kbd></span><span>la radio del obrador: sintonizar emisoras</span></div>
     <div class="bfoot"><button class="btn" id="p-title">Cambiar de libreta</button><span class="grow">Tus partidas están en la pantalla de título.</span><button class="btn main" id="p-go">Seguir horneando</button></div>`, 'paper');
   sh.querySelector('.x').onclick = sh.querySelector('#p-go').onclick = () => ui.closeModal(); sh.querySelector('#p-title').onclick = () => { saveMid(); jump(null); };
   sh.querySelector('#p-save').onclick = (e) => { snap(); saveMid(); sfx('stamp'); ui.saved('Guardada'); const b = e.currentTarget; b.textContent = '¡Guardada!'; sh.querySelector('#p-when').textContent = 'Guardada ahora mismo, con foto nueva'; const im = sh.querySelector('.ph'); im.innerHTML = `<img src="${saves.getShot(slot)}" alt="">`; setTimeout(() => { if (b.isConnected) b.textContent = 'Guardar ahora'; }, 1400); };
@@ -1114,7 +1116,6 @@ function openPause() {
   sh.querySelector('#v-m').oninput = (e) => { CFG.mus = Number(e.target.value); saveCfg(); }; sh.querySelector('#v-s').oninput = (e) => { CFG.sfx = Number(e.target.value); saveCfg(); sfx('pop'); };
   sh.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { CFG.q = b.dataset.q; saveCfg(); sh.querySelectorAll('[data-q]').forEach(x => x.classList.toggle('main', x === b)); });
   sh.querySelectorAll('[data-snd]').forEach(b => b.onclick = () => { CFG.snd = b.dataset.snd; saveCfg(); setSound(CFG.snd !== 'synth'); sh.querySelectorAll('[data-snd]').forEach(x => x.classList.toggle('main', x === b)); sfx('bell'); });
-  sh.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { nextStation(b.dataset.st); sh.querySelectorAll('[data-st]').forEach(x => x.classList.toggle('main', x === b)); });
   ui.onKey = (k) => { if (k === 'e' || k === 'enter') ui.closeModal(); }; sfx('page');
 }
 function ovenGauge(i, id) { return ui.anchor('gauge timer', `<div class="dial"><div class="ndl"></div>${img(id)}<b></b></div>`, [W.ovenSlots[i].p[0] + (i ? 1.0 : 1.2), W.ovenSlots[i].p[1] + (i ? 0.75 : 1.55), W.ovenSlots[i].p[2] + 0.3]); }
@@ -1145,8 +1146,8 @@ function checkLogros() {
     rec5: S.recipes.length >= 5, rec10: S.recipes.length >= 10, h2: H.every(h => h >= 2), h5: H.some(h => h >= 5), ob6: UPG_ORDER.filter(x => S.up[x]).length >= 6, ob12: UPG_ORDER.every(x => S.up[x]), casa: comfort() >= MUE_ORDER.length, lata: (S.lata || 0) >= 200,
     racha: (C.tillBest || 0) >= 10, hacha: !!C.chop5, gato: (C.pets || 0) >= 5, brillo: (C.finds || 0) >= 20, patos: (C.ducks || 0) >= 12, patitos: (S.ducklings || 0) >= 6, anio: S.day > 28, hornada: (S.hornadas || 0) >= 1, hornada3: (S.hornadas || 0) >= 3, m3: BREAD_ORDER.some(b => mastery(b) >= 3), equipo: STAFF_ORDER.every(x => S.staff[x]) && S.up.miga,
   };
-  Object.assign(ok, vidaLogros());
-  let k = 0; for (const [id, name, , prize] of LOGROS) if (ok[id] && !S.ach[id]) { S.ach[id] = true; S.money += prize; setTimeout(() => { sfx('fanfare'); ui.setMoney(S.money, true); ui.toast(`★ Logro: ${name} · +${prize} <span class="coin sm"></span>`, 'gold'); }, 900 + 2700 * k++); }
+  Object.assign(ok, vidaLogros()); ok.dial = RADIO.every(st => stOpen(st) && S.radio?.found[st.id]);
+  let k = 0; for (const [id, name, , prize] of LOGROS) if (ok[id] && !S.ach[id]) { S.ach[id] = true; S.money += prize; setTimeout(() => { sfx('fanfare'); ui.setMoney(S.money, true); ui.toast(`★ Logro: ${name} · +${prize} <span class="coin sm"></span>`, 'gold'); }, 900 + 2700 * k++); const st = RADIO.find(x => x.need === id); if (st) setTimeout(() => { sfx('ding'); ui.toast(`<kbd>R</kbd> Una emisora nueva llega a Migas: búscala en el dial, cerca del ${Math.round(st.f)}`, 'good'); }, 900 + 2700 * k++); }
   if (k) save();
 }
 function toggleBrb() { R.autoBrb = false; R.brb = !R.brb; W.brb.visible = R.brb; $('#brb').classList.toggle('hide', !R.brb); sfx(R.brb ? 'place' : 'bell'); ui.toast(R.brb ? (miga ? 'Cartel puesto. Miga se queda al mando.' : 'Cartel puesto: nadie entra ni se impacienta. A pasear.') : 'Cartel fuera: ¡abierto otra vez!'); }
@@ -1189,7 +1190,15 @@ function buildRadio() {
   gmesh(GG.cyl(0.008, 0.008, 0.5, 6), gmat('#cfd6da', { rough: 0.3, metal: 0.7 }), { parent: b, p: [0.2, 0.4, -0.05], r: [0, 0, -0.35] }); gmesh(GG.sph(0.022, 8, 6), red, { parent: b, p: [0.285, 0.635, -0.05] });
   g.position.set(...RADIO_AT); scene.add(g); radio = { g: b };
 }
-function nextStation(to) { const i = STATIONS.findIndex(x => x[0] === CFG.radio); CFG.radio = to || STATIONS[(i + 1) % STATIONS.length][0]; setStation(CFG.radio); localStorage.setItem('pantastic-cfg', JSON.stringify(CFG)); sfx('tick'); setTimeout(() => sfx('tick'), 90); ui.toast(`<kbd>R</kbd> ${STATIONS.find(x => x[0] === CFG.radio)[1]}`); if (radio) { burst('spark', ...RADIO_AT, 5); } }
+const stOpen = (st) => !st.need || !!S.ach[st.need];
+/** Pone en el aire lo que marque el dial de la partida. */
+function applyRadio() { const r = S.radio; if (r.off) { setStation('off'); setTune(1, 0); return; } const a = radioAt(r.f, stOpen); if (a.st) { setStation(a.st.id, a.st.tracks); setTune(a.sig, 1 - a.sig); } else { setStation('none'); setTune(0, 1); } }
+function useRadio() {
+  if (R.zone || !(pan.z < 0.8 && Math.abs(pan.x) < 6.6)) return ui.toast('<kbd>R</kbd> La radio está en el obrador: desde aquí solo se la oye de lejos'), sfx('no');
+  if (R.carry) return ui.toast('Con las manos ocupadas no se gira un dial'), sfx('no');
+  pan.goto = null; pan.yawTo = Math.atan2(RADIO_AT[0] - pan.x, RADIO_AT[2] - pan.z); burst('spark', ...RADIO_AT, 5);
+  openRadio({ R: S.radio, isOpen: stOpen, apply: applyRadio, sfx, eve: R.time > 17.5 * 60, onClose: () => { checkLogros(); save(); } });
+}
 
 // ---------- quién lleva el obrador ----------
 const HEROES = [
@@ -1361,7 +1370,7 @@ function frame(dt) {
   if (ui.dialogOpen !== frame.dk) { frame.dk = ui.dialogOpen; duck(frame.dk); }
   { const z = R?.zone || null, town = R && !z, free = !R || ['title', 'pick', 'fiesta', 'letter'].includes(mode);
     audioScene({ free, inside: inside && !z, home: !!R?.inHome, zone: z, rain: R?.weather === 'lluvia', wind: R?.weather === 'viento', night: light.night, fire: R?.fire, doorD: Math.hypot(pan.x, pan.z - 0.9), ovenD: town ? Math.hypot(pan.x - 5.1, pan.z + 4.3) : null, fountainD: town && S.up.fuente ? Math.hypot(pan.x - W.fountainPos[0], pan.z - W.fountainPos[1]) : null, riverD: z === 'rio' ? 2.5 : town ? Math.hypot(pan.x - W.travel.rio[0], pan.z - W.travel.rio[1]) + 3 : null });
-    if (radio && town && inside && CFG.radio !== 'off' && mode === 'play') { radio.t = (radio.t || 3) - dt; radio.g.rotation.z = Math.sin(tSec * 9) * 0.03; if (radio.t < 0) { radio.t = 5 + Math.random() * 5; emote([RADIO_AT[0], RADIO_AT[1] + 0.55, RADIO_AT[2]], pick(['♪', '♫', '♪'])); } } else if (radio) radio.g.rotation.z = 0; }
+    if (radio && town && inside && !S.radio?.off && mode === 'play') { radio.t = (radio.t || 3) - dt; radio.g.rotation.z = Math.sin(tSec * 9) * 0.03; if (radio.t < 0) { radio.t = 5 + Math.random() * 5; emote([RADIO_AT[0], RADIO_AT[1] + 0.55, RADIO_AT[2]], pick(['♪', '♫', '♪'])); } } else if (radio) radio.g.rotation.z = 0; }
   if (R && mode === 'play' && !R.inHome) { frame.amb = (frame.amb || 2) - dt; if (frame.amb < 0) { frame.amb = 0.25 + Math.random() * 0.5; const outside = pan.z > 0.9 || Math.abs(pan.x) > 6.8; if (outside && R.weather !== 'lluvia' && light.night < 0.5 && Math.random() < 0.3) ambient('chirp'); if (Math.hypot(pan.x - 5.1, pan.z + 3.8) < 4 && Math.random() < 0.45 + R.fire * 0.4) ambient('crackle'); if (S.up.fuente && Math.hypot(pan.x + 10.2, pan.z - 7) < 5) ambient('water'); } }
   updateLife(dt, tSec, pan, { rain: R?.weather === 'lluvia', night: light.night > 0.6 || (R && season().n === 'invierno'), onFlush: () => sfx('whoosh') });
   updateParticles(dt); ui.update();
@@ -1390,7 +1399,7 @@ function boot() {
     if (k === 'e' || k === ' ' || k === 'enter') pressE = true;
     if ((k === 'l' || k === 'tab') && mode === 'play') openBook();
     if (k === 'b' && mode === 'play') toggleBrb();
-    if (k === 'r' && mode === 'play' && !R.decor) nextStation();
+    if (k === 'r' && mode === 'play' && !R.decor) useRadio();
     if (k === 'escape' && mode === 'play') openPause();
     if (k === 'q' && mode === 'play' && cur?.pick && cur.cust && !R.decor) openBasket(cur.pick, cur.cust);
     if (k === 'q' && mode === 'play' && cur?.gift && !R.decor) openGift(cur.gift);
@@ -1401,7 +1410,7 @@ function boot() {
   { const ck = document.querySelector('#cal .clock'); ck.addEventListener('pointerdown', (e) => { e.stopPropagation(); ffHold = true; }); addEventListener('pointerup', () => { ffHold = false; }); addEventListener('pointercancel', () => { ffHold = false; }); }
   setInterval(() => { if (!TEST && S && mode === 'play' && !ui.modalOpen) saveMid(); }, 5000); addEventListener('visibilitychange', () => { if (document.hidden && S && !TEST) saveMid(); }); addEventListener('pagehide', () => { if (S && !TEST) saveMid(); });
   addEventListener('pointerdown', () => { initAudio(); resumeAudio(); });
-  setVolume(CFG.mus, CFG.sfx); setQuality(CFG.q); setSound(CFG.snd !== 'synth'); setStation(CFG.radio); buildRadio();
+  setVolume(CFG.mus, CFG.sfx); setQuality(CFG.q); setSound(CFG.snd !== 'synth'); buildRadio();
   const fit = () => { const st = document.documentElement.style, base = Math.min(innerWidth / 1280, innerHeight / 720), small = base < 0.8;
     // en pantallas pequeñas la interfaz no encoge con la ventana: se queda en un tamaño que se lee y las hojas se recolocan
     const z = small ? clamp(Math.min(0.8, innerWidth / 600), 0.5, 0.8) : Math.min(base, 1.3), zs = small ? clamp(Math.min(innerWidth / 900, innerHeight / 470), 0.5, 0.82) : Math.min(base, 1.3);
@@ -1426,7 +1435,7 @@ function boot() {
 
   saves.migrate();
   const begin = (i, s) => {
-    slot = i; saves.setCur(i); S = s || fresh(); S.name ||= saves.defName(i); S.look ||= {}; S.hero ||= 'pan'; ui.tx = S.hero === 'isart' ? heroTx : null; W.homeSign?.(S.hero === 'isart' ? 'Isart' : 'Pan'); if (Object.keys(S.look).length || S.hero === 'isart') rebuildPan(); S.build ||= []; S.baked ||= {}; S.wood ??= 6; S.lata ??= 0; S.home ||= {}; S.sup ||= {}; S.tr ||= {}; S.staff ||= {}; S.hornadas ??= 0; S.bond ||= {}; S.ach ||= {}; S.cnt ||= {}; S.look ||= {}; S.story ||= {}; S.homePos ||= {}; S.pm ??= 0; S.ayer ||= []; S.years ??= 0; S.style ||= 'miel'; vidaDefaults(S); applyUpgrades(); cam.yawTo = 0; cam.pitchTo = 0; cam.zoomTo = 0.72;
+    slot = i; saves.setCur(i); S = s || fresh(); S.name ||= saves.defName(i); S.look ||= {}; S.radio ||= { f: 89.3, off: false, found: { migas: 1 }, last: 'migas' }; applyRadio(); S.hero ||= 'pan'; ui.tx = S.hero === 'isart' ? heroTx : null; W.homeSign?.(S.hero === 'isart' ? 'Isart' : 'Pan'); if (Object.keys(S.look).length || S.hero === 'isart') rebuildPan(); S.build ||= []; S.baked ||= {}; S.wood ??= 6; S.lata ??= 0; S.home ||= {}; S.sup ||= {}; S.tr ||= {}; S.staff ||= {}; S.hornadas ??= 0; S.bond ||= {}; S.ach ||= {}; S.cnt ||= {}; S.look ||= {}; S.story ||= {}; S.homePos ||= {}; S.pm ??= 0; S.ayer ||= []; S.years ??= 0; S.style ||= 'miel'; vidaDefaults(S); applyUpgrades(); cam.yawTo = 0; cam.pitchTo = 0; cam.zoomTo = 0.72;
     if (!S.intro) { S.intro = true; mode = 'letter'; R = null; music('title'); pan.x = 1.6; pan.z = -2.6; letter(CARTA, 'Una carta dentro del horno', () => { startDay(true); ui.dayTitle('Día 1', 'lunes · el horno vuelve a encenderse'); sfx('day'); }); }
     else { startDay(); loadMid(); setTimeout(awayReport, 1200); }
   };

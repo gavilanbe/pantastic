@@ -8,7 +8,7 @@ export const SFX_LIST = {
   sweep: ['Barrer', 2], cut: ['Greñar', 2], knock: ['Llamar a la puerta', 2], splash: ['Caña al agua', 2],
 };
 export const AMB_LIST = { amb_day: 'Pueblo de mañana', amb_eve: 'Atardecer con grillos', amb_rain: 'Lluvia', amb_wind: 'Viento', amb_fire: 'Fuego del horno', amb_fountain: 'Fuente', amb_river: 'Río' };
-export const MUS_LIST = { mus_title: 'Título', mus_day: 'Radio Migas · mañana', mus_day2: 'Radio Migas · swing', mus_eve: 'Radio Migas · atardecer', mus_fiesta: 'La Hornada' };
+export const MUS_LIST = { mus_title: 'Título', mus_day: 'Radio Migas · mañana', mus_day2: 'Swing del Colmado · 1', mus_eve: 'Radio Migas · atardecer', mus_fiesta: 'La Hornada', mus_swing: 'Swing del Colmado · 2', mus_molino: 'Onda Molino', mus_fonda: 'Fonda FM', mus_nocturno: 'Nocturno', mus_charanga: 'La Charanga' };
 /** Toma elegida de cada efecto (a o b). */
 export const PICK = { place: 'b', coin: 'b', bell: 'b', quack: 'b', no: 'b' };
 /** Volumen relativo de cada efecto, para que los pasos no tapen la campanilla. */
