@@ -14,7 +14,7 @@ import { ui, img, coin, stars, ingChip, $, ICON, XI } from './ui.js';
 import { initAudio, resumeAudio, sfx, blip, note, music, toggleMute } from './audio.js';
 import { DOUGH_TINT } from './breads.js';
 import { toScreen, groundAt, setQuality, setSee, see } from './gfx.js';
-import { setVolume, duck, ambient } from './audio.js';
+import { setVolume, duck, ambient, audioScene, setStyle as setSound, setStation, setSurface, STATIONS } from './audio.js';
 import { itemModels, addToque } from './items.js';
 import { saves } from './saves.js';
 import { openTitle } from './title.js';
@@ -27,7 +27,7 @@ const SPARE_AT = [4.3, -3.9], FF = 5;
 
 let S, R, mode = 'boot', K = null, tSec = 0, cur = null, fiesta = null;
 const keys = new Set(); let pressE = false, eBuf = 0, holdT = 0, hitstop = 0, lastCust = null; const joy = { x: 0, y: 0, on: false }; let ffHold = false, ffOn = false;
-const CFG = Object.assign({ mus: 0.5, sfx: 0.8, q: 'alta' }, (() => { try { return JSON.parse(localStorage.getItem('pantastic-cfg')) || {}; } catch { return {}; } })());
+const CFG = Object.assign({ mus: 0.5, sfx: 0.8, q: 'alta', snd: 'real', radio: 'migas' }, (() => { try { return JSON.parse(localStorage.getItem('pantastic-cfg')) || {}; } catch { return {}; } })());
 const hit = (s) => { hitstop = Math.max(hitstop, s); };
 const pan = makeChar(PAN_LOOK); let miga = null, pipa = null, brasa = null, leva = null; const nbChar = {};
 const doughSq = new Spring(1, 260, 12);
@@ -134,6 +134,7 @@ function startDay(first = false) {
   pan.x = 1.6; pan.z = -2.6; pan.yawTo = pan.yaw = 0; pan.goto = null;
   $('#keys').classList.toggle('gone', S.day > 2);
   if (!first && S.day === 2) setTimeout(() => ui.toast(`${face('pipa', 'happy')} Nuevo: por las mañanas Pipa está con su carro en la plaza, y vende más barato`, 'good'), 7600);
+  if (!S.radioTip) { S.radioTip = 1; setTimeout(() => ui.toast('<kbd>R</kbd> La música sale de la radio del obrador: con R cambias de emisora', 'good'), 16000); }
   if (!first && S.day === 2) setTimeout(() => ui.toast('<kbd>B</kbd> Nuevo: cuelga el «Vuelvo enseguida» y nadie se impacienta mientras das una vuelta', 'good'), 14500);
   if (!first && S.day === 2) setTimeout(() => ui.toast('Nuevo: antes de hornear se greña el pan. Unos buenos cortes suben la calidad', 'good'), 18000);
   if (!first && S.day === 3) setTimeout(() => ui.toast('Nuevo: desde hoy el horno pide leña. La leñera está fuera, a la derecha', 'good'), 8800);
@@ -350,7 +351,7 @@ function outStroll(rt, quiet) {
 function standUp(st) { if (!st.seat) return; st.seat.used = null; const b = st.seat; st.seat = null; st.ch.sit = false; st.ch.root.position.y = 0; st.ch.z += Math.cos(b.yaw) * 0.55; st.ch.x += Math.sin(b.yaw) * 0.55; }
 function knock(id) {
   if (R.recado?.to === id) setTimeout(() => recadoDone(id), 1200);
-  const rt = R.routine.find(x => x.nb === id), h = W.homes[id], N = NEIGH[id]; sfx('tick'); setTimeout(() => sfx('tick'), 140);
+  const rt = R.routine.find(x => x.nb === id), h = W.homes[id], N = NEIGH[id]; sfx('knock');
   if (!rt || rt.state === 'out' || R.stroll.some(s2 => s2.nb === id) || R.cust.some(c => c.nb === id)) return ui.toast(`Nadie contesta en casa de ${N.n}. Andará por la plaza.`);
   const wasBack = rt.state === 'back', st = outStroll(rt, false); st.ch.yawTo = st.ch.yaw = Math.atan2(pan.x - st.ch.x, pan.z - st.ch.z); st.t = 5; if (wasBack) { st.home = true; st.to = null; st.t = 99; setTimeout(() => { st.to = [h.out[0], h.out[1]]; }, 400); }
   if (!R.chatted[id]) chat(st); else talk(st, [wasBack ? 'A estas horas ya estoy en zapatillas. ¡Hasta mañana, Pan!' : '¡Ya salgo, ya salgo! Qué prisas.']);
@@ -880,7 +881,7 @@ function takeOrder(o) {
 const GRACIAS = ['¡A domicilio y todo! Así da gusto. Toma, y quédate con la vuelta.', 'Huele que alimenta. Justo a tiempo: ya tenía la mesa puesta.', '¡Mi pedido! Pasa, pasa… ah, que tienes el horno encendido. Otro día.', 'Calentito todavía. Tu abuela también me lo traía a casa, ¿sabes?'];
 function deliverHome(o) {
   const id = o.who, rt = R.routine.find(x => x.nb === id), away = !rt || rt.state === 'out' || R.stroll.some(s2 => s2.nb === id) || R.cust.some(c => c.nb === id);
-  setCarry(null); sfx('tick'); setTimeout(() => sfx('tick'), 140); pan.act('give');
+  setCarry(null); sfx('knock'); pan.act('give');
   if (away) { ui.toast(`Nadie abre en casa de ${NEIGH[id].n}: le dejas el pedido colgado de la puerta`); return finishOrder(o, false, true); }
   const wasBack = rt.state === 'back', st = outStroll(rt, false), h = W.homes[id]; st.ch.yawTo = st.ch.yaw = Math.atan2(pan.x - st.ch.x, pan.z - st.ch.z); st.t = 6; pan.yawTo = Math.atan2(st.ch.x - pan.x, st.ch.z - pan.z);
   talk(st, [o.late ? 'Más vale tarde que nunca. Gracias por acercarte hasta aquí.' : pick(GRACIAS)], () => { st.ch.act('joy'); finishOrder(o, true, true); if (wasBack) { st.home = true; st.to = [h.out[0], h.out[1]]; } });
@@ -902,7 +903,7 @@ function refreshDirt() {
 }
 function addDirt() { const free = DIRT_AT.map((_, i) => i).filter(i => !R.dirt.includes(i)); if (!free.length || S.day < 2) return; const i = pick(free); R.dirt.push(i); R.clean = false; refreshDirt(); burst('flour', DIRT_AT[i][0], 0.4, DIRT_AT[i][1], 8); }
 function sweep(i) {
-  R.dirt.splice(R.dirt.indexOf(i), 1); refreshDirt(); const [x, z] = DIRT_AT[i]; pan.yawTo = Math.atan2(x - pan.x, z - pan.z); pan.act('give'); setTimeout(() => pan.act('give'), 260); sfx('whoosh'); setTimeout(() => sfx('whoosh'), 240); burst('flour', x, 0.3, z, 16); burst('dust', x, 0.2, z, 6); addRep(1); cnt('sweeps'); ui.float('♥ limpio', x, 1.2, z, 'heart');
+  R.dirt.splice(R.dirt.indexOf(i), 1); refreshDirt(); const [x, z] = DIRT_AT[i]; pan.yawTo = Math.atan2(x - pan.x, z - pan.z); pan.act('give'); setTimeout(() => pan.act('give'), 260); sfx('sweep'); burst('flour', x, 0.3, z, 16); burst('dust', x, 0.2, z, 6); addRep(1); cnt('sweeps'); ui.float('♥ limpio', x, 1.2, z, 'heart');
   if (!R.dirt.length && !R.clean) { R.clean = true; setTimeout(() => { sfx('good'); ui.toast('El obrador, como una patena: a la gente se le va la mano con las propinas', 'good'); }, 600); } save();
 }
 function drawOferta() { let e = $('#oferta'); if (!e) { e = document.createElement('div'); e.id = 'oferta'; $('#chalks').insertBefore(e, $('#orders')); } e.innerHTML = R?.oferta ? `Oferta ${img(R.oferta)}<b>${BREADS[R.oferta].n}</b>` : ''; }
@@ -955,7 +956,7 @@ function scoreKey(k) {
   if (k === 'escape') { g.skip = true; return endScore(); }
   if (k !== 'e' && k !== ' ' && k !== 'enter') return; if (g.i >= g.marks.length || g.u < 0) return;
   const err = Math.abs(g.u - g.marks[g.i]), gr = err < 0.022 ? 'p' : err < 0.055 ? 'g' : 'm'; g.hits.push({ u: g.u, gr }); g.i++;
-  sfx('squish'); if (gr === 'p') { sfx('perfect'); note(g.i + 2); cam.shake = 0.25; hit(0.04); } else if (gr === 'g') note(g.i); else sfx('meh');
+  sfx('cut'); if (gr === 'p') { sfx('perfect'); note(g.i + 2); cam.shake = 0.25; hit(0.04); } else if (gr === 'g') note(g.i); else sfx('meh');
   $('#score .sc-word').textContent = gr === 'p' ? '¡Limpio!' : gr === 'g' ? 'Bien' : 'Torcido…'; if (g.i >= g.marks.length) g.end = 0.001;
 }
 function updateScore(dt) {
@@ -1104,14 +1105,16 @@ function openPause() {
   const can = mode === 'play' && !R.ended, shot = saves.getShot(slot);
   const sh = ui.modal(`<button class="x">✕</button><h2>Pausa</h2><div class="sub">El obrador espera. Día ${S.day} · ${S.money} ${coin}</div>
     <div class="psave lib-c${slot}"><div class="ph">${shot ? `<img src="${shot}" alt="">` : ''}</div><div class="pi"><b>${saves.nameOf(S, slot)}</b><small id="p-when">Se guarda sola. Recién guardada</small><div class="pb"><button class="btn sm" id="p-save">Guardar ahora</button><button class="btn sm" id="p-redo" ${can ? '' : 'disabled'}>Repetir el día desde la mañana</button></div></div></div>
-    <div class="set"><span>Música</span><input type="range" min="0" max="1" step="0.05" value="${CFG.mus}" id="v-m"><span>Efectos</span><input type="range" min="0" max="1" step="0.05" value="${CFG.sfx}" id="v-s"><span>Gráficos</span><span class="seg"><button data-q="alta" class="btn sm ${CFG.q === 'alta' ? 'main' : ''}">Nítidos</button> <button data-q="media" class="btn sm ${CFG.q === 'media' ? 'main' : ''}">Ligeros</button></span></div>
-    <div class="lbl">Controles</div><div class="ctl"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>moverse (o clic en el suelo)</span><span><kbd>E</kbd></span><span>acción; mantener para confirmar</span><span><kbd>F</kbd></span><span>mantener: que corra el reloj</span><span><kbd>L</kbd></span><span>libreta</span><span><kbd>B</kbd></span><span>cartel «Vuelvo enseguida»</span><span><kbd>M</kbd></span><span>silenciar</span></div>
+    <div class="set"><span>Música</span><input type="range" min="0" max="1" step="0.05" value="${CFG.mus}" id="v-m"><span>Efectos</span><input type="range" min="0" max="1" step="0.05" value="${CFG.sfx}" id="v-s"><span>Gráficos</span><span class="seg"><button data-q="alta" class="btn sm ${CFG.q === 'alta' ? 'main' : ''}">Nítidos</button> <button data-q="media" class="btn sm ${CFG.q === 'media' ? 'main' : ''}">Ligeros</button></span><span>Sonido</span><span class="seg"><button data-snd="real" class="btn sm ${CFG.snd !== 'synth' ? 'main' : ''}">Grabado</button> <button data-snd="synth" class="btn sm ${CFG.snd === 'synth' ? 'main' : ''}">De sintetizador</button></span><span>Radio</span><span class="seg">${STATIONS.map(([id, n]) => `<button data-st="${id}" class="btn sm ${CFG.radio === id ? 'main' : ''}">${n}</button>`).join(' ')}</span></div>
+    <div class="lbl">Controles</div><div class="ctl"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>moverse (o clic en el suelo)</span><span><kbd>E</kbd></span><span>acción; mantener para confirmar</span><span><kbd>F</kbd></span><span>mantener: que corra el reloj</span><span><kbd>L</kbd></span><span>libreta</span><span><kbd>B</kbd></span><span>cartel «Vuelvo enseguida»</span><span><kbd>M</kbd></span><span>silenciar</span><span><kbd>R</kbd></span><span>cambiar la emisora de la radio</span></div>
     <div class="bfoot"><button class="btn" id="p-title">Cambiar de libreta</button><span class="grow">Tus partidas están en la pantalla de título.</span><button class="btn main" id="p-go">Seguir horneando</button></div>`, 'paper');
   sh.querySelector('.x').onclick = sh.querySelector('#p-go').onclick = () => ui.closeModal(); sh.querySelector('#p-title').onclick = () => { saveMid(); jump(null); };
   sh.querySelector('#p-save').onclick = (e) => { snap(); saveMid(); sfx('stamp'); ui.saved('Guardada'); const b = e.currentTarget; b.textContent = '¡Guardada!'; sh.querySelector('#p-when').textContent = 'Guardada ahora mismo, con foto nueva'; const im = sh.querySelector('.ph'); im.innerHTML = `<img src="${saves.getShot(slot)}" alt="">`; setTimeout(() => { if (b.isConnected) b.textContent = 'Guardar ahora'; }, 1400); };
   const redo = sh.querySelector('#p-redo'); redo.onclick = () => { if (!redo.dataset.sure) { redo.dataset.sure = 1; redo.textContent = '¿Seguro? Se pierde lo de hoy'; redo.classList.add('main'); sfx('tick'); return; } if (saves.rewind(slot, S.day)) { sfx('page'); ui.fade(1); setTimeout(() => jump(slot), 350); } else { sfx('no'); redo.textContent = 'No hay mañana guardada de hoy'; } };
   sh.querySelector('#v-m').oninput = (e) => { CFG.mus = Number(e.target.value); saveCfg(); }; sh.querySelector('#v-s').oninput = (e) => { CFG.sfx = Number(e.target.value); saveCfg(); sfx('pop'); };
   sh.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { CFG.q = b.dataset.q; saveCfg(); sh.querySelectorAll('[data-q]').forEach(x => x.classList.toggle('main', x === b)); });
+  sh.querySelectorAll('[data-snd]').forEach(b => b.onclick = () => { CFG.snd = b.dataset.snd; saveCfg(); setSound(CFG.snd !== 'synth'); sh.querySelectorAll('[data-snd]').forEach(x => x.classList.toggle('main', x === b)); sfx('bell'); });
+  sh.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { nextStation(b.dataset.st); sh.querySelectorAll('[data-st]').forEach(x => x.classList.toggle('main', x === b)); });
   ui.onKey = (k) => { if (k === 'e' || k === 'enter') ui.closeModal(); }; sfx('page');
 }
 function ovenGauge(i, id) { return ui.anchor('gauge timer', `<div class="dial"><div class="ndl"></div>${img(id)}<b></b></div>`, [W.ovenSlots[i].p[0] + (i ? 1.0 : 1.2), W.ovenSlots[i].p[1] + (i ? 0.75 : 1.55), W.ovenSlots[i].p[2] + 0.3]); }
@@ -1174,6 +1177,19 @@ function goalText() {
   const got = NEIGH_ORDER.filter(id => S.gave[id]).length;
   return [`Gánate a los vecinos: ${got} de 7 fichas de la abuela`, ICON.hogaza];
 }
+
+// ---------- la radio del obrador ----------
+const RADIO_AT = [1.62, 2.02, -5.42]; let radio = null;
+function buildRadio() {
+  const g = new THREE.Group(), wood = gmat('#b9794a', { rough: 0.8 }), cream = gmat('#f4e6c8', { rough: 0.7 }), red = gmat('#e2664f', { rough: 0.6 }), dark = gmat('#5a3a28', { rough: 0.9 });
+  gmesh(GG.box(1.0, 0.07, 0.42, 0.02), wood, { parent: g, p: [0, -0.2, 0] }); for (const sx of [-0.36, 0.36]) gmesh(GG.box(0.06, 0.24, 0.3, 0.015), wood, { parent: g, p: [sx, -0.34, -0.05] });
+  const b = new THREE.Group(); g.add(b); gmesh(GG.box(0.62, 0.36, 0.24, 0.07), red, { parent: b, p: [0, 0.02, 0] }); gmesh(GG.box(0.54, 0.28, 0.04, 0.04), cream, { parent: b, p: [0, 0.02, 0.115] });
+  gmesh(GG.cyl(0.105, 0.105, 0.03, 20), dark, { parent: b, p: [-0.13, 0.02, 0.135], r: [Math.PI / 2, 0, 0] }); for (let i = 0; i < 3; i++) gmesh(GG.box(0.16, 0.014, 0.012, 0.004), cream, { parent: b, p: [-0.13, -0.03 + i * 0.05, 0.152] });
+  gmesh(GG.cyl(0.045, 0.045, 0.04, 14), gmat('#f2b84b', { rough: 0.4, metal: 0.4 }), { parent: b, p: [0.15, 0.07, 0.14], r: [Math.PI / 2, 0, 0] }); gmesh(GG.cyl(0.03, 0.03, 0.04, 12), dark, { parent: b, p: [0.15, -0.05, 0.14], r: [Math.PI / 2, 0, 0] });
+  gmesh(GG.cyl(0.008, 0.008, 0.5, 6), gmat('#cfd6da', { rough: 0.3, metal: 0.7 }), { parent: b, p: [0.2, 0.4, -0.05], r: [0, 0, -0.35] }); gmesh(GG.sph(0.022, 8, 6), red, { parent: b, p: [0.285, 0.635, -0.05] });
+  g.position.set(...RADIO_AT); scene.add(g); radio = { g: b };
+}
+function nextStation(to) { const i = STATIONS.findIndex(x => x[0] === CFG.radio); CFG.radio = to || STATIONS[(i + 1) % STATIONS.length][0]; setStation(CFG.radio); localStorage.setItem('pantastic-cfg', JSON.stringify(CFG)); sfx('tick'); setTimeout(() => sfx('tick'), 90); ui.toast(`<kbd>R</kbd> ${STATIONS.find(x => x[0] === CFG.radio)[1]}`); if (radio) { burst('spark', ...RADIO_AT, 5); } }
 
 // ---------- quién lleva el obrador ----------
 const HEROES = [
@@ -1251,7 +1267,7 @@ function updatePlay(dt) {
       const p = collide(pan.x + pan.vx * dt, pan.z + pan.vz * dt, 0.3, R.zone ? W.zones[R.zone] : null), moved = Math.hypot(p[0] - pan.x, p[1] - pan.z) / dt; pan.x = p[0]; pan.z = p[1];
       if (l) pan.yawTo = Math.atan2(mx, mz); pan.speed = moved > 0.4 ? moved : 0; pan.stuck = moved < v * 0.35 ? (pan.stuck || 0) + dt : 0; if (moved < v * 0.35) { pan.vx *= 0.7; pan.vz *= 0.7; }
       if (pan.action === 'wave') pan.action = null;
-      pan.stepT = (pan.stepT || 0) - dt * (moved / 3.4); if (pan.stepT < 0 && pan.speed) { pan.stepT = 0.27; sfx('step'); if (Math.random() < 0.5) burst('dust', pan.x, 0.08, pan.z, 1, { color: pan.z > 0.7 ? 0xe9dcc0 : 0xf6ead6 }); }
+      pan.stepT = (pan.stepT || 0) - dt * (moved / 3.4); if (pan.stepT < 0 && pan.speed) { pan.stepT = 0.27; setSurface(R.inHome || R.zone === 'fonda' || (!R.zone && pan.z < 0.8 && Math.abs(pan.x) < 6.6) ? 'wood' : R.zone ? 'grass' : pan.z > 0.8 && pan.z < 6.2 ? 'stone' : 'grass'); sfx('step'); if (Math.random() < 0.5) burst('dust', pan.x, 0.08, pan.z, 1, { color: pan.z > 0.7 ? 0xe9dcc0 : 0xf6ead6 }); }
     } else { pan.speed = 0; pan.vx = pan.vz = 0; }
   }
   if (R.chopping && (mx || mz)) endChop(); if (R.fishing && (mx || mz)) endFish();
@@ -1343,6 +1359,9 @@ function frame(dt) {
   // flecha del tutorial sobre el sitio al que toca ir, sonido ambiente y música más baja al hablar
   { const gp = R && mode === 'play' && S.tut < 7 ? [[0.8, 2.7, -5.0], [3.0, 3.3, -5.4], [5.1, 3.4, -4.6], [5.1, 3.4, -4.6], [-1.9, 2.5, -3.4], [-1.9, 2.5, -3.4], [6.1, 3.1, -2.25]][S.tut] : R && mode === 'play' && !R.zone && R.carry?.stage === 'order' ? [W.homes[R.orders[R.carry.o].who].door[0], 3.3, W.homes[R.orders[R.carry.o].who].door[1]] : R && mode === 'play' && !R.zone && R.orders.some(o => !o.done && !o.out && ordHave(o) >= o.n) ? [W.boardPos[0], 3.0, W.boardPos[1]] : null, far = gp && Math.hypot(pan.x - gp[0], pan.z - gp[2]) > 1.7; guide.visible = !!far; if (far) { guide.position.set(gp[0], gp[1] + Math.abs(Math.sin(tSec * 4)) * 0.3, gp[2]); guide.rotation.y = tSec * 3; } }
   if (ui.dialogOpen !== frame.dk) { frame.dk = ui.dialogOpen; duck(frame.dk); }
+  { const z = R?.zone || null, town = R && !z, free = !R || ['title', 'pick', 'fiesta', 'letter'].includes(mode);
+    audioScene({ free, inside: inside && !z, home: !!R?.inHome, zone: z, rain: R?.weather === 'lluvia', wind: R?.weather === 'viento', night: light.night, fire: R?.fire, doorD: Math.hypot(pan.x, pan.z - 0.9), ovenD: town ? Math.hypot(pan.x - 5.1, pan.z + 4.3) : null, fountainD: town && S.up.fuente ? Math.hypot(pan.x - W.fountainPos[0], pan.z - W.fountainPos[1]) : null, riverD: z === 'rio' ? 2.5 : town ? Math.hypot(pan.x - W.travel.rio[0], pan.z - W.travel.rio[1]) + 3 : null });
+    if (radio && town && inside && CFG.radio !== 'off' && mode === 'play') { radio.t = (radio.t || 3) - dt; radio.g.rotation.z = Math.sin(tSec * 9) * 0.03; if (radio.t < 0) { radio.t = 5 + Math.random() * 5; emote([RADIO_AT[0], RADIO_AT[1] + 0.55, RADIO_AT[2]], pick(['♪', '♫', '♪'])); } } else if (radio) radio.g.rotation.z = 0; }
   if (R && mode === 'play' && !R.inHome) { frame.amb = (frame.amb || 2) - dt; if (frame.amb < 0) { frame.amb = 0.25 + Math.random() * 0.5; const outside = pan.z > 0.9 || Math.abs(pan.x) > 6.8; if (outside && R.weather !== 'lluvia' && light.night < 0.5 && Math.random() < 0.3) ambient('chirp'); if (Math.hypot(pan.x - 5.1, pan.z + 3.8) < 4 && Math.random() < 0.45 + R.fire * 0.4) ambient('crackle'); if (S.up.fuente && Math.hypot(pan.x + 10.2, pan.z - 7) < 5) ambient('water'); } }
   updateLife(dt, tSec, pan, { rain: R?.weather === 'lluvia', night: light.night > 0.6 || (R && season().n === 'invierno'), onFlush: () => sfx('whoosh') });
   updateParticles(dt); ui.update();
@@ -1371,6 +1390,7 @@ function boot() {
     if (k === 'e' || k === ' ' || k === 'enter') pressE = true;
     if ((k === 'l' || k === 'tab') && mode === 'play') openBook();
     if (k === 'b' && mode === 'play') toggleBrb();
+    if (k === 'r' && mode === 'play' && !R.decor) nextStation();
     if (k === 'escape' && mode === 'play') openPause();
     if (k === 'q' && mode === 'play' && cur?.pick && cur.cust && !R.decor) openBasket(cur.pick, cur.cust);
     if (k === 'q' && mode === 'play' && cur?.gift && !R.decor) openGift(cur.gift);
@@ -1381,7 +1401,7 @@ function boot() {
   { const ck = document.querySelector('#cal .clock'); ck.addEventListener('pointerdown', (e) => { e.stopPropagation(); ffHold = true; }); addEventListener('pointerup', () => { ffHold = false; }); addEventListener('pointercancel', () => { ffHold = false; }); }
   setInterval(() => { if (!TEST && S && mode === 'play' && !ui.modalOpen) saveMid(); }, 5000); addEventListener('visibilitychange', () => { if (document.hidden && S && !TEST) saveMid(); }); addEventListener('pagehide', () => { if (S && !TEST) saveMid(); });
   addEventListener('pointerdown', () => { initAudio(); resumeAudio(); });
-  setVolume(CFG.mus, CFG.sfx); setQuality(CFG.q);
+  setVolume(CFG.mus, CFG.sfx); setQuality(CFG.q); setSound(CFG.snd !== 'synth'); setStation(CFG.radio); buildRadio();
   const fit = () => { const st = document.documentElement.style, base = Math.min(innerWidth / 1280, innerHeight / 720), small = base < 0.8;
     // en pantallas pequeñas la interfaz no encoge con la ventana: se queda en un tamaño que se lee y las hojas se recolocan
     const z = small ? clamp(Math.min(0.8, innerWidth / 600), 0.5, 0.8) : Math.min(base, 1.3), zs = small ? clamp(Math.min(innerWidth / 900, innerHeight / 470), 0.5, 0.82) : Math.min(base, 1.3);

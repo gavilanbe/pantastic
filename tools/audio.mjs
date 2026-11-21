@@ -1,0 +1,25 @@
+// Prueba del sonido sin ventana: juega un rato con el audio encendido y comprueba que carga las muestras, que los bucles suenan y que la radio obedece.
+import { chromium } from 'playwright'; import { spawn } from 'node:child_process'; import path from 'node:path'; import fs from 'node:fs'; import { fileURLToPath } from 'node:url';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), port = 5190 + Math.floor(Math.random() * 300);
+const srv = spawn('node', [path.join(root, 'tools/serve.mjs'), String(port)], { stdio: 'ignore' }); await new Promise(r => setTimeout(r, 400));
+const cacheDir = process.env.HOME + '/Library/Caches/ms-playwright';
+const exe = fs.readdirSync(cacheDir).filter(d => d.startsWith('chromium_headless_shell-')).sort().map(d => `${cacheDir}/${d}/chrome-headless-shell-mac-arm64/chrome-headless-shell`).filter(f => fs.existsSync(f)).pop();
+const browser = await chromium.launch({ executablePath: exe, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } }); let bad = 0; const miss = [];
+page.on('console', m => { if (m.type() === 'error') { bad++; console.log('[error]', m.text()); } }); page.on('pageerror', e => { bad++; console.log('[pageerror]', e.message); });
+page.on('response', r => { if (r.url().includes('/snd/') && r.status() >= 400) miss.push(r.url().split('/snd/')[1]); });
+const loaded = new Set(); page.on('requestfinished', r => { if (r.url().includes('/snd/')) loaded.add(r.url().split('/snd/')[1]); });
+const check = (ok, what) => { console.log((ok ? '  ok  ' : ' FALLO ') + what); if (!ok) bad++; };
+await page.goto(`http://127.0.0.1:${port}/`); await page.waitForFunction('window.game && window.game.ready'); await page.waitForTimeout(1000);
+await page.keyboard.press('e'); await page.waitForTimeout(3200); await page.keyboard.press('e'); await page.waitForTimeout(3400); await page.keyboard.press('e'); await page.waitForTimeout(5000);
+check(await page.evaluate(() => window.game.mode) === 'play', 'se llega a jugar con el audio encendido');
+await page.keyboard.down('d'); await page.waitForTimeout(900); await page.keyboard.up('d'); await page.keyboard.down('s'); await page.waitForTimeout(2600); await page.keyboard.up('s'); await page.waitForTimeout(2500);
+check([...loaded].filter(f => /_[abc]\.mp3/.test(f)).length >= 35, `efectos cargados: ${[...loaded].filter(f => /_[abc]\.mp3/.test(f)).length}`);
+check(loaded.has('mus_title.mp3') && loaded.has('mus_day.mp3'), 'la música del título y de la radio se piden');
+check(loaded.has('amb_day.mp3') && loaded.has('amb_fire.mp3'), 'ambiente de pueblo y fuego del horno se piden');
+check(!miss.length, 'ningún sonido falta' + (miss.length ? ': ' + miss.join(', ') : ''));
+await page.keyboard.press('r'); await page.waitForTimeout(400); check(JSON.parse(await page.evaluate(() => localStorage.getItem('pantastic-cfg'))).radio === 'abuela', 'R cambia a los discos de la abuela');
+await page.keyboard.press('Escape'); await page.waitForTimeout(600); await page.screenshot({ path: path.join(root, 'shots/audio-pausa.png') });
+await page.goto(`http://127.0.0.1:${port}/escucha.html`); await page.waitForTimeout(1200); await page.screenshot({ path: path.join(root, 'shots/escucha.png') });
+check(await page.locator('.snd').count() >= 40, 'la sala de escucha lista los sonidos');
+console.log(bad ? `${bad} problema(s)` : 'todo bien'); await browser.close(); srv.kill(); process.exit(bad ? 1 : 0);

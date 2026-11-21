@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pantastic! · Sala de escucha</title>
+<link rel="stylesheet" href="src/ui.css">
+<style>
+  html, body { overflow: auto; height: auto; user-select: auto; }
+  body { background: #f6e8cf var(--grain); padding: 28px 20px 120px; }
+  main { max-width: 1040px; margin: 0 auto; }
+  h1 { font: 700 46px var(--hand); margin: 0; } h1 small { display: block; font: 700 19px/1.3 var(--hand); color: var(--soft); max-width: 760px; margin-top: 4px; }
+  h2 { font: 900 13px var(--font); letter-spacing: 2px; text-transform: uppercase; color: var(--red); margin: 30px 0 10px; display: flex; gap: 10px; align-items: center; } h2::after { content: ''; flex: 1; border-top: 2px dashed #dcc59a; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .snd { background: var(--paper); border: 3px solid #fff; border-radius: 16px; padding: 10px 14px 12px; box-shadow: 0 4px 0 var(--shadow); }
+  .snd b { display: block; font: 700 21px var(--hand); margin-bottom: 6px; } .snd .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .take { display: inline-flex; align-items: center; gap: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 3px 0 #caa06a; }
+  .take button { border: none; font: 800 15px var(--font); color: var(--ink); background: linear-gradient(#fffaf0, #f6e6c2); padding: 8px 14px; cursor: pointer; } .take button:active { filter: brightness(.94); }
+  .take .use { background: #efe2c4; border-left: 2px solid #e2cfa4; font-size: 13px; color: var(--soft); } .take.on .use { background: var(--green); color: #fff; } .take.on .play { background: linear-gradient(#fff3c4, #f7dd8a); }
+  .take.mix .use { display: none; }
+  .long { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); } .long audio { width: 100%; height: 38px; }
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--kraft) var(--grain); padding: 12px 20px; display: flex; gap: 14px; align-items: center; justify-content: center; box-shadow: 0 -4px 0 var(--shadow); font: 700 18px var(--hand); flex-wrap: wrap; }
+  #bar .btn { font-size: 16px; padding: 9px 18px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sala de escucha<small>Todo el sonido grabado de Pantastic!. En los efectos con dos tomas, pulsa para oír y marca «usar» en la que prefieras: el juego abierto en este mismo navegador la usa desde ese momento. Los pasos y el amasado alternan sus tomas solos.</small></h1>
+  <h2>Efectos</h2><div class="grid" id="sfx"></div>
+  <h2>Ambientes en bucle</h2><div class="grid long" id="amb"></div>
+  <h2>La radio y la música</h2><div class="grid long" id="mus"></div>
+</main>
+<div id="bar"><span id="count"></span><button class="btn main" id="copy">Copiar mi elección</button><button class="btn" id="reset">Volver a las tomas A</button></div>
+<script type="module">
+import { SFX_LIST, AMB_LIST, MUS_LIST, PICK } from './src/snd.js';
+const KEY = 'pantastic-snd-pick'; let picks = {}; try { picks = JSON.parse(localStorage.getItem(KEY)) || {}; } catch { }
+const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
+let cur = null; const play = (f) => { if (cur) cur.pause(); cur = new Audio('snd/' + f + '.mp3'); cur.play(); };
+const draw = () => {
+  const box = document.getElementById('sfx'); box.innerHTML = '';
+  for (const [id, [name, n, mix]] of Object.entries(SFX_LIST)) {
+    const c = el('div', 'snd', `<b>${name}</b><div class="row"></div>`), row = c.querySelector('.row'), sel = picks[id] || PICK[id] || 'a';
+    for (let i = 0; i < n; i++) { const v = 'abc'[i], t = el('span', 'take' + (mix ? ' mix' : '') + (!mix && v === sel ? ' on' : ''), `<button class="play">▶ Toma ${v.toUpperCase()}</button><button class="use">${v === sel ? '✓ en uso' : 'usar'}</button>`); t.querySelector('.play').onclick = () => play(id + '_' + v); t.querySelector('.use').onclick = () => { picks[id] = v; localStorage.setItem(KEY, JSON.stringify(picks)); play(id + '_' + v); draw(); }; row.append(t); }
+    box.append(c);
+  }
+  const ch = Object.entries(picks).filter(([k, v]) => v !== (PICK[k] || 'a')).length; document.getElementById('count').textContent = ch ? `${ch} ${ch === 1 ? 'toma cambiada' : 'tomas cambiadas'} respecto a lo publicado` : 'Todo como está publicado';
+};
+for (const [box, list] of [['amb', AMB_LIST], ['mus', MUS_LIST]]) for (const [id, name] of Object.entries(list)) document.getElementById(box).append(el('div', 'snd', `<b>${name}</b><audio controls loop preload="none" src="snd/${id}.mp3"></audio>`));
+document.getElementById('copy').onclick = async (e) => { const all = {}; for (const id in SFX_LIST) if (!SFX_LIST[id][2]) all[id] = picks[id] || PICK[id] || 'a'; await navigator.clipboard.writeText('Elección de sonidos de Pantastic: ' + JSON.stringify(all)); e.target.textContent = '¡Copiada! Pégasela a Claude'; setTimeout(() => e.target.textContent = 'Copiar mi elección', 2200); };
+document.getElementById('reset').onclick = () => { picks = {}; localStorage.removeItem(KEY); draw(); };
+draw();
+</script>
+</body>
+</html>
