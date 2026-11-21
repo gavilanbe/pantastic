@@ -13,7 +13,7 @@ import { logoURL } from './logo.js';
 import { ui, img, coin, stars, ingChip, $, ICON, XI } from './ui.js';
 import { initAudio, resumeAudio, sfx, blip, note, music, toggleMute } from './audio.js';
 import { DOUGH_TINT } from './breads.js';
-import { toScreen, groundAt, setQuality, setSee, see } from './gfx.js';
+import { toScreen, groundAt, setQuality, setSee, see, canvasTex } from './gfx.js';
 import { setVolume, duck, ambient, audioScene, setStyle as setSound, setStation, setTune, setSurface } from './audio.js';
 import { openRadio, radioAt } from './radio.js';
 import { RADIO } from './data.js';
@@ -137,6 +137,7 @@ function startDay(first = false) {
   $('#keys').classList.toggle('gone', S.day > 2);
   if (!first && S.day === 2) setTimeout(() => ui.toast(`${face('pipa', 'happy')} Nuevo: por las mañanas Pipa está con su carro en la plaza, y vende más barato`, 'good'), 7600);
   if (!S.radioTip) { S.radioTip = 1; setTimeout(() => ui.toast('<kbd>R</kbd> La música sale de la radio del obrador: con R giras el dial y buscas emisoras', 'good'), 16000); }
+  if (!S.perchaTip && S.day >= 2) { S.perchaTip = 1; setTimeout(() => ui.toast('Nuevo en la plaza: La Percha, un puesto con ropa, peinados y gorros para cambiar de aspecto', 'good'), 21000); }
   if (!first && S.day === 2) setTimeout(() => ui.toast('<kbd>B</kbd> Nuevo: cuelga el «Vuelvo enseguida» y nadie se impacienta mientras das una vuelta', 'good'), 14500);
   if (!first && S.day === 2) setTimeout(() => ui.toast('Nuevo: antes de hornear se greña el pan. Unos buenos cortes suben la calidad', 'good'), 18000);
   if (!first && S.day === 3) setTimeout(() => ui.toast('Nuevo: desde hoy el horno pide leña. La leñera está fuera, a la derecha', 'good'), 8800);
@@ -866,6 +867,7 @@ function findAction() {
     if (bs === 'horno') { const any = R.oven.some(x => x); if (c?.stage === 'wood') return { text: R.fire > 0.92 ? 'Dejar el tronco al pie del horno' : 'Echar leña', pos, fn: useOven, st: s }; return { text: c?.stage === 'proofed' ? 'Meter al horno' : any && !c ? 'Sacar del horno' : 'Horno', ok: (c?.stage === 'proofed') || (any && !c), pos, fn: useOven, st: s }; }
   }
   for (const st of R.stroll) if (!st.home && Math.hypot(px - st.ch.x, pz - st.ch.z) < 1.7) { const cg = canGift(st.nb), bd = R.bday === st.nb ? ' 🎂' : ''; if (!R.chatted[st.nb]) return { text: `Charlar con ${NEIGH[st.nb].n}${bd}${cg ? ' · Q regalar' : ''}`, pos: [st.ch.x, 2.3, st.ch.z], fn: () => chat(st), cust: st, gift: cg ? st : null }; if (cg) return { text: `Hacerle un regalo a ${NEIGH[st.nb].n}${bd}`, pos: [st.ch.x, 2.3, st.ch.z], fn: () => openGift(st), cust: st, gift: st }; }
+  if (Math.hypot(px - PERCHA_AT[0], pz - PERCHA_AT[1] - 0.6) < 1.9) return { text: c ? 'La Percha: deja antes la bandeja' : 'Mirar en La Percha: ropa, peinados y gorros', ok: !c, pos: [PERCHA_AT[0], 2.9, PERCHA_AT[1]], fn: () => c ? sfx('no') : openWardrobe(false, true) };
   if (R.pipa && Math.hypot(px - pipa.x, pz - pipa.z) < 1.9) return { text: 'Comprar a Pipa, precio de amiga', pos: [pipa.x, 2.2, pipa.z], fn: () => openShop(0.85) };
   for (const f of R.finds) if (Math.hypot(px - f.x, pz - f.z) < 1.2) return { text: 'Mirar qué brilla', pos: [f.x, 1.1, f.z], fn: () => find(f) };
   if (R.mail && Math.hypot(px - 7.9, pz - 1.5) < 1.6) return { text: 'Abrir el buzón', pos: [7.9, 1.9, 1.5], fn: openMail };
@@ -1054,28 +1056,74 @@ function openMolino() {
   sh.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const p = Number(b.dataset.p), id = b.dataset.b; if (S.money < p) return sfx('no'); S.money -= p; R.today.spent += p; S.ing[id] = (S.ing[id] || 0) + 10; S.sup.tejo = (S.sup.tejo || 0) + p; ui.setMoney(S.money, true); sfx('stamp'); sfx('poof'); burst('flour', pan.x + 1, 1.2, pan.z - 0.6, 14); gainPts('tejo', 1); save(); ui.closeModal(); ui.toast(`${iimg(id)}+10 ${ING[id].n.toLowerCase()}`, 'good'); });
   sh.querySelector('#m-free').onclick = () => { R.milled = true; S.ing.harina = (S.ing.harina || 0) + 2; sfx('good'); burst('flour', pan.x, 0.6, pan.z, 16); pan.act('give'); ui.closeModal(); ui.toast(`${iimg('harina')}Barres dos puñados de harina buena`, 'good'); save(); };
 }
-const ROPA = {
-  get peto() { return S?.hero === 'isart' ? [['marino', 'Azul marino', '#34466b', () => true, ''], ...PETOS] : PETOS; }, get head() { return S?.hero === 'isart' ? HEAD_I : HEAD_P; },
-  tee: [['crema', 'Crema', '#fbf3e3', () => true, ''], ['menta', 'Menta', '#bfe6d8', () => supLvl('pipa') >= 1, 'tarjeta de Pipa a nivel 1'], ['rosa', 'Rosa', '#ffc2c8', () => bond('pua', 3), 'tres corazones con Púa'], ['rayas', 'De rayas', '#e2664f', () => bond('brinco', 3), 'tres corazones con Brinco']],
+// ---------- el aspecto: armario en casa y «La Percha» en la plaza ----------
+// Cada prenda: [id, nombre, color de la muestra, precio]. Lo de precio 0 viene de casa.
+const WEAR = {
+  pelo: { n: 'Peinado', who: 'pan', items: [['melena', 'Melena', '#33211c', 0], ['media', 'Media melena', '#33211c', 60], ['recogido', 'Moño alto', '#33211c', 80], ['coletas', 'Dos coletas', '#33211c', 80]] },
+  barba: { n: 'Barba', who: 'isart', items: [['corta', 'Barba corta', '#7a5238', 0], ['bigote', 'Bigote', '#7a5238', 40], ['nada', 'Afeitado', '#f1c9a8', 40]] },
+  tinte: { n: 'Color del pelo', items: [['castano', 'Castaño', '#33211c', 0], ['negro', 'Azabache', '#17110f', 50], ['cobre', 'Cobrizo', '#8a3f22', 70], ['miel', 'Miel', '#b9843f', 70], ['fresa', 'Fresa', '#d9627a', 120], ['plata', 'Plata', '#b9b3b0', 120]] },
+  head: { n: 'En la cabeza', items: [['nada', 'Nada', '#f4e6c8', 0], ['gorro', 'Gorro de obrador', '#fffdf7', 0], ['panuelo', 'Pañuelo rojo', '#e2664f', 45], ['gorra', 'Gorra beige', '#d8c4a0', 45], ['boina', 'Boina', '#3d3550', 60], ['paja', 'Sombrero de paja', '#e9cf8f', 90], ['flor', 'Flor', '#ff9ac1', 35], ['lazo', 'Lazo', '#ff7b9c', 35]] },
+  gafas: { n: 'Gafas', items: [['nada', 'Sin gafas', '#f4e6c8', 0], ['redondas', 'Redondas', '#e9dcc2', 50], ['rojas', 'De pasta roja', '#c9455a', 50]] },
+  peto: { n: 'El peto', items: [['denim', 'Vaquero', '#5f8fc4', 0], ['marino', 'Azul marino', '#34466b', 0], ['mostaza', 'Mostaza', '#d9a441', 60], ['verde', 'Verde huerto', '#6fa878', 60], ['frambuesa', 'Frambuesa', '#c9556b', 80], ['carbon', 'Carbón', '#4a4654', 80], ['lila', 'Lila', '#a58bc9', 80]] },
+  tee: { n: 'La camiseta', items: [['crema', 'Crema', '#fbf3e3', 0], ['menta', 'Menta', '#bfe6d8', 30], ['rosa', 'Rosa', '#ffc2c8', 30], ['cielo', 'Cielo', '#bcdcf2', 30], ['rayas', 'De rayas', '#e2664f', 50]] },
+  zap: { n: 'Zapatillas', items: [['blancas', 'Blancas', '#fdf8ee', 0], ['rojas', 'Rojas', '#e2664f', 35], ['menta', 'Menta', '#8fd0bd', 35], ['mostaza', 'Mostaza', '#e8b23c', 35], ['negras', 'Negras', '#3a3440', 35]] },
 };
-const HEAD_I = [['gorro', 'Gorro de panadero', '#fffdf7', () => true, ''], ['gorra', 'Gorra beige', '#d8c4a0', () => S.day >= 3, 'llegar al día 3'], ['panuelo', 'Pañuelo rojo', '#e2664f', () => S.day >= 5, 'llegar al día 5']];
-const ROPA_BASE = {
-  peto: [['denim', 'Vaquero', '#5f8fc4', () => true, ''], ['mostaza', 'Mostaza', '#d9a441', () => lvl() >= 2, 'fama nivel 3'], ['verde', 'Verde huerto', '#6fa878', () => S.up.huerto, 'tener el huerto'], ['frambuesa', 'Frambuesa', '#c9556b', () => bond('lana', 3), 'tres corazones con Doña Lana'], ['carbon', 'Carbón', '#4a4654', () => renown() >= 1, 'una estrella de renombre']],
-  tee: [['crema', 'Crema', '#fbf3e3', () => true, ''], ['menta', 'Menta', '#bfe6d8', () => supLvl('pipa') >= 1, 'tarjeta de Pipa a nivel 1'], ['rosa', 'Rosa', '#ffc2c8', () => bond('pua', 3), 'tres corazones con Púa'], ['rayas', 'De rayas', '#e2664f', () => bond('brinco', 3), 'tres corazones con Brinco']],
-  head: [['nada', 'Sin nada', '#33211c', () => true, ''], ['panuelo', 'Pañuelo rojo', '#e2664f', () => S.day >= 5, 'llegar al día 5'], ['flor', 'Flor en el pelo', '#ff9ac1', () => S.up.jardin, 'tener las jardineras'], ['gorro', 'Gorro de panadera', '#fffdf7', () => lvl() >= 5, 'ser Maestra panadera']],
-};
-const PETOS = ROPA_BASE.peto, HEAD_P = ROPA_BASE.head;
-function panLook() { const k = S.look || {}, f = (slot, id) => ROPA[slot].find(x => x[0] === (id || ROPA[slot][0][0])) || ROPA[slot][0], acc = f('head', k.head)[0]; return { ...(S.hero === 'isart' ? ISART_LOOK : PAN_LOOK), peto: f('peto', k.peto)[2], tee: k.tee === 'rayas' ? '#fbf3e3' : f('tee', k.tee)[2], stripes: k.tee === 'rayas', acc: acc !== 'nada' ? acc : null }; }
-function rebuildPan() { const n = makeChar(panLook()), old = pan.root; scene.remove(old); for (const k of ['root', 'body', 'head', 'arms', 'legs', 'tail', 'torso', 'carryAnchor', 'faceMat', 'L']) pan[k] = n[k]; pan._ex = null; scene.add(pan.root); see.m.value = ['gorro', 'gorra'].includes(pan.L.acc) ? 1.05 : 0.15; if (R) setCarry(R.carry); }
-function openWardrobe(keep) {
-  if (!keep) sfx('page'); pan.goto = null; pan.yawTo = 0.35; cam.zoomTo = 0.4;
-  const row = (slot, title) => `<div class="lbl">${title}</div><div class="ropa">${ROPA[slot].map(([id, n, c, ok, how]) => { const has = ok(), on = (S.look[slot] || ROPA[slot][0][0]) === id; return `<button class="rp ${on ? 'on' : ''} ${has ? '' : 'lock'}" data-slot="${slot}" data-id="${id}" ${has ? '' : 'disabled'}><i style="background:${c}"></i><b>${n}</b>${has ? '' : `<small>${how}</small>`}</button>`; }).join('')}</div>`;
-  const sh = ui.modal(`<button class="x">✕</button><h2>El armario</h2><div class="sub">Lo que te van regalando y lo que te has ganado.</div>${row('peto', 'El peto')}${row('tee', 'La camiseta')}${row('head', 'En la cabeza')}`, 'paper side');
-  const m = sh.parentElement; m.style.background = 'none'; m.style.backdropFilter = 'none'; m.style.placeItems = 'center end'; if (keep) sh.style.animation = 'none';
-  ui.onClose = () => { m.style.background = m.style.backdropFilter = m.style.placeItems = ''; cam.zoomTo = 0.62; };
-  sh.querySelector('.x').onclick = () => ui.closeModal();
-  sh.querySelectorAll('.rp:not(.lock)').forEach(b => b.onclick = () => { S.look[b.dataset.slot] = b.dataset.id; rebuildPan(); pan.pop(4); pan.act('joy'); pan.say('happy', 1.5); sfx('pop'); burst('spark', pan.x, 1.4, pan.z, 10); save(); ui.onClose = null; openWardrobe(true); });
+const WEAR_ORDER = ['pelo', 'barba', 'tinte', 'head', 'gafas', 'peto', 'tee', 'zap'];
+const isI = () => S.hero === 'isart';
+const wearDef = (slot) => ({ pelo: 'melena', barba: 'corta', tinte: 'castano', head: isI() ? 'gorro' : 'nada', gafas: isI() ? 'redondas' : 'nada', peto: isI() ? 'marino' : 'denim', tee: 'crema', zap: 'blancas' }[slot]);
+/** Lo que no le pega a cada cual: Isart no va sin nada en la cabeza ni con flor o lazo. */
+const wearFits = (slot, id) => !(isI() && slot === 'head' && ['nada', 'flor', 'lazo'].includes(id));
+const wearItems = (slot) => WEAR[slot].items.filter(it => wearFits(slot, it[0]));
+const wearSlots = () => WEAR_ORDER.filter(sl => !WEAR[sl].who || WEAR[sl].who === (S.hero || 'pan'));
+const wearOwn = (slot, id) => { const it = WEAR[slot].items.find(x => x[0] === id); return !it || it[3] === 0 || id === wearDef(slot) || !!S.own?.[slot + ':' + id] || S.look?.[slot] === id; };
+const wearing = (slot, k = S.look || {}) => { const id = k[slot]; return id && WEAR[slot].items.some(x => x[0] === id) && wearFits(slot, id) ? id : wearDef(slot); };
+function panLook(k = S.look || {}) {
+  const w = (slot) => wearing(slot, k), col = (slot) => WEAR[slot].items.find(x => x[0] === w(slot))[2], tin = col('tinte'), acc = w('head');
+  const beardC = w('tinte') === 'castano' ? '#7a5238' : tin;
+  return { ...(isI() ? ISART_LOOK : PAN_LOOK), key: isI() ? `isart|${w('barba')}|${beardC}` : 'pan', peto: col('peto'), tee: w('tee') === 'rayas' ? '#fbf3e3' : col('tee'), stripes: w('tee') === 'rayas', acc: acc !== 'nada' ? acc : null, glasses: w('gafas'), shoe: col('zap'), hair: w('pelo'), hairC: tin, beard: w('barba'), beardC, browC: w('tinte') === 'castano' ? '#5e3d28' : tin };
 }
+function rebuildPan(k) { const n = makeChar(panLook(k)), old = pan.root; scene.remove(old); for (const key of ['root', 'body', 'head', 'arms', 'legs', 'tail', 'torso', 'carryAnchor', 'faceMat', 'L']) pan[key] = n[key]; pan._ex = null; pan.scale = n.scale; scene.add(pan.root); see.m.value = ['gorro', 'gorra', 'paja', 'boina'].includes(pan.L.acc) ? 1.05 : 0.15; if (R) setCarry(R.carry); }
+/** Armario (en casa: ponerse lo que se tiene) y tienda (en La Percha: probarse y comprar). */
+function openWardrobe(keep, shop = false, slotSel = null, tryOn = null) {
+  if (!keep) sfx(shop ? 'bell' : 'page'); pan.goto = null; pan.yawTo = shop ? 0.2 : 0.35; cam.zoomTo = 0.4; S.own ||= {};
+  const slots = wearSlots(), slot = slots.includes(slotSel) ? slotSel : slots[0], T = tryOn || {}, look = { ...S.look, ...T };
+  const pend = Object.entries(T).filter(([sl, id]) => !wearOwn(sl, id)), total = pend.reduce((a, [sl, id]) => a + WEAR[sl].items.find(x => x[0] === id)[3], 0);
+  const sh = ui.modal(`<button class="x">✕</button><h2>${shop ? 'La Percha' : 'El armario'}</h2><div class="sub">${shop ? `Pruébate lo que quieras: no cuesta nada mirar. Llevas ${S.money} ${coin}` : 'Lo que ya es tuyo. Lo demás se compra en La Percha, el puesto de la plaza.'}</div>
+    <div class="wtabs">${slots.map(sl => `<button class="wt ${sl === slot ? 'on' : ''}" data-sl="${sl}">${sl === 'tinte' && isI() ? 'Color de la barba' : WEAR[sl].n}${pend.some(p => p[0] === sl) ? '<i class="dot"></i>' : ''}</button>`).join('')}</div>
+    <div class="ropa scroll">${wearItems(slot).map(([id, n, c, p]) => { const own = wearOwn(slot, id), on = wearing(slot, look) === id; return `<button class="rp ${on ? 'on' : ''} ${own ? '' : shop ? 'buy' : 'lock'}" data-id="${id}" ${own || shop ? '' : 'disabled'}><i style="background:${c}"></i><b>${n}</b>${own ? (on ? '<small>puesto</small>' : '') : `<small>${p} <span class="coin sm"></span></small>`}</button>`; }).join('')}</div>
+    ${shop ? `<div class="wfoot">${pend.length ? `<span>${pend.length === 1 ? 'Una prenda nueva' : pend.length + ' prendas nuevas'}: <b>${total}</b> ${coin}</span><button class="btn main" id="w-buy" ${S.money < total ? 'disabled' : ''}>${S.money < total ? `Te faltan ${total - S.money}` : 'Me lo llevo puesto'}</button>` : '<span>Elige algo que no tengas para probártelo.</span>'}</div>` : ''}`, 'paper side');
+  const m = sh.parentElement; m.style.background = 'none'; m.style.backdropFilter = 'none'; m.style.placeItems = 'center end'; if (keep) sh.style.animation = 'none';
+  const restore = () => { m.style.background = m.style.backdropFilter = m.style.placeItems = ''; cam.zoomTo = shop ? 0.72 : 0.62; };
+  ui.onClose = () => { restore(); if (pend.length) { rebuildPan(); ui.toast('Lo que no has comprado vuelve a la percha'); } };
+  const again = (sl, t) => { ui.onClose = null; openWardrobe(true, shop, sl, t); };
+  sh.querySelector('.x').onclick = () => ui.closeModal(); sh.querySelectorAll('.wt').forEach(b => b.onclick = () => { sfx('tick'); again(b.dataset.sl, T); });
+  sh.querySelectorAll('.rp:not(.lock)').forEach(b => b.onclick = () => {
+    const id = b.dataset.id, t = { ...T }; if (wearOwn(slot, id)) { delete t[slot]; S.look[slot] = id; save(); } else t[slot] = id;
+    rebuildPan({ ...S.look, ...t }); pan.pop(4); pan.act(wearOwn(slot, id) ? 'joy' : 'spin'); pan.say('happy', 1.5); sfx('pop'); burst('spark', pan.x, 1.4, pan.z, 10); again(slot, t);
+  });
+  const buy = sh.querySelector('#w-buy'); if (buy) buy.onclick = () => { if (S.money < total) return sfx('no'); S.money -= total; R.today.spent += total; for (const [sl, id] of pend) { S.own[sl + ':' + id] = 1; S.look[sl] = id; } ui.setMoney(S.money, true); cnt('prendas', pend.length); rebuildPan(); pan.act('spin'); setTimeout(() => pan.act('joy'), 800); pan.say('wow', 2); sfx('buy'); sfx('fanfare'); burst('confetti', pan.x, 2, pan.z, 50); save(); checkLogros(); again(slot, {}); };
+  ui.onKey = (k) => { const i = slots.indexOf(slot); if (k === 'tab' || k === 'd' || k === 'arrowright') { sfx('tick'); again(slots[(i + 1) % slots.length], T); } else if (k === 'a' || k === 'arrowleft') { sfx('tick'); again(slots[(i + slots.length - 1) % slots.length], T); } };
+}
+// El puesto: un perchero con toldo en el prado de la plaza, con espejo y lata para dejar las monedas.
+const PERCHA_AT = [-0.4, 8.9];
+function buildPercha() {
+  const g = new THREE.Group(), wood = gmat('#b9794a', { rough: 0.85 }), [x, z] = PERCHA_AT;
+  for (const sx of [-1.15, 1.15]) for (const sz of [-0.55, 0.55]) gmesh(GG.cyl(0.055, 0.065, 2.3, 8), wood, { parent: g, p: [sx, 1.15, sz] });
+  const tex = canvasTex(256, 64, (c, W2, H2) => { for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#fff6e2' : '#f2b84b'; c.fillRect(i * 32, 0, 32, H2); } c.fillStyle = 'rgba(120,70,20,.12)'; c.fillRect(0, H2 - 8, W2, 8); });
+  const aw = gmesh(GG.box(2.7, 0.08, 1.6, 0.03), gmat(0xffffff, { map: tex, rough: 0.9 }), { parent: g, p: [0, 2.36, 0.08] }); aw.rotation.x = 0.16;
+  for (let i = 0; i < 9; i++) gmesh(GG.sph(0.15, 10, 6), gmat(i % 2 ? '#fff6e2' : '#f2b84b', { rough: 0.9 }), { parent: g, p: [-1.2 + i * 0.3, 2.2, 0.86], s: [1, 0.55, 0.3] });
+  gmesh(GG.cyl(0.03, 0.03, 2.3, 8), gmat('#cfd6da', { rough: 0.3, metal: 0.7 }), { parent: g, p: [0, 1.82, -0.2], r: [0, 0, Math.PI / 2] });
+  [['#5f8fc4', -0.85], ['#d9a441', -0.5], ['#c9556b', -0.15], ['#6fa878', 0.2], ['#a58bc9', 0.55], ['#fbf3e3', 0.9]].forEach(([c, px], i) => { const h = new THREE.Group(); gmesh(GG.box(0.3, 0.52, 0.1, 0.05), gmat(c, { rough: 0.95 }), { parent: h, p: [0, -0.34, 0] }); gmesh(GG.box(0.1, 0.16, 0.08, 0.03), gmat(c, { rough: 0.95 }), { parent: h, p: [-0.09, -0.07, 0] }); gmesh(GG.box(0.1, 0.16, 0.08, 0.03), gmat(c, { rough: 0.95 }), { parent: h, p: [0.09, -0.07, 0] }); gmesh(GG.tor(0.05, 0.01, 6, 12), gmat('#8c7a66'), { parent: h, p: [0, 0.05, 0] }); h.position.set(px, 1.74, -0.2); h.rotation.y = (i % 2 ? 0.25 : -0.2); g.add(h); h.userData.sw = i; });
+  gmesh(GG.box(2.3, 0.08, 0.7, 0.03), wood, { parent: g, p: [0, 0.82, 0.25] }); for (const sx of [-1, 1]) gmesh(GG.box(0.08, 0.8, 0.6, 0.02), wood, { parent: g, p: [sx, 0.42, 0.25] });
+  gmesh(GG.cyl(0.26, 0.27, 0.02, 20), gmat('#e9cf8f', { rough: 1 }), { parent: g, p: [-0.7, 0.9, 0.3] }); gmesh(GG.cyl(0.13, 0.15, 0.12, 16), gmat('#e9cf8f', { rough: 1 }), { parent: g, p: [-0.7, 0.96, 0.3] }); gmesh(GG.cyl(0.155, 0.155, 0.035, 16), gmat('#e2664f'), { parent: g, p: [-0.7, 0.93, 0.3] });
+  gmesh(GG.sph(0.17, 14, 8), gmat('#3d3550', { rough: 0.95 }), { parent: g, p: [-0.15, 0.9, 0.3], s: [1.15, 0.35, 1.1] });
+  gmesh(GG.cyl(0.1, 0.1, 0.16, 14), gmat('#cfd6da', { rough: 0.35, metal: 0.6 }), { parent: g, p: [0.85, 0.94, 0.38] }); gmesh(GG.cyl(0.05, 0.05, 0.01, 12), gmat('#f2b84b', { metal: 0.6, rough: 0.3 }), { parent: g, p: [0.85, 1.03, 0.38] });
+  const mir = new THREE.Group(); gmesh(GG.cyl(0.04, 0.05, 1.5, 8), wood, { parent: mir, p: [0, 0.75, 0] }); gmesh(GG.cyl(0.3, 0.3, 0.05, 24), wood, { parent: mir, p: [0, 1.55, 0], r: [Math.PI / 2, 0, 0], s: [1, 1, 1.35] }); gmesh(GG.cyl(0.25, 0.25, 0.06, 24), gmat('#cfe9f2', { rough: 0.15, metal: 0.4, emissive: '#bfe3ee', ei: 0.25 }), { parent: mir, p: [0, 1.55, 0.005], r: [Math.PI / 2, 0, 0], s: [1, 1, 1.35] }); gmesh(GG.cyl(0.22, 0.26, 0.05, 12), wood, { parent: mir, p: [0, 0.03, 0] }); mir.position.set(1.75, 0, 0.5); mir.rotation.y = -0.5; g.add(mir);
+  const sg = canvasTex(256, 96, (c) => { c.fillStyle = '#fff3d8'; c.beginPath(); c.roundRect(4, 4, 248, 88, 20); c.fill(); c.strokeStyle = '#c98a5a'; c.lineWidth = 8; c.stroke(); c.fillStyle = '#e2664f'; c.font = '900 46px "Baloo 2", ui-rounded, sans-serif'; c.textAlign = 'center'; c.fillText('La Percha', 128, 64, 226); });
+  gmesh(GG.box(1.3, 0.48, 0.05, 0.02), gmat(0xffffff, { map: sg, rough: 0.8 }), { parent: g, p: [0, 2.72, 0.5], r: [-0.12, 0, -0.03] });
+  g.position.set(x, groundY(x, z), z); scene.add(g); W.circles.push([x, z - 0.1, 1.25], [x + 1.75, z + 0.5, 0.35]); percha = g;
+}
+let percha = null; const groundY = () => 0.1;
 const pmGain = () => Math.max(1, Math.floor(Math.sqrt(Math.max(0, S.total.earned - (S.runBase || 0)) / 250)));
 function prestige() {
   const gain = pmGain(); S.pm = (S.pm || 0) + gain; S.runs = (S.runs || 0) + 1; S.runBase = S.total.earned; S.runHornadas = S.hornadas || 0;
@@ -1452,7 +1500,7 @@ function boot() {
   { const ck = document.querySelector('#cal .clock'); ck.addEventListener('pointerdown', (e) => { e.stopPropagation(); ffHold = true; }); addEventListener('pointerup', () => { ffHold = false; }); addEventListener('pointercancel', () => { ffHold = false; }); }
   setInterval(() => { if (!TEST && S && mode === 'play' && !ui.modalOpen) saveMid(); }, 5000); addEventListener('visibilitychange', () => { if (document.hidden && S && !TEST) saveMid(); }); addEventListener('pagehide', () => { if (S && !TEST) saveMid(); });
   addEventListener('pointerdown', () => { initAudio(); resumeAudio(); });
-  setVolume(CFG.mus, CFG.sfx); setQuality(CFG.q); setSound(CFG.snd !== 'synth'); buildRadio();
+  setVolume(CFG.mus, CFG.sfx); setQuality(CFG.q); setSound(CFG.snd !== 'synth'); buildRadio(); buildPercha();
   const fit = () => { const st = document.documentElement.style, base = Math.min(innerWidth / 1280, innerHeight / 720), small = base < 0.8;
     // en pantallas pequeñas la interfaz no encoge con la ventana: se queda en un tamaño que se lee y las hojas se recolocan
     const z = small ? clamp(Math.min(0.8, innerWidth / 600), 0.5, 0.8) : Math.min(base, 1.3), zs = small ? clamp(Math.min(innerWidth / 900, innerHeight / 470), 0.5, 0.82) : Math.min(base, 1.3);
@@ -1477,7 +1525,7 @@ function boot() {
 
   saves.migrate();
   const begin = (i, s) => {
-    slot = i; saves.setCur(i); S = s || fresh(); S.name ||= saves.defName(i); S.look ||= {}; S.radio ||= { f: 89.3, off: false, found: { migas: 1 }, last: 'migas' }; applyRadio(); S.hero ||= 'pan'; ui.tx = S.hero === 'isart' ? heroTx : null; W.homeSign?.(S.hero === 'isart' ? 'Isart' : 'Pan'); if (Object.keys(S.look).length || S.hero === 'isart') rebuildPan(); S.build ||= []; S.baked ||= {}; S.wood ??= 6; S.lata ??= 0; S.home ||= {}; S.sup ||= {}; S.tr ||= {}; S.staff ||= {}; S.hornadas ??= 0; S.bond ||= {}; S.ach ||= {}; S.cnt ||= {}; S.look ||= {}; S.story ||= {}; S.homePos ||= {}; S.pm ??= 0; S.ayer ||= []; S.years ??= 0; S.style ||= 'miel'; vidaDefaults(S); applyUpgrades(); cam.yawTo = 0; cam.pitchTo = 0; cam.zoomTo = 0.72;
+    slot = i; saves.setCur(i); S = s || fresh(); S.name ||= saves.defName(i); S.look ||= {}; S.radio ||= { f: 89.3, off: false, found: { migas: 1 }, last: 'migas' }; applyRadio(); S.hero ||= 'pan'; ui.tx = S.hero === 'isart' ? heroTx : null; W.homeSign?.(S.hero === 'isart' ? 'Isart' : 'Pan'); S.own ||= {}; for (const sl of WEAR_ORDER) if (S.look[sl] && WEAR[sl].items.some(x => x[0] === S.look[sl])) S.own[sl + ':' + S.look[sl]] = 1; if (Object.keys(S.look).length || S.hero === 'isart') rebuildPan(); S.build ||= []; S.baked ||= {}; S.wood ??= 6; S.lata ??= 0; S.home ||= {}; S.sup ||= {}; S.tr ||= {}; S.staff ||= {}; S.hornadas ??= 0; S.bond ||= {}; S.ach ||= {}; S.cnt ||= {}; S.look ||= {}; S.story ||= {}; S.homePos ||= {}; S.pm ??= 0; S.ayer ||= []; S.years ??= 0; S.style ||= 'miel'; vidaDefaults(S); applyUpgrades(); cam.yawTo = 0; cam.pitchTo = 0; cam.zoomTo = 0.72;
     if (!S.intro) { S.intro = true; mode = 'letter'; R = null; music('title'); pan.x = 1.6; pan.z = -2.6; letter(CARTA, 'Una carta dentro del horno', () => { startDay(true); ui.dayTitle('Día 1', 'lunes · el horno vuelve a encenderse'); sfx('day'); }); }
     else { startDay(); loadMid(); setTimeout(awayReport, 1200); }
   };

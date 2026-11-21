@@ -39,13 +39,15 @@ function drawFace(g, L, ex, look = 0) {
   }
   // mofletes
   if (cheeks) { g.globalAlpha = sp === 'pan' ? 0.42 : 0.5; ell(g, cx - dx - 24, ey + 27, 16, 11, cheeks); ell(g, cx + dx + 24, ey + 27, 16, 11, cheeks); g.globalAlpha = 1; }
-  if (isart) {
+  if (isart && L.beard === 'bigote') { g.fillStyle = L.beardC || '#7a5238'; g.beginPath(); g.moveTo(cx - 30, mouthY - 6); g.quadraticCurveTo(cx - 14, mouthY - 22, cx, mouthY - 15); g.quadraticCurveTo(cx + 14, mouthY - 22, cx + 30, mouthY - 6); g.quadraticCurveTo(cx + 12, mouthY - 9, cx, mouthY - 7); g.quadraticCurveTo(cx - 12, mouthY - 9, cx - 30, mouthY - 6); g.fill(); }
+  if (isart && (L.beard || 'corta') === 'corta') {
     // barba corta que baja de las patillas, rodea la boca y cubre el mentón
-    const bc = '#7a5238';
+    const bc = L.beardC || '#7a5238';
     g.fillStyle = bc; g.beginPath(); g.moveTo(-4, ey - 10); g.quadraticCurveTo(26, ey + 34, cx - 36, mouthY - 13); g.quadraticCurveTo(cx - 14, mouthY - 21, cx, mouthY - 15); g.quadraticCurveTo(cx + 14, mouthY - 21, cx + 36, mouthY - 13); g.quadraticCurveTo(230, ey + 34, 260, ey - 10); g.lineTo(260, 300); g.lineTo(-4, 300); g.closePath(); g.fill();
-    g.save(); g.clip(); const rb = rnd(11); g.globalAlpha = 0.5; for (let i = 0; i < 520; i++) { const x = rb() * 256, y = ey - 10 + rb() * 150; g.fillStyle = rb() < 0.5 ? '#5e3d28' : '#94694a'; g.fillRect(x, y, 2, 4.5); } g.globalAlpha = 1; g.restore();
-    ell(g, cx, mouthY + 4, 23, 12.5, '#f1c9a8'); g.globalAlpha = 0.85; ell(g, cx + dx + 34, ey + 12, 9, 5, '#fffaf0', -0.4); g.globalAlpha = 1;
+    g.save(); g.clip(); const rb = rnd(11); g.globalAlpha = 0.5; for (let i = 0; i < 520; i++) { const x = rb() * 256, y = ey - 10 + rb() * 150; g.fillStyle = rb() < 0.5 ? 'rgba(0,0,0,.28)' : 'rgba(255,255,255,.2)'; g.fillRect(x, y, 2, 4.5); } g.globalAlpha = 1; g.restore();
+    ell(g, cx, mouthY + 4, 23, 12.5, '#f1c9a8');
   }
+  if (isart) { g.globalAlpha = 0.85; ell(g, cx + dx + 34, ey + 12, 9, 5, '#fffaf0', -0.4); g.globalAlpha = 1; }
   if (sp === 'pan' && !isart) {
     g.globalAlpha = 0.4; g.fillStyle = '#b06f55';
     for (const s of [-1, 1]) for (const [fx, fy] of [[14, 14], [22, 20], [30, 13], [38, 19], [9, 22]]) { g.beginPath(); g.arc(cx + s * (dx - 28 + fx), ey + fy + 3, 1.7, 0, 7); g.fill(); }
@@ -71,7 +73,7 @@ function drawFace(g, L, ex, look = 0) {
     if (sp === 'pan') {
       if (!blink && !happy && !isart) { g.beginPath(); g.moveTo(x - s * 11, ey - 12); g.quadraticCurveTo(x, ey - 20, x + s * 13, ey - 10); g.lineTo(x + s * 19, ey - 14); g.strokeStyle = '#24140f'; g.lineWidth = 3.6; g.stroke(); }
       const up = wow ? 6 : 0, tilt = sad ? 7 : 0;
-      g.beginPath(); g.moveTo(x - s * 13, ey - 33 - up - tilt); g.quadraticCurveTo(x + s * 2, ey - 41 - up, x + s * 17, ey - 32 - up + tilt * 0.6); g.strokeStyle = isart ? '#5e3d28' : '#33221c'; g.lineWidth = isart ? 6.2 : 4.2; g.stroke();
+      g.beginPath(); g.moveTo(x - s * 13, ey - 33 - up - tilt); g.quadraticCurveTo(x + s * 2, ey - 41 - up, x + s * 17, ey - 32 - up + tilt * 0.6); g.strokeStyle = isart ? (L.browC || '#5e3d28') : '#33221c'; g.lineWidth = isart ? 6.2 : 4.2; g.stroke();
     } else {
       if (L.lash && !blink && !happy) { g.strokeStyle = sp === 'tejon' ? dark : eyeCol; g.lineWidth = 3; for (const [a, b] of [[0.55, 0.95], [0.2, 0.75]]) { g.beginPath(); g.moveTo(x + s * eyeRx * 0.75, ey - eyeRy * a); g.lineTo(x + s * (eyeRx + 8), ey - eyeRy * b - 2); g.stroke(); } }
       if (sad || wow || L.brow) {
@@ -165,17 +167,19 @@ function petoTex0(peto, tee, stripes) {
 }
 
 // ---------- pelo de Pan ----------
-function hairGeo() {
+const hairCache = new Map();
+function hairGeo(len = 1, base = '#33211c') {
+  const hk = len + base; if (hairCache.has(hk)) return hairCache.get(hk);
   const N = 56, M = 22, pos = [], col = [], idx = [];
   const rx = 0.43 * 1.1, ry = 0.385 * 1.16, rz = 0.4 * 1.12;
-  const open = 1.0, c0 = new THREE.Color('#33211c'), c1 = new THREE.Color('#1f1412'), c2 = new THREE.Color('#5a3b2e'), c = new THREE.Color();
+  const open = 1.0, c0 = new THREE.Color(base), c1 = new THREE.Color(base).multiplyScalar(0.62), c2 = new THREE.Color(base).lerp(new THREE.Color('#ffffff'), 0.22), c = new THREE.Color();
   for (let i = 0; i <= N; i++) {
     const phi = -Math.PI + (i / N) * Math.PI * 2, ap = Math.abs(phi);
     // dentro de la abertura de la cara, el pelo es un flequillo cortina; fuera, melena larga
     const w = THREE.MathUtils.smoothstep(ap, open - 0.2, open + 0.12);
     const fringe = lerp(0.74, 1.38, Math.pow(clamp(ap / open, 0, 1), 1.5)) - Math.exp(-ap * ap / 0.004) * 0.1;
     const thEnd = lerp(fringe, Math.PI * 0.5, w);
-    const drop = w * lerp(0.52, 0.36, THREE.MathUtils.smoothstep(ap, 1.1, 2.4));
+    const drop = w * lerp(0.52, 0.36, THREE.MathUtils.smoothstep(ap, 1.1, 2.4)) * len;
     const arcLen = thEnd * 0.42, total = arcLen + drop;
     for (let j = 0; j <= M; j++) {
       const s = (j / M) * total; let x, y, z;
@@ -197,7 +201,7 @@ function hairGeo() {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   g.setIndex(idx); g.computeVertexNormals();
-  return g;
+  hairCache.set(hk, g); return g;
 }
 
 let _blob; function blobMat() { if (!_blob) { const t = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 4, 32, 32, 32); gr.addColorStop(0, 'rgba(60,35,25,.5)'); gr.addColorStop(1, 'rgba(60,35,25,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }); _blob = basic('#ffffff', { map: t, transparent: true, depthWrite: false }); _blob.polygonOffset = true; _blob.polygonOffsetFactor = -2; } return _blob; }
@@ -219,7 +223,7 @@ export function makeChar(look) {
   for (const s of [-1, 1]) {
     const piv = group({ parent: body, p: [s * 0.115, 0.26, 0] });
     mesh(G.cap(0.082, 0.09), isPan ? mat(L.legs || L.peto || '#5f8fc4', { rough: 0.9 }) : furM, { parent: piv, p: [0, -0.1, 0] });
-    const shoe = isPan ? mat('#fdf8ee', { rough: 0.6 }) : (sp === 'buho' || sp === 'rana' ? mat(sp === 'buho' ? '#e9a53a' : L.fur) : mat(L.acc2 || '#6b4a3a', { rough: 0.7 }));
+    const shoe = isPan ? mat(L.shoe || '#fdf8ee', { rough: 0.6 }) : (sp === 'buho' || sp === 'rana' ? mat(sp === 'buho' ? '#e9a53a' : L.fur) : mat(L.acc2 || '#6b4a3a', { rough: 0.7 }));
     mesh(G.sph(0.1, 14, 10), shoe, { parent: piv, p: [0, -0.2, 0.035], s: [1, 0.62, 1.35] });
     if (isPan) mesh(G.sph(0.1, 14, 10), mat('#e8b23c', { rough: 0.6 }), { parent: piv, p: [0, -0.225, 0.035], s: [1.04, 0.3, 1.4] });
     legs.push(piv);
@@ -251,15 +255,14 @@ export function makeChar(look) {
   if (isart) {
     // calvo: orejas, gafas redondas de pasta clara y una sombra de pelo rapado en la nuca
     for (const s of [-1, 1]) mesh(G.sph(0.06, 10, 8), skinM, { parent: head, p: [s * 0.415, -0.05, 0.1], s: [0.6, 1, 0.8] });
-    mesh(new THREE.SphereGeometry(R * 1.012, 24, 12, Math.PI + 0.25, Math.PI - 0.5, 1.2, 0.85), mat('#8a6248', { rough: 1, transparent: true, opacity: 0.5 }), { parent: head, s: [1.075, 0.96, 1.0] });
-    const fr = mat('#e9dcc2', { rough: 0.35 });
-    for (const s of [-1, 1]) { mesh(G.tor(0.098, 0.012, 6, 24), fr, { parent: head, p: [s * 0.168, 0.052, 0.375], r: [-0.1, s * 0.42, 0] }); }
-    mesh(G.cyl(0.01, 0.01, 0.13, 6), fr, { parent: head, p: [0, 0.07, 0.425], r: [0, 0, Math.PI / 2] });
+    mesh(new THREE.SphereGeometry(R * 1.012, 24, 12, Math.PI + 0.25, Math.PI - 0.5, 1.2, 0.85), mat(L.beardC || '#8a6248', { rough: 1, transparent: true, opacity: 0.45 }), { parent: head, s: [1.075, 0.96, 1.0] });
   } else if (isPan) {
-    hairG = hairG || hairGeo();
-    mesh(hairG, mat(0xffffff, { vc: true, rough: 0.5, rim: 0.5, side: THREE.DoubleSide, nocache: true }), { parent: head, p: [0, 0.035, -0.012] });
+    const hs2 = L.hair || 'melena', hc = L.hairC || '#33211c', hlen = { melena: 1, media: 0.42, recogido: 0.06, coletas: 0.06 }[hs2] ?? 1, hm = mat(new THREE.Color(hc).multiplyScalar(0.8), { rough: 0.55, rim: 0.5 });
+    mesh(hairGeo(hlen, hc), mat(0xffffff, { vc: true, rough: 0.5, rim: 0.5, side: THREE.DoubleSide, nocache: true }), { parent: head, p: [0, 0.035, -0.012] });
     // forro interior para que la melena tenga cuerpo
-    mesh(G.sph(R * 1.0, 20, 14), mat('#1f1412', { rough: 0.8 }), { parent: head, p: [0, -0.02, -0.08], s: [1.08, 0.98, 0.9] });
+    mesh(G.sph(R * 1.0, 20, 14), mat(new THREE.Color(hc).multiplyScalar(0.62), { rough: 0.8 }), { parent: head, p: [0, hlen < 0.2 ? 0.03 : -0.02, -0.08], s: [1.08, hlen < 0.2 ? 0.9 : 0.98, 0.9] });
+    if (hs2 === 'recogido') { mesh(G.sph(0.19, 16, 12), hm, { parent: head, p: [0, 0.4, -0.2], s: [1, 0.9, 1] }); mesh(G.tor(0.1, 0.03, 8, 18), mat('#e2664f', { rough: 0.8 }), { parent: head, p: [0, 0.3, -0.16], r: [Math.PI / 2 - 0.5, 0, 0] }); }
+    if (hs2 === 'coletas') for (const s of [-1, 1]) { mesh(G.sph(0.15, 14, 10), hm, { parent: head, p: [s * 0.47, -0.2, -0.06], s: [0.8, 1.35, 0.8], r: [0, 0, s * 0.25] }); mesh(G.tor(0.07, 0.028, 8, 16), mat('#e2664f', { rough: 0.8 }), { parent: head, p: [s * 0.43, -0.03, -0.05], r: [Math.PI / 2, 0, s * 0.3] }); }
     const gold = mat('#e9b949', { rough: 0.28, metal: 0.75, rim: 0.5 });
     for (const s of [-1, 1]) {
       mesh(G.sph(0.06, 10, 8), skinM, { parent: head, p: [s * 0.41, -0.07, 0.13], s: [0.6, 1, 0.8] });
@@ -323,8 +326,27 @@ export function makeChar(look) {
     if (sp !== 'buho' && L.acc !== 'pajarita') for (const y of [0.62, 0.48]) mesh(G.sph(0.022, 8, 6), mat('#fff6e4', { rough: 0.5 }), { parent: body, p: [0, y, y > 0.5 ? 0.205 : 0.262] });
     if (sp === 'zorro') for (const s of [-1, 1]) mesh(G.cone(0.1, 0.22, 8), mat('#fff6ea', { rough: 0.95 }), { parent: head, p: [s * 0.4, -0.13, 0.08], r: [0, 0, s * -1.9], s: [1, 1, 0.6] });
   }
+  // gafas
+  if (L.glasses === 'redondas') {
+    const fr = mat('#e9dcc2', { rough: 0.35 });
+    for (const s of [-1, 1]) mesh(G.tor(0.098, 0.012, 6, 24), fr, { parent: head, p: [s * 0.168, 0.052, 0.375], r: [-0.1, s * 0.42, 0] });
+    mesh(G.cyl(0.01, 0.01, 0.13, 6), fr, { parent: head, p: [0, 0.07, 0.425], r: [0, 0, Math.PI / 2] });
+  }
+  if (L.glasses === 'rojas') {
+    const fr = mat('#c9455a', { rough: 0.4 });
+    for (const s of [-1, 1]) mesh(G.tor(0.092, 0.017, 6, 20), fr, { parent: head, p: [s * 0.165, 0.052, 0.376], r: [-0.1, s * 0.42, 0] });
+    mesh(G.cyl(0.013, 0.013, 0.12, 6), fr, { parent: head, p: [0, 0.07, 0.425], r: [0, 0, Math.PI / 2] });
+  }
   // accesorios
   const A = L.acc;
+  if (A === 'boina') {
+    const bm = mat('#3d3550', { rough: 0.95 }), b = group({ parent: head, p: [0.03, 0.31, -0.02], r: [0.1, 0, -0.22] });
+    mesh(G.sph(0.36, 20, 12), bm, { parent: b, s: [1.16, 0.3, 1.1] }); mesh(G.cyl(0.33, 0.35, 0.06, 20), bm, { parent: b, p: [0, -0.06, 0] }); mesh(G.cyl(0.012, 0.018, 0.07, 6), bm, { parent: b, p: [0, 0.13, 0] });
+  }
+  if (A === 'paja') {
+    const st = mat('#e9cf8f', { rough: 1 }), b = group({ parent: head, p: [0, 0.27, -0.03], r: [-0.14, 0, 0.05] });
+    mesh(G.cyl(0.62, 0.64, 0.03, 28), st, { parent: b }); mesh(G.cyl(0.29, 0.33, 0.2, 22), st, { parent: b, p: [0, 0.1, 0] }); mesh(G.sph(0.29, 18, 10), st, { parent: b, p: [0, 0.19, 0], s: [1, 0.3, 1] }); mesh(G.cyl(0.335, 0.335, 0.06, 22), mat('#e2664f', { rough: 0.8 }), { parent: b, p: [0, 0.04, 0] });
+  }
   if (A === 'gafas') {
     const fr = mat('#c9455a', { rough: 0.4 });
     for (const s of [-1, 1]) mesh(G.tor(0.085, 0.013, 6, 20), fr, { parent: head, p: [s * 0.14, 0.05, 0.39], r: [-0.12, s * 0.3, 0] });
@@ -464,7 +486,7 @@ export function updateChar(ch, dt) {
 
 export const PAN_LOOK = { sp: 'pan', fur: '#f4cfae', skin: '#f4cfae', key: 'pan' };
 /** Isart: calvo, barba corta, gafas redondas y siempre con algo en la cabeza (de fábrica, el gorro de panadero). */
-export const ISART_LOOK = { sp: 'pan', who: 'isart', fur: '#f1c9a8', skin: '#f1c9a8', key: 'isart', peto: '#34466b', tee: '#f6eedc', legs: '#bfa987', acc: 'gorro', capC: '#d8c4a0', scale: 1.05 };
+export const ISART_LOOK = { sp: 'pan', who: 'isart', fur: '#f1c9a8', skin: '#f1c9a8', key: 'isart', peto: '#34466b', tee: '#f6eedc', legs: '#bfa987', acc: 'gorro', capC: '#d8c4a0', glasses: 'redondas', scale: 1.05 };
 export const MIGA_LOOK = { lash: true, sp: 'raton', fur: '#b9b3c4', skin: '#f6eef0', shirt: '#f08a7b', pat: 'raya', acc: 'delantal', scale: 0.72 };
 
 const V_SP = ['liebre', 'tejon', 'zorro', 'raton', 'oveja', 'rana', 'erizo', 'buho'];
