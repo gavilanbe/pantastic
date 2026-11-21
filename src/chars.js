@@ -16,7 +16,8 @@ function drawFace(g, L, ex, look = 0) {
   g.translate(0, -20);
   let ey = 136, dx = 40, eyeCol = '#2a1d1a', eyeRx = 11, eyeRy = 16, mouthY = 176, drawEyes = true, cheeks = '#ff9c8e';
   // marcas por especie
-  if (sp === 'pan') { ey = 138; dx = 41; eyeRx = 11.5; eyeRy = 16; mouthY = 181; cheeks = '#f08f83'; }
+  const isart = L.who === 'isart';
+  if (sp === 'pan') { ey = 138; dx = 41; eyeRx = 11.5; eyeRy = 16; mouthY = 181; cheeks = '#f08f83'; if (isart) { eyeRx = 10.5; eyeRy = 14.5; cheeks = '#e89a86'; } }
   if (sp === 'tejon') {
     g.fillStyle = L.skin; g.fillRect(40, 0, 176, H);
     g.fillStyle = '#3b3a42';
@@ -38,7 +39,14 @@ function drawFace(g, L, ex, look = 0) {
   }
   // mofletes
   if (cheeks) { g.globalAlpha = sp === 'pan' ? 0.42 : 0.5; ell(g, cx - dx - 24, ey + 27, 16, 11, cheeks); ell(g, cx + dx + 24, ey + 27, 16, 11, cheeks); g.globalAlpha = 1; }
-  if (sp === 'pan') {
+  if (isart) {
+    // barba corta que baja de las patillas, rodea la boca y cubre el mentón
+    const bc = '#7a5238';
+    g.fillStyle = bc; g.beginPath(); g.moveTo(-4, ey - 10); g.quadraticCurveTo(26, ey + 34, cx - 36, mouthY - 13); g.quadraticCurveTo(cx - 14, mouthY - 21, cx, mouthY - 15); g.quadraticCurveTo(cx + 14, mouthY - 21, cx + 36, mouthY - 13); g.quadraticCurveTo(230, ey + 34, 260, ey - 10); g.lineTo(260, 300); g.lineTo(-4, 300); g.closePath(); g.fill();
+    g.save(); g.clip(); const rb = rnd(11); g.globalAlpha = 0.5; for (let i = 0; i < 520; i++) { const x = rb() * 256, y = ey - 10 + rb() * 150; g.fillStyle = rb() < 0.5 ? '#5e3d28' : '#94694a'; g.fillRect(x, y, 2, 4.5); } g.globalAlpha = 1; g.restore();
+    ell(g, cx, mouthY + 4, 23, 12.5, '#f1c9a8'); g.globalAlpha = 0.85; ell(g, cx + dx + 34, ey + 12, 9, 5, '#fffaf0', -0.4); g.globalAlpha = 1;
+  }
+  if (sp === 'pan' && !isart) {
     g.globalAlpha = 0.4; g.fillStyle = '#b06f55';
     for (const s of [-1, 1]) for (const [fx, fy] of [[14, 14], [22, 20], [30, 13], [38, 19], [9, 22]]) { g.beginPath(); g.arc(cx + s * (dx - 28 + fx), ey + fy + 3, 1.7, 0, 7); g.fill(); }
     g.globalAlpha = 1;
@@ -61,9 +69,9 @@ function drawFace(g, L, ex, look = 0) {
     }
     g.lineCap = 'round'; g.lineJoin = 'round';
     if (sp === 'pan') {
-      if (!blink && !happy) { g.beginPath(); g.moveTo(x - s * 11, ey - 12); g.quadraticCurveTo(x, ey - 20, x + s * 13, ey - 10); g.lineTo(x + s * 19, ey - 14); g.strokeStyle = '#24140f'; g.lineWidth = 3.6; g.stroke(); }
+      if (!blink && !happy && !isart) { g.beginPath(); g.moveTo(x - s * 11, ey - 12); g.quadraticCurveTo(x, ey - 20, x + s * 13, ey - 10); g.lineTo(x + s * 19, ey - 14); g.strokeStyle = '#24140f'; g.lineWidth = 3.6; g.stroke(); }
       const up = wow ? 6 : 0, tilt = sad ? 7 : 0;
-      g.beginPath(); g.moveTo(x - s * 13, ey - 33 - up - tilt); g.quadraticCurveTo(x + s * 2, ey - 41 - up, x + s * 17, ey - 32 - up + tilt * 0.6); g.strokeStyle = '#33221c'; g.lineWidth = 4.2; g.stroke();
+      g.beginPath(); g.moveTo(x - s * 13, ey - 33 - up - tilt); g.quadraticCurveTo(x + s * 2, ey - 41 - up, x + s * 17, ey - 32 - up + tilt * 0.6); g.strokeStyle = isart ? '#5e3d28' : '#33221c'; g.lineWidth = isart ? 6.2 : 4.2; g.stroke();
     } else {
       if (L.lash && !blink && !happy) { g.strokeStyle = sp === 'tejon' ? dark : eyeCol; g.lineWidth = 3; for (const [a, b] of [[0.55, 0.95], [0.2, 0.75]]) { g.beginPath(); g.moveTo(x + s * eyeRx * 0.75, ey - eyeRy * a); g.lineTo(x + s * (eyeRx + 8), ey - eyeRy * b - 2); g.stroke(); } }
       if (sad || wow || L.brow) {
@@ -77,7 +85,7 @@ function drawFace(g, L, ex, look = 0) {
   g.lineCap = 'round';
   if (sp === 'pan') {
     arc(g, cx - 1, ey + 21, 4, 0.3, Math.PI - 0.6, 'rgba(160,100,80,.7)', 2.2);
-    ell(g, cx - 8, ey + 21, 2.3, 2.3, '#e8b23c'); ell(g, cx - 8.6, ey + 20.4, 0.9, 0.9, '#fff3c0');
+    if (!isart) { ell(g, cx - 8, ey + 21, 2.3, 2.3, '#e8b23c'); ell(g, cx - 8.6, ey + 20.4, 0.9, 0.9, '#fff3c0'); }
     if (wow) { ell(g, cx, mouthY + 4, 8, 10, '#7c2f33'); ell(g, cx, mouthY + 9, 5, 4, '#e77b7b'); }
     else if (sad) { g.beginPath(); g.moveTo(cx - 13, mouthY + 6); g.quadraticCurveTo(cx, mouthY - 4, cx + 13, mouthY + 6); g.strokeStyle = mc; g.lineWidth = 4; g.stroke(); }
     else if (happy || talk) {
@@ -197,20 +205,20 @@ let _blob; function blobMat() { if (!_blob) { const t = canvasTex(64, 64, (g) =>
 let hairG;
 export function makeChar(look) {
   const L = { ...look }; L.key = L.key || [L.sp, L.fur, L.skin, L.shirt, L.pat].join('|');
-  const sp = L.sp, isPan = sp === 'pan';
+  const sp = L.sp, isPan = sp === 'pan', isart = L.who === 'isart';
   const furM = mat(L.fur, { rough: 0.9, rim: 0.34 }), skinM = mat(L.skin, { rough: 0.85, rim: 0.3 });
   const root = group(), body = group({ parent: root });
 
   // torso
   const torsoMat = mat(0xffffff, { map: isPan ? petoTex(L.peto, L.tee, L.stripes) : shirtTex(L), rough: 0.88, rim: 0.3 });
   const torso = mesh(G.lathe([[0.001, 0.2], [0.19, 0.2], [0.265, 0.3], [0.26, 0.46], [0.2, 0.64], [0.135, 0.76], [0.001, 0.8]], 26), torsoMat, { parent: body });
-  if (sp === 'buho') torso.scale.set(1.12, 1, 1.05);
+  if (sp === 'buho') torso.scale.set(1.12, 1, 1.05); if (isart) torso.scale.set(1.1, 1, 1.07);
 
   // piernas
   const legs = [];
   for (const s of [-1, 1]) {
     const piv = group({ parent: body, p: [s * 0.115, 0.26, 0] });
-    mesh(G.cap(0.082, 0.09), isPan ? mat(L.peto || '#5f8fc4', { rough: 0.9 }) : furM, { parent: piv, p: [0, -0.1, 0] });
+    mesh(G.cap(0.082, 0.09), isPan ? mat(L.legs || L.peto || '#5f8fc4', { rough: 0.9 }) : furM, { parent: piv, p: [0, -0.1, 0] });
     const shoe = isPan ? mat('#fdf8ee', { rough: 0.6 }) : (sp === 'buho' || sp === 'rana' ? mat(sp === 'buho' ? '#e9a53a' : L.fur) : mat(L.acc2 || '#6b4a3a', { rough: 0.7 }));
     mesh(G.sph(0.1, 14, 10), shoe, { parent: piv, p: [0, -0.2, 0.035], s: [1, 0.62, 1.35] });
     if (isPan) mesh(G.sph(0.1, 14, 10), mat('#e8b23c', { rough: 0.6 }), { parent: piv, p: [0, -0.225, 0.035], s: [1.04, 0.3, 1.4] });
@@ -240,7 +248,14 @@ export function makeChar(look) {
   const skull = mesh(G.sph(R, 36, 26), faceMat, { parent: head, s: hs });
   const dark = mat('#2a1d1a', { rough: 0.5 });
 
-  if (isPan) {
+  if (isart) {
+    // calvo: orejas, gafas redondas de pasta clara y una sombra de pelo rapado en la nuca
+    for (const s of [-1, 1]) mesh(G.sph(0.06, 10, 8), skinM, { parent: head, p: [s * 0.415, -0.05, 0.1], s: [0.6, 1, 0.8] });
+    mesh(new THREE.SphereGeometry(R * 1.012, 24, 12, Math.PI + 0.25, Math.PI - 0.5, 1.2, 0.85), mat('#8a6248', { rough: 1, transparent: true, opacity: 0.5 }), { parent: head, s: [1.075, 0.96, 1.0] });
+    const fr = mat('#e9dcc2', { rough: 0.35 });
+    for (const s of [-1, 1]) { mesh(G.tor(0.098, 0.012, 6, 24), fr, { parent: head, p: [s * 0.168, 0.052, 0.375], r: [-0.1, s * 0.42, 0] }); }
+    mesh(G.cyl(0.01, 0.01, 0.13, 6), fr, { parent: head, p: [0, 0.07, 0.425], r: [0, 0, Math.PI / 2] });
+  } else if (isPan) {
     hairG = hairG || hairGeo();
     mesh(hairG, mat(0xffffff, { vc: true, rough: 0.5, rim: 0.5, side: THREE.DoubleSide, nocache: true }), { parent: head, p: [0, 0.035, -0.012] });
     // forro interior para que la melena tenga cuerpo
@@ -316,7 +331,7 @@ export function makeChar(look) {
     mesh(G.cyl(0.011, 0.011, 0.1, 6), fr, { parent: head, p: [0, 0.055, 0.42], r: [0, 0, Math.PI / 2] });
   }
   if (A === 'gorra') {
-    const capM = mat('#5b4a3a', { rough: 0.95 });
+    const capM = mat(L.capC || '#5b4a3a', { rough: 0.95 });
     mesh(G.sph(0.33, 18, 12), capM, { parent: head, p: [0, 0.2, -0.02], s: [1.12, 0.5, 1.05] });
     mesh(G.cyl(0.2, 0.22, 0.03, 16), capM, { parent: head, p: [0, 0.14, 0.33], s: [1, 1, 0.7], r: [0.5, 0, 0] });
   }
@@ -442,6 +457,8 @@ export function updateChar(ch, dt) {
 }
 
 export const PAN_LOOK = { sp: 'pan', fur: '#f4cfae', skin: '#f4cfae', key: 'pan' };
+/** Isart: calvo, barba corta, gafas redondas y siempre con algo en la cabeza (de fábrica, el gorro de panadero). */
+export const ISART_LOOK = { sp: 'pan', who: 'isart', fur: '#f1c9a8', skin: '#f1c9a8', key: 'isart', peto: '#34466b', tee: '#f6eedc', legs: '#bfa987', acc: 'gorro', capC: '#d8c4a0', scale: 1.05 };
 export const MIGA_LOOK = { lash: true, sp: 'raton', fur: '#b9b3c4', skin: '#f6eef0', shirt: '#f08a7b', pat: 'raya', acc: 'delantal', scale: 0.72 };
 
 const V_SP = ['liebre', 'tejon', 'zorro', 'raton', 'oveja', 'rana', 'erizo', 'buho'];

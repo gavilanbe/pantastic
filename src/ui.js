@@ -21,6 +21,8 @@ export const img = (id) => `<img src="${ICON[id]}" alt="">`;
 
 export const ui = {
   modalOpen: false, dialogOpen: false, onKey: null,
+  /** Filtro de textos según quién protagoniza la partida (nombre y género). */
+  tx: null, t(s) { return ui.tx && typeof s === 'string' ? ui.tx(s) : s; },
   init(icons, extra) { ICON = icons; XI = extra; },
   show(sel, on) { $(sel).classList.toggle('hide', !on); },
 
@@ -43,25 +45,25 @@ export const ui = {
     const key = ids.map(k => k + shelf[k].length).join(); if (box.dataset.k === key) return; box.dataset.k = key;
     box.innerHTML = ids.map(k => `<div class="sh">${img(k)}×${shelf[k].length}</div>`).join('');
   },
-  setGoal(t, ic) { const g = $('#goal'); if ($('#goal-t').textContent === t) return; $('#goal-t').textContent = t; $('#goal-ic').src = ic || ICON.barra; g.classList.remove('flash'); void g.offsetWidth; g.classList.add('flash'); },
+  setGoal(t, ic) { t = ui.t(t); const g = $('#goal'); if ($('#goal-t').textContent === t) return; $('#goal-t').textContent = t; $('#goal-ic').src = ic || ICON.barra; g.classList.remove('flash'); void g.offsetWidth; g.classList.add('flash'); },
   prompt(text, p, ok = true, hold = 0) {
-    const e = $('#prompt'); if (!text) { e.classList.add('hide'); return; } e.style.setProperty('--h', hold);
+    const e = $('#prompt'); if (!text) { e.classList.add('hide'); return; } text = ui.t(text); e.style.setProperty('--h', hold);
     e.classList.remove('hide'); const html = `<div class="in ${ok ? '' : 'no'}">${ok ? '<kbd>E</kbd>' : ''}<span>${text}</span></div>`;
     if (e.dataset.h !== html) { e.innerHTML = html; e.dataset.h = html; }
     const s = toScreen(p[0], p[1], p[2]); for (const a of anchors) if (a.sx != null && Math.abs(a.sx - s.x) < 130 && a.sy - s.y > -14 && a.sy - s.y < 46) s.y = a.sy - 50; e.style.transform = `translate(${s.x}px, ${Math.max(46, s.y)}px)`;
   },
-  toast(html, cls = '') { const t = el('div', 'toast ' + cls, html); $('#toasts').append(t); setTimeout(() => t.remove(), 2550); while ($('#toasts').children.length > 2) $('#toasts').firstChild.remove(); },
+  toast(html, cls = '') { html = ui.t(html); const box = $('#toasts'); for (const o of [...box.children]) if (o.dataset.h === html) o.remove(); const t = el('div', 'toast ' + cls, html); t.dataset.h = html; box.append(t); setTimeout(() => t.remove(), 2550); while ($('#toasts').children.length > 2) $('#toasts').firstChild.remove(); },
 
   // ---- anclados al mundo ----
   anchor(cls, html, pos) { const e = el('div', cls, `<div class="in">${html}</div>`); e.pos = pos; $('#world').append(e); anchors.add(e); return e; },
   unanchor(e) { if (!e) return; anchors.delete(e); e.remove(); },
-  float(text, x, y, z, cls = '') { const s = toScreen(x, y, z); const f = el('div', 'float ' + cls, text); f.style.left = s.x + 'px'; f.style.top = s.y + 'px'; $('#world').append(f); setTimeout(() => f.remove(), 1300); },
+  float(text, x, y, z, cls = '') { text = ui.t(text); const s = toScreen(x, y, z); const f = el('div', 'float ' + cls, text); f.style.left = s.x + 'px'; f.style.top = s.y + 'px'; $('#world').append(f); setTimeout(() => f.remove(), 1300); },
   update() { for (const e of anchors) { const p = e.pos, s = toScreen(p[0], p[1], p[2]); e.sx = s.x; e.sy = s.y; e.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px)`; } },
   clearWorld() { for (const e of anchors) e.remove(); anchors.clear(); },
 
   // ---- diálogo con máquina de escribir estable ----
   dialog(name, lines, { onDone, onChar, onLine, face } = {}) {
-    const box = $('#dialog'), tx = $('#dlg-text'); let i = 0, n = 0, timer = null, full = '';
+    lines = lines.map(ui.t); const box = $('#dialog'), tx = $('#dlg-text'); let i = 0, n = 0, timer = null, full = '';
     box.classList.toggle('noface', !face); $('#dlg-face').classList.toggle('hide', !face); const fimg = $('#dlg-face img'); if (face) fimg.src = face.idle; ui.dlgFace = (talk) => { if (face) fimg.src = talk ? face.talk : face.happy; };
     ui.dialogOpen = true; box.classList.remove('hide'); $('#dlg-name').textContent = name; $('#dlg-name').classList.toggle('hide', !name);
     const draw = () => { tx.innerHTML = `<span>${full.slice(0, n)}</span><span class="h">${full.slice(n)}</span>`; $('#dlg-next').style.visibility = n >= full.length ? 'visible' : 'hidden'; };
@@ -74,7 +76,7 @@ export const ui = {
   },
 
   // ---- modal ----
-  modal(html, cls = '') { const m = $('#modal'); clearTimeout(ui.outT); m.classList.remove('out'); m.innerHTML = `<div class="sheet ${cls}">${html}</div>`; m.classList.remove('hide'); ui.modalOpen = true; m.scrollTop = 0; return m.firstChild; },
+  modal(html, cls = '') { html = ui.t(html); const m = $('#modal'); clearTimeout(ui.outT); m.classList.remove('out'); m.innerHTML = `<div class="sheet ${cls}">${html}</div>`; m.classList.remove('hide'); ui.modalOpen = true; m.scrollTop = 0; return m.firstChild; },
   closeModal() { const m = $('#modal'); if (!ui.modalOpen) return; ui.modalOpen = false; m.classList.add('out'); const cb = ui.onClose; ui.onClose = null; ui.outT = setTimeout(() => { m.classList.add('hide'); m.classList.remove('out'); m.innerHTML = ''; }, 130); cb?.(); },
 
   // ---- amasado ----
@@ -91,15 +93,21 @@ export const ui = {
   // ---- pantallas ----
   fade(v) { $('#fade').style.opacity = v; },
   dayTitle(a, b) { const d = el('div', 'daytitle', `<div class="a">${a}</div><div class="b">${b}</div>`); $('#ui').append(d); setTimeout(() => d.remove(), 3300); },
-  card(html, ms = 6000) { document.querySelectorAll('.fiesta-card').forEach(e => e.remove()); const d = el('div', 'fiesta-card', html); $('#ui').append(d); if (ms) setTimeout(() => d.remove(), ms); return d; },
-  title(hasSave, onStart, onNew) {
-    const t = $('#title'); t.classList.remove('hide');
-    t.innerHTML = `<img class="logo" src="${logoURL()}" alt="Pantastic!">
-      <button class="btn main" id="t-go">${hasSave ? 'Seguir horneando' : 'Encender el horno'}</button>
-      ${hasSave ? '<button class="btn sm" id="t-new" style="margin-top:14px">Empezar de cero</button>' : ''}
-      <div class="hint"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> moverse</span><span><kbd>E</kbd> todo lo demás</span></div>`;
-    $('#t-go').onclick = () => { t.classList.add('hide'); onStart(); };
-    if (hasSave) $('#t-new').onclick = () => { if ($('#t-new').dataset.sure) { t.classList.add('hide'); onNew(); } else { $('#t-new').dataset.sure = 1; $('#t-new').textContent = '¿Seguro? Se borra la partida'; } };
+  card(html, ms = 6000) { html = ui.t(html); document.querySelectorAll('.fiesta-card').forEach(e => e.remove()); const d = el('div', 'fiesta-card', html); $('#ui').append(d); if (ms) setTimeout(() => d.remove(), ms); return d; },
+  /** Sello pequeño junto a la libreta: la partida acaba de guardarse. */
+  saved(text = 'Guardado') { let e = $('#saved'); if (!e) { e = el('div', '', ''); e.id = 'saved'; $('#ui').append(e); } e.innerHTML = `<i></i>${text}`; e.classList.remove('on'); void e.offsetWidth; e.classList.add('on'); },
+  /** Selector de protagonista: una ficha de la abuela por cabeza; la elegida se despliega junto a su foco. */
+  pick(heroes, { onSel, onGo, onBack }) {
+    const box = el('div', '', `<div class="pk-h">¿Quién enciende el horno?</div>
+      ${heroes.map((h, k) => `<div class="pk-card pk${k}" data-k="${k}"><i class="tape"></i><div class="pk-top"><span class="pk-pic"><img src="${h.face}" alt=""></span><div><small>${h.sub}</small><b>${h.n}</b></div></div><div class="pk-body">${h.lines.map(l => `<p>${l}</p>`).join('')}<button class="btn main">¡Al obrador con ${h.n}!</button></div><span class="pk-seal">${h.seal}</span></div>`).join('')}
+      <div class="pk-keys"><span><kbd>A</kbd><kbd>D</kbd> cambiar el foco</span><span><kbd>E</kbd> elegir</span><span><kbd>Esc</kbd> volver a las libretas</span></div>`);
+    box.id = 'pick'; $('#ui').append(box); let sel = 0, done = false;
+    const cards = [...box.querySelectorAll('.pk-card')], set = (k) => { sel = k; cards.forEach((c, i) => c.classList.toggle('on', i === k)); };
+    const go = () => { if (done) return; done = true; cards[sel].classList.add('chosen'); box.classList.add('done'); onGo(); };
+    cards.forEach((c, k) => { c.onclick = (e) => { if (done) return; if (k !== sel) onSel(k); else if (e.target.closest('.btn')) go(); }; c.onpointerenter = () => { if (!done && k !== sel && matchMedia('(hover: hover)').matches) onSel(k); }; });
+    const key = (e) => { const k = e.key.toLowerCase(); if (k === 'm') return; e.stopPropagation(); if (e.repeat || done) return; if (k === 'a' || k === 'arrowleft') onSel(0); else if (k === 'd' || k === 'arrowright') onSel(1); else if (k === 'e' || k === 'enter' || k === ' ') { e.preventDefault(); go(); } else if (k === 'escape') onBack(); };
+    addEventListener('keydown', key, true); set(0);
+    return { set, close() { removeEventListener('keydown', key, true); box.remove(); } };
   },
   rain(on) { const r = $('#rain'); if (!on) { r.innerHTML = ''; return; } if (r.children.length) return; let h = ''; for (let i = 0; i < 70; i++) h += `<i class="drop" style="left:${Math.random() * 110}vw;animation-duration:${0.5 + Math.random() * 0.4}s;animation-delay:${-Math.random()}s;opacity:${0.3 + Math.random() * 0.5}"></i>`; r.innerHTML = h; },
 };

@@ -1,6 +1,6 @@
 // Iconos renderizados en 3D para la interfaz: ingredientes, mejoras y retratos.
 import { THREE, mat, mesh, group, G, blob, bend, rnd } from './gfx.js';
-import { makeChar, updateChar, PAN_LOOK, MIGA_LOOK } from './chars.js';
+import { makeChar, updateChar, PAN_LOOK, ISART_LOOK, MIGA_LOOK } from './chars.js';
 import { makeTray, makeBread } from './breads.js';
 import { NEIGH, PIPA_LOOK, STAFF } from './data.js';
 
@@ -178,7 +178,7 @@ export function renderExtras(size = 200, objs = {}, items = {}) {
     cam.position.set(0.25, 1.5 + tall * 0.5, 3.1 + tall * 1.6); cam.lookAt(0, 1.06 + tall * 0.5, 0);
     r.render(sc, cam); const url = r.domElement.toDataURL('image/png'); sc.remove(ch.root); return url;
   };
-  const looks = { pan: PAN_LOOK, miga: MIGA_LOOK, pipa: PIPA_LOOK }; for (const id in STAFF) if (STAFF[id].look) looks[id] = STAFF[id].look; for (const id in NEIGH) looks[id] = NEIGH[id].look;
+  const looks = { pan: PAN_LOOK, isart: ISART_LOOK, miga: MIGA_LOOK, pipa: PIPA_LOOK }; for (const id in STAFF) if (STAFF[id].look) looks[id] = STAFF[id].look; for (const id in NEIGH) looks[id] = NEIGH[id].look;
   for (const id in looks) out.face[id] = { idle: bust(looks[id], 'idle'), happy: bust(looks[id], 'happy'), talk: bust(looks[id], 'talk') };
   out.up.miga = out.face.miga.happy;
   out.mue = {}; for (const id in objs) out.mue[id] = shot(objs[id], { fit: 1.05, up: id === 'alfombra' ? 2.2 : 0.8 });
